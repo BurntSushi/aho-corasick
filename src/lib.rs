@@ -2,6 +2,9 @@
 A fast implementation of the Aho-Corasick string search algorithm.
 */
 
+#![allow(dead_code)]
+
+use std::collections::VecDeque;
 use std::fmt;
 
 #[derive(Clone, Debug)]
@@ -69,6 +72,30 @@ impl Automaton {
             }
         }
         self.pats = pats;
+        self.fill()
+    }
+
+    fn fill(mut self) -> Automaton {
+        let mut q = VecDeque::new();
+        for &si in self.states[1].goto.iter().filter(|&&si| si != 1) {
+            q.push_front(si);
+        }
+        while let Some(si) = q.pop_back() {
+            for c in 0..256 {
+                let u = self.states[si].goto[c];
+                if u != 0 {
+                    q.push_front(u);
+                    let mut v = self.states[si].fail;
+                    while self.states[v].goto[c] == 0 {
+                        v = self.states[v].fail;
+                    }
+                    let ufail = self.states[v].goto[c];
+                    self.states[u].fail = ufail;
+                    let ufail_out = self.states[ufail].out.clone();
+                    self.states[u].out.extend(ufail_out);
+                }
+            }
+        }
         self
     }
 
@@ -76,6 +103,20 @@ impl Automaton {
         let i = self.states.len();
         self.states.push(state);
         i
+    }
+
+    pub fn find(&self, s: &str) -> Vec<usize> {
+        let mut si = 1;
+        for &b in s.as_bytes() {
+            while self.states[si].goto[b as usize] == 0 {
+                si = self.states[si].fail;
+            }
+            si = self.states[si].goto[b as usize];
+            if !self.states[si].out.is_empty() {
+                return self.states[si].out.clone();
+            }
+        }
+        vec![]
     }
 }
 
@@ -138,7 +179,9 @@ mod tests {
 
     #[test]
     fn scratch() {
-        let aut = Builder::new().add("he").add("she").build();
+        let aut =
+            Builder::new().add("he").add("she").add("his").add("hers").build();
         println!("{:?}", aut);
+        println!("{:?}", aut.find("but she said"));
     }
 }
