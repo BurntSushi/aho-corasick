@@ -15,3 +15,9 @@ name = "aho_corasick"
 
 [dependencies]
 memchr = "0.1.*"
+
+[[bench]]
+name = "bench"
+path = "benches/bench.rs"
+test = false
+bench = true
