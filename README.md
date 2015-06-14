@@ -1,6 +1,4 @@
-**UNDER DEVELOPMENT**
-
-This crate provides a fast implementation of the
+This crate provides an implementation of the
 [Aho-Corasick](http://en.wikipedia.org/wiki/Aho%E2%80%93Corasick_string_matching_algorithm)
 algorithm. Its intended use case is for fast substring matching, particularly
 when matching multiple substrings in a search text. This is achieved by
@@ -19,7 +17,33 @@ Dual-licensed under MIT or the [UNLICENSE](http://unlicense.org).
 
 ### Documentation
 
-[http://burntsushi.net/rustdoc/aho-corasick/](http://burntsushi.net/rustdoc/aho-corasick/).
+[http://burntsushi.net/rustdoc/aho_corasick/](http://burntsushi.net/rustdoc/aho_corasick/).
+
+
+### Example
+
+The documentation contains several examples, and there is a more complete
+example as a full program in `examples/dict-search.rs`.
+
+Here is a quick example showing simple substring matching:
+
+```rust
+use aho_corasick::{AcAutomaton, Match};
+
+let aut = AcAutomaton::new(vec!["apple", "maple"]);
+let mut it = aut.find("I like maple apples.");
+assert_eq!(it.next(), Some(Match {
+    pati: 1,
+    start: 7,
+    end: 12,
+}));
+assert_eq!(it.next(), Some(Match {
+    pati: 0,
+    start: 13,
+    end: 18,
+}));
+assert_eq!(it.next(), None);
+```
 
 
 ### Alternatives

@@ -16,6 +16,13 @@ name = "aho_corasick"
 [dependencies]
 memchr = "0.1.*"
 
+[dev-dependencies]
+csv = "*"
+docopt = "*"
+quickcheck = "*"
+rand = "*"
+rustc-serialize = "*"
+
 [[bench]]
 name = "bench"
 path = "benches/bench.rs"
