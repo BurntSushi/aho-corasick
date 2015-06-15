@@ -167,11 +167,14 @@ struct State {
     depth: u32,
 }
 
+// #[derive(Clone)]
+// enum Goto {
+    // Sparse(Vec<StateIdx>), // indexed by alphabet
+    // Dense(Vec<(u8, StateIdx)>),
+// }
+
 #[derive(Clone)]
-enum Goto {
-    Sparse(Vec<StateIdx>), // indexed by alphabet
-    Dense(Vec<(u8, StateIdx)>),
-}
+struct Goto(Vec<StateIdx>);
 
 impl AcAutomaton {
     /// Create a new automaton from an iterator of patterns.
@@ -573,40 +576,62 @@ impl AcAutomaton {
 // See comments on `DENSE_DEPTH_THRESHOLD` constant above for motivation.
 impl State {
     fn new(depth: u32) -> State {
-        let goto = if depth <= DENSE_DEPTH_THRESHOLD {
-            Goto::Sparse(vec![0; 256])
-        } else {
-            Goto::Dense(vec![])
-        };
         State {
             out: vec![],
             fail: 1,
-            goto: goto,
+            goto: Goto(vec![0; 256]),
             depth: depth,
         }
     }
 
-    fn goto(&self, b1: u8) -> StateIdx {
-        match self.goto {
-            Goto::Sparse(ref m) => m[b1 as usize],
-            Goto::Dense(ref m) => {
-                for &(b2, si) in m {
-                    if b1 == b2 {
-                        return si;
-                    }
-                }
-                FAIL_STATE
-            }
-        }
+    fn goto(&self, b: u8) -> StateIdx {
+        self.goto.0[b as usize]
     }
 
     fn set_goto(&mut self, b: u8, si: StateIdx) {
-        match self.goto {
-            Goto::Sparse(ref mut m) => m[b as usize] = si,
-            Goto::Dense(ref mut m) => m.push((b, si)),
-        }
+        self.goto.0[b as usize] = si;
+    }
+
+    fn transitions(&self) -> Vec<(usize, StateIdx)> {
+        self.goto.0.iter().cloned().enumerate().collect()
     }
 }
+// impl State {
+    // fn new(depth: u32) -> State {
+        // let goto = if depth <= DENSE_DEPTH_THRESHOLD {
+            // Goto::Sparse(vec![0; 256])
+        // } else {
+            // Goto::Dense(vec![])
+        // };
+        // State {
+            // out: vec![],
+            // fail: 1,
+            // goto: goto,
+            // depth: depth,
+        // }
+    // }
+//
+    // fn goto(&self, b1: u8) -> StateIdx {
+        // match self.goto {
+            // Goto::Sparse(ref m) => m[b1 as usize],
+            // Goto::Dense(ref m) => {
+                // for &(b2, si) in m {
+                    // if b1 == b2 {
+                        // return si;
+                    // }
+                // }
+                // FAIL_STATE
+            // }
+        // }
+    // }
+//
+    // fn set_goto(&mut self, b: u8, si: StateIdx) {
+        // match self.goto {
+            // Goto::Sparse(ref mut m) => m[b as usize] = si,
+            // Goto::Dense(ref mut m) => m.push((b, si)),
+        // }
+    // }
+// }
 
 impl<S: Into<String>> FromIterator<S> for AcAutomaton {
     /// Create an automaton from an iterator of strings.
@@ -641,25 +666,12 @@ impl State {
         use std::char::from_u32;
 
         let mut goto = vec![];
-        match self.goto {
-            Goto::Sparse(ref m) => {
-                for (i, &state) in m.iter().enumerate() {
-                    if (!root && state == 0) || (root && state == 1) {
-                        continue;
-                    }
-                    goto.push(format!(
-                        "{} => {}", from_u32(i as u32).unwrap(), state));
-                }
+        for (i, state) in self.transitions() {
+            if (!root && state == 0) || (root && state == 1) {
+                continue;
             }
-            Goto::Dense(ref m) => {
-                for &(i, state) in m.iter() {
-                    if (!root && state == 0) || (root && state == 1) {
-                        continue;
-                    }
-                    goto.push(format!(
-                        "{} => {}", from_u32(i as u32).unwrap(), state));
-                }
-            }
+            goto.push(format!(
+                "{} => {}", from_u32(i as u32).unwrap(), state));
         }
         goto.connect(", ")
     }
