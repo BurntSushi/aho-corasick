@@ -32,7 +32,8 @@ fn haystack_same(letter: char) -> String {
 
 macro_rules! aut_benches {
     ($prefix:ident, $aut:expr) => { mod $prefix {
-use aho_corasick::AcAutomaton;
+#![allow(unused_imports)]
+use aho_corasick::{AcAutomaton, Sparse};
 use test::Bencher;
 
 use super::{HAYSTACK_RANDOM, bench_aut_no_match, haystack_same};
