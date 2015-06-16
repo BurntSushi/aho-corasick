@@ -5,12 +5,16 @@ extern crate test;
 
 use std::iter;
 
-use aho_corasick::AcAutomaton;
+use aho_corasick::{AcAutomaton, Transitions};
 use test::Bencher;
 
 const HAYSTACK_RANDOM: &'static str = include_str!("random.txt");
 
-fn bench_aut_no_match(b: &mut Bencher, aut: AcAutomaton, haystack: &str) {
+fn bench_aut_no_match<T: Transitions>(
+    b: &mut Bencher,
+    aut: AcAutomaton<T>,
+    haystack: &str,
+) {
     b.bytes = haystack.len() as u64;
     b.iter(|| assert!(aut.find(haystack).next().is_none()));
 }
@@ -26,15 +30,22 @@ fn haystack_same(letter: char) -> String {
     iter::repeat(letter).take(10000).collect()
 }
 
+macro_rules! aut_benches {
+    ($prefix:ident, $aut:expr) => { mod $prefix {
+use aho_corasick::AcAutomaton;
+use test::Bencher;
+
+use super::{HAYSTACK_RANDOM, bench_aut_no_match, haystack_same};
+
 #[bench]
 fn ac_one_byte(b: &mut Bencher) {
-    let aut = AcAutomaton::new(vec!["a"]);
+    let aut = $aut(vec!["a"]);
     bench_aut_no_match(b, aut, &haystack_same('z'));
 }
 
 #[bench]
 fn ac_one_prefix_byte_no_match(b: &mut Bencher) {
-    let aut = AcAutomaton::new(vec!["zbc"]);
+    let aut = $aut(vec!["zbc"]);
     bench_aut_no_match(b, aut, &haystack_same('y'));
 }
 
@@ -42,85 +53,89 @@ fn ac_one_prefix_byte_no_match(b: &mut Bencher) {
 fn ac_one_prefix_byte_every_match(b: &mut Bencher) {
     // We lose the benefit of `memchr` because the first byte matches
     // in every position in the haystack.
-    let aut = AcAutomaton::new(vec!["zbc"]);
+    let aut = $aut(vec!["zbc"]);
     bench_aut_no_match(b, aut, &haystack_same('z'));
 }
 
 #[bench]
 fn ac_one_prefix_byte_random(b: &mut Bencher) {
-    let aut = AcAutomaton::new(vec!["zbc\x00"]);
+    let aut = $aut(vec!["zbc\x00"]);
     bench_aut_no_match(b, aut, HAYSTACK_RANDOM);
 }
 
 #[bench]
 fn ac_two_bytes(b: &mut Bencher) {
-    let aut = AcAutomaton::new(vec!["a", "b"]);
+    let aut = $aut(vec!["a", "b"]);
     bench_aut_no_match(b, aut, &haystack_same('z'));
 }
 
 #[bench]
 fn ac_two_diff_prefix(b: &mut Bencher) {
-    let aut = AcAutomaton::new(vec!["abcdef", "bmnopq"]);
+    let aut = $aut(vec!["abcdef", "bmnopq"]);
     bench_aut_no_match(b, aut, &haystack_same('z'));
 }
 
 #[bench]
 fn ac_two_one_prefix_byte_every_match(b: &mut Bencher) {
-    let aut = AcAutomaton::new(vec!["zbcdef", "zmnopq"]);
+    let aut = $aut(vec!["zbcdef", "zmnopq"]);
     bench_aut_no_match(b, aut, &haystack_same('z'));
 }
 
 #[bench]
 fn ac_two_one_prefix_byte_no_match(b: &mut Bencher) {
-    let aut = AcAutomaton::new(vec!["zbcdef", "zmnopq"]);
+    let aut = $aut(vec!["zbcdef", "zmnopq"]);
     bench_aut_no_match(b, aut, &haystack_same('y'));
 }
 
 #[bench]
 fn ac_two_one_prefix_byte_random(b: &mut Bencher) {
-    let aut = AcAutomaton::new(vec!["zbcdef\x00", "zmnopq\x00"]);
+    let aut = $aut(vec!["zbcdef\x00", "zmnopq\x00"]);
     bench_aut_no_match(b, aut, HAYSTACK_RANDOM);
 }
 
 #[bench]
 fn ac_ten_bytes(b: &mut Bencher) {
-    let aut = AcAutomaton::new(vec!["a", "b", "c", "d", "e",
-                                    "f", "g", "h", "i", "j"]);
+    let aut = $aut(vec!["a", "b", "c", "d", "e",
+                        "f", "g", "h", "i", "j"]);
     bench_aut_no_match(b, aut, &haystack_same('z'));
 }
 
 #[bench]
 fn ac_ten_diff_prefix(b: &mut Bencher) {
-    let aut = AcAutomaton::new(vec!["abcdef", "bbcdef", "cbcdef", "dbcdef",
-                                    "ebcdef", "fbcdef", "gbcdef", "hbcdef",
-                                    "ibcdef", "jbcdef"]);
+    let aut = $aut(vec!["abcdef", "bbcdef", "cbcdef", "dbcdef",
+                        "ebcdef", "fbcdef", "gbcdef", "hbcdef",
+                        "ibcdef", "jbcdef"]);
     bench_aut_no_match(b, aut, &haystack_same('z'));
 }
 
 #[bench]
 fn ac_ten_one_prefix_byte_every_match(b: &mut Bencher) {
-    let aut = AcAutomaton::new(vec!["zacdef", "zbcdef", "zccdef", "zdcdef",
-                                    "zecdef", "zfcdef", "zgcdef", "zhcdef",
-                                    "zicdef", "zjcdef"]);
+    let aut = $aut(vec!["zacdef", "zbcdef", "zccdef", "zdcdef",
+                        "zecdef", "zfcdef", "zgcdef", "zhcdef",
+                        "zicdef", "zjcdef"]);
     bench_aut_no_match(b, aut, &haystack_same('z'));
 }
 
 #[bench]
 fn ac_ten_one_prefix_byte_no_match(b: &mut Bencher) {
-    let aut = AcAutomaton::new(vec!["zacdef", "zbcdef", "zccdef", "zdcdef",
-                                    "zecdef", "zfcdef", "zgcdef", "zhcdef",
-                                    "zicdef", "zjcdef"]);
+    let aut = $aut(vec!["zacdef", "zbcdef", "zccdef", "zdcdef",
+                        "zecdef", "zfcdef", "zgcdef", "zhcdef",
+                        "zicdef", "zjcdef"]);
     bench_aut_no_match(b, aut, &haystack_same('y'));
 }
 
 #[bench]
 fn ac_ten_one_prefix_byte_random(b: &mut Bencher) {
-    let aut = AcAutomaton::new(vec!["zacdef\x00", "zbcdef\x00", "zccdef\x00",
-                                    "zdcdef\x00", "zecdef\x00", "zfcdef\x00",
-                                    "zgcdef\x00", "zhcdef\x00", "zicdef\x00",
-                                    "zjcdef\x00"]);
+    let aut = $aut(vec!["zacdef\x00", "zbcdef\x00", "zccdef\x00",
+                        "zdcdef\x00", "zecdef\x00", "zfcdef\x00",
+                        "zgcdef\x00", "zhcdef\x00", "zicdef\x00",
+                        "zjcdef\x00"]);
     bench_aut_no_match(b, aut, HAYSTACK_RANDOM);
 }
+}}}
+
+aut_benches!(dense, AcAutomaton::new);
+aut_benches!(sparse, AcAutomaton::<Sparse>::with_transitions);
 
 // A naive multi-pattern search.
 // We use this to benchmark *throughput*, so it should never match anything.

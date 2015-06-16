@@ -120,8 +120,13 @@ use std::iter::FromIterator;
 
 use memchr::memchr;
 
+/// The integer type used for the state index.
+///
+/// Limiting this to 32 bit integers can have a big impact on memory usage
+/// when using the `Sparse` transition representation.
+pub type StateIdx = u32;
+
 type PatIdx = usize;
-type StateIdx = u32;
 
 // Constants for special state indexes.
 const FAIL_STATE: u32 = 0;
@@ -153,24 +158,18 @@ const DENSE_DEPTH_THRESHOLD: u32 = 3;
 
 /// An Aho-Corasick finite automaton.
 #[derive(Clone)]
-pub struct AcAutomaton {
+pub struct AcAutomaton<T=Dense> {
     pats: Vec<String>,
-    states: Vec<State>,
+    states: Vec<State<T>>,
     start_bytes: Vec<u8>,
 }
 
 #[derive(Clone)]
-struct State {
+struct State<T> {
     out: Vec<PatIdx>,
     fail: StateIdx,
-    goto: Goto,
+    goto: T,
     depth: u32,
-}
-
-#[derive(Clone)]
-enum Goto {
-    Sparse(Vec<StateIdx>), // indexed by alphabet
-    Dense(Vec<(u8, StateIdx)>),
 }
 
 impl AcAutomaton {
@@ -178,7 +177,20 @@ impl AcAutomaton {
     ///
     /// The patterns must be convertible to Unicode `String` values via the
     /// `Into` trait.
-    pub fn new<S, I>(pats: I) -> AcAutomaton
+    pub fn new<S, I>(pats: I) -> AcAutomaton<Dense>
+            where S: Into<String>, I: IntoIterator<Item=S> {
+        AcAutomaton::with_transitions(pats)
+    }
+}
+
+impl<T: Transitions> AcAutomaton<T> {
+    /// Create a new automaton from an iterator of patterns.
+    ///
+    /// This constructor allows one to choose the transition representation.
+    ///
+    /// The patterns must be convertible to Unicode `String` values via the
+    /// `Into` trait.
+    pub fn with_transitions<S, I>(pats: I) -> AcAutomaton<T>
             where S: Into<String>, I: IntoIterator<Item=S> {
         AcAutomaton {
             pats: vec![], // filled in later, avoid wrath of borrow checker
@@ -188,7 +200,7 @@ impl AcAutomaton {
     }
 
     /// Returns an iterator of non-overlapping matches in `s`.
-    pub fn find<'a, 's>(&'a self, s: &'s str) -> Matches<'a, 's> {
+    pub fn find<'a, 's>(&'a self, s: &'s str) -> Matches<'a, 's, T> {
         Matches {
             aut: self,
             text: s.as_bytes(),
@@ -201,7 +213,7 @@ impl AcAutomaton {
     pub fn find_overlapping<'a, 's>(
         &'a self,
         s: &'s str,
-    ) -> MatchesOverlapping<'a, 's> {
+    ) -> MatchesOverlapping<'a, 's, T> {
         MatchesOverlapping {
             aut: self,
             text: s.as_bytes(),
@@ -215,7 +227,7 @@ impl AcAutomaton {
     pub fn stream_find<'a, R: io::Read>(
         &'a self,
         rdr: R,
-    ) -> StreamMatches<'a, R> {
+    ) -> StreamMatches<'a, R, T> {
         StreamMatches {
             aut: self,
             buf: io::BufReader::new(rdr),
@@ -228,7 +240,7 @@ impl AcAutomaton {
     pub fn stream_find_overlapping<'a, R: io::Read>(
         &'a self,
         rdr: R,
-    ) -> StreamMatchesOverlapping<'a, R> {
+    ) -> StreamMatchesOverlapping<'a, R, T> {
         StreamMatchesOverlapping {
             aut: self,
             buf: io::BufReader::new(rdr),
@@ -320,14 +332,14 @@ pub struct Match {
 /// `'a` is the lifetime of the automaton and `'s` is the lifetime of the
 /// search text.
 #[derive(Debug)]
-pub struct Matches<'a, 's> {
-    aut: &'a AcAutomaton,
+pub struct Matches<'a, 's, T: 'a + Transitions> {
+    aut: &'a AcAutomaton<T>,
     text: &'s [u8],
     texti: usize,
     si: StateIdx,
 }
 
-impl<'a, 's> Iterator for Matches<'a, 's> {
+impl<'a, 's, T: Transitions> Iterator for Matches<'a, 's, T> {
     type Item = Match;
 
     fn next(&mut self) -> Option<Match> {
@@ -354,14 +366,14 @@ impl<'a, 's> Iterator for Matches<'a, 's> {
 /// `'a` is the lifetime of the automaton and `R` is the type of the underlying
 /// `io::Read`er.
 #[derive(Debug)]
-pub struct StreamMatches<'a, R> {
-    aut: &'a AcAutomaton,
+pub struct StreamMatches<'a, R, T: 'a + Transitions> {
+    aut: &'a AcAutomaton<T>,
     buf: io::BufReader<R>,
     texti: usize,
     si: StateIdx,
 }
 
-impl<'a, R: io::Read> Iterator for StreamMatches<'a, R> {
+impl<'a, R: io::Read, T: Transitions> Iterator for StreamMatches<'a, R, T> {
     type Item = io::Result<Match>;
 
     fn next(&mut self) -> Option<io::Result<Match>> {
@@ -399,15 +411,15 @@ impl<'a, R: io::Read> Iterator for StreamMatches<'a, R> {
 /// `'a` is the lifetime of the automaton and `'s` is the lifetime of the
 /// search text.
 #[derive(Debug)]
-pub struct MatchesOverlapping<'a, 's> {
-    aut: &'a AcAutomaton,
+pub struct MatchesOverlapping<'a, 's, T: 'a + Transitions> {
+    aut: &'a AcAutomaton<T>,
     text: &'s [u8],
     texti: usize,
     si: StateIdx,
     outi: usize,
 }
 
-impl<'a, 's> Iterator for MatchesOverlapping<'a, 's> {
+impl<'a, 's, T: Transitions> Iterator for MatchesOverlapping<'a, 's, T> {
     type Item = Match;
 
     fn next(&mut self) -> Option<Match> {
@@ -441,15 +453,19 @@ impl<'a, 's> Iterator for MatchesOverlapping<'a, 's> {
 /// `'a` is the lifetime of the automaton and `R` is the type of the underlying
 /// `io::Read`er.
 #[derive(Debug)]
-pub struct StreamMatchesOverlapping<'a, R> {
-    aut: &'a AcAutomaton,
+pub struct StreamMatchesOverlapping<'a, R, T: 'a + Transitions> {
+    aut: &'a AcAutomaton<T>,
     buf: io::BufReader<R>,
     texti: usize,
     si: StateIdx,
     outi: usize,
 }
 
-impl<'a, R: io::Read> Iterator for StreamMatchesOverlapping<'a, R> {
+impl<
+    'a,
+    R: io::Read,
+    T: Transitions,
+> Iterator for StreamMatchesOverlapping<'a, R, T> {
     type Item = io::Result<Match>;
 
     fn next(&mut self) -> Option<io::Result<Match>> {
@@ -496,9 +512,9 @@ impl<'a, R: io::Read> Iterator for StreamMatchesOverlapping<'a, R> {
 // translation of the description/psuedo-code from:
 // http://www.cs.uku.fi/~kilpelai/BSA05/lectures/slides04.pdf
 
-impl AcAutomaton {
+impl<T: Transitions> AcAutomaton<T> {
     // This is the first phase and builds the initial keyword tree.
-    fn build(mut self, pats: Vec<String>) -> AcAutomaton {
+    fn build(mut self, pats: Vec<String>) -> AcAutomaton<T> {
         for (pati, pat) in pats.iter().enumerate() {
             if pat.is_empty() {
                 continue;
@@ -528,7 +544,7 @@ impl AcAutomaton {
     }
 
     // The second phase that fills in the back links.
-    fn fill(mut self) -> AcAutomaton {
+    fn fill(mut self) -> AcAutomaton<T> {
         // Fill up the queue with all non-root transitions out of the root
         // node. Then proceed by breadth first traversal.
         let mut q = VecDeque::new();
@@ -557,39 +573,65 @@ impl AcAutomaton {
         self
     }
 
-    fn add_state(&mut self, state: State) -> StateIdx {
+    fn add_state(&mut self, state: State<T>) -> StateIdx {
         let i = self.states.len();
         self.states.push(state);
         i as StateIdx
     }
 }
 
-// Encapsulation of the "goto" state transitions.
-// At a shallow depth, we use a dense map (char |--> state index) for state
-// transitions.
-// At deeper depths, we use a sparse map ([(char, state index)]) for state
-// transitions.
-//
-// See comments on `DENSE_DEPTH_THRESHOLD` constant above for motivation.
-impl State {
-    fn new(depth: u32) -> State {
-        let goto = if depth <= DENSE_DEPTH_THRESHOLD {
-            Goto::Sparse(vec![0; 256])
-        } else {
-            Goto::Dense(vec![])
-        };
+impl<T: Transitions> State<T> {
+    fn new(depth: u32) -> State<T> {
         State {
             out: vec![],
             fail: 1,
-            goto: goto,
+            goto: Transitions::new(depth),
             depth: depth,
         }
     }
 
+    fn goto(&self, b: u8) -> StateIdx { self.goto.goto(b) }
+    fn set_goto(&mut self, b: u8, si: StateIdx) { self.goto.set_goto(b, si); }
+}
+
+/// An abstraction over state transition strategies.
+///
+/// This is an attempt to let the caller choose the space/time trade offs
+/// used for state transitions.
+///
+/// (It's possible that this interface is merely good enough for just the two
+/// implementations in this crate.)
+pub trait Transitions {
+    fn new(depth: u32) -> Self;
+    fn goto(&self, alpha: u8) -> StateIdx;
+    fn set_goto(&mut self, alpha: u8, si: StateIdx);
+}
+
+/// State transitions that can be stored either sparsely or densely.
+///
+/// This uses less space but at the expense of slower matching.
+#[derive(Clone, Debug)]
+pub struct Dense(DenseChoice);
+
+#[derive(Clone, Debug)]
+enum DenseChoice {
+    Sparse(Vec<StateIdx>), // indexed by alphabet
+    Dense(Vec<(u8, StateIdx)>),
+}
+
+impl Transitions for Dense {
+    fn new(depth: u32) -> Dense {
+        if depth <= DENSE_DEPTH_THRESHOLD {
+            Dense(DenseChoice::Sparse(vec![0; 256]))
+        } else {
+            Dense(DenseChoice::Dense(vec![]))
+        }
+    }
+
     fn goto(&self, b1: u8) -> StateIdx {
-        match self.goto {
-            Goto::Sparse(ref m) => m[b1 as usize],
-            Goto::Dense(ref m) => {
+        match self.0 {
+            DenseChoice::Sparse(ref m) => m[b1 as usize],
+            DenseChoice::Dense(ref m) => {
                 for &(b2, si) in m {
                     if b1 == b2 {
                         return si;
@@ -601,10 +643,32 @@ impl State {
     }
 
     fn set_goto(&mut self, b: u8, si: StateIdx) {
-        match self.goto {
-            Goto::Sparse(ref mut m) => m[b as usize] = si,
-            Goto::Dense(ref mut m) => m.push((b, si)),
+        match self.0 {
+            DenseChoice::Sparse(ref mut m) => m[b as usize] = si,
+            DenseChoice::Dense(ref mut m) => m.push((b, si)),
         }
+    }
+}
+
+/// State transitions that are always sparse.
+///
+/// This can use enormous amounts of memory when there are many patterns,
+/// but matching is very fast.
+#[derive(Clone, Debug)]
+pub struct Sparse(Vec<StateIdx>);
+
+impl Transitions for Sparse {
+    fn new(_: u32) -> Sparse {
+        Sparse(vec![0; 256])
+    }
+
+    #[inline]
+    fn goto(&self, b: u8) -> StateIdx {
+        self.0[b as usize]
+    }
+
+    fn set_goto(&mut self, b: u8, si: StateIdx) {
+        self.0[b as usize] = si;
     }
 }
 
@@ -618,7 +682,7 @@ impl<S: Into<String>> FromIterator<S> for AcAutomaton {
 // Provide some question debug impls for viewing automatons.
 // The custom impls mostly exist for special showing of sparse maps.
 
-impl fmt::Debug for AcAutomaton {
+impl<T: Transitions> fmt::Debug for AcAutomaton<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use std::iter::repeat;
 
@@ -631,7 +695,7 @@ impl fmt::Debug for AcAutomaton {
     }
 }
 
-impl State {
+impl<T: Transitions> State<T> {
     fn debug(&self, root: bool) -> String {
         format!("State {{ depth: {:?}, out: {:?}, fail: {:?}, goto: {{{}}} }}",
                 self.depth, self.out, self.fail, self.goto_string(root))
@@ -641,31 +705,18 @@ impl State {
         use std::char::from_u32;
 
         let mut goto = vec![];
-        match self.goto {
-            Goto::Sparse(ref m) => {
-                for (i, &state) in m.iter().enumerate() {
-                    if (!root && state == 0) || (root && state == 1) {
-                        continue;
-                    }
-                    goto.push(format!(
-                        "{} => {}", from_u32(i as u32).unwrap(), state));
-                }
+        for b in (0..256).map(|b| b as u8) {
+            let si = self.goto(b);
+            if (!root && si == FAIL_STATE) || (root && si == ROOT_STATE) {
+                continue;
             }
-            Goto::Dense(ref m) => {
-                for &(i, state) in m.iter() {
-                    if (!root && state == 0) || (root && state == 1) {
-                        continue;
-                    }
-                    goto.push(format!(
-                        "{} => {}", from_u32(i as u32).unwrap(), state));
-                }
-            }
+            goto.push(format!("{} => {}", from_u32(b as u32).unwrap(), si));
         }
         goto.connect(", ")
     }
 }
 
-impl fmt::Debug for State {
+impl<T: Transitions> fmt::Debug for State<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.debug(false))
     }
