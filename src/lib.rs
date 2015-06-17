@@ -250,6 +250,13 @@ impl<T: Transitions> AcAutomaton<T> {
         }
     }
 
+    /// Returns all of the patterns matched by this automaton.
+    ///
+    /// The order of the patterns is the order in which they were added.
+    pub fn patterns(&self) -> &[String] {
+        &self.pats
+    }
+
     /// Returns the pattern indexed at `i`.
     ///
     /// The index corresponds to the position at which the pattern was added
