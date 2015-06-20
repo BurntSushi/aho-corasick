@@ -130,7 +130,10 @@ use std::iter::FromIterator;
 
 use memchr::memchr;
 
-pub use self::autiter::{Automaton, Match};
+pub use self::autiter::{
+    Automaton, Match,
+    Matches, MatchesOverlapping, StreamMatches, StreamMatchesOverlapping,
+};
 pub use self::full::FullAcAutomaton;
 
 // We're specifying paths explicitly so that we can use
