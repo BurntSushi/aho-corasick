@@ -15,7 +15,7 @@ The main type exposed by this crate is `AcAutomaton`, which can be constructed
 from an iterator of pattern strings:
 
 ```rust
-use aho_corasick::AcAutomaton;
+use aho_corasick::{Automaton, AcAutomaton};
 
 let aut = AcAutomaton::new(vec!["apple", "maple"]);
 
@@ -26,7 +26,7 @@ let aut: AcAutomaton = ["apple", "maple"].iter().cloned().collect();
 Finding matches can be done with `find`:
 
 ```rust
-use aho_corasick::{AcAutomaton, Match};
+use aho_corasick::{Automaton, AcAutomaton, Match};
 
 let aut = AcAutomaton::new(vec!["apple", "maple"]);
 let mut it = aut.find("I like maple apples.");
@@ -47,7 +47,7 @@ Use `find_overlapping` if you want to report all matches, even if they
 overlap with each other.
 
 ```rust
-use aho_corasick::{AcAutomaton, Match};
+use aho_corasick::{Automaton, AcAutomaton, Match};
 
 let aut = AcAutomaton::new(vec!["abc", "a"]);
 let matches: Vec<_> = aut.find_overlapping("abc").collect();
@@ -67,7 +67,7 @@ that can't fit into memory:
 ```no_run
 use std::fs::File;
 
-use aho_corasick::AcAutomaton;
+use aho_corasick::{Automaton, AcAutomaton};
 
 let aut = AcAutomaton::new(vec!["foo", "bar", "baz"]);
 let rdr = File::open("search.txt").unwrap();
@@ -89,7 +89,7 @@ streaming match over arbitrarily large data.
 
 A key aspect of an Aho-Corasick implementation is how the state transitions
 are represented. The easiest way to make the automaton fast is to store a
-dense 256-slot map in each state. It maps an input byte to a state index.
+sparse 256-slot map in each state. It maps an input byte to a state index.
 This makes the matching loop extremely fast, since it translates to a simple
 pointer read.
 
@@ -105,9 +105,20 @@ that requires a linear scan.
 or equal to `3` are less memory efficient. The result is that the memory usage
 of the automaton stops growing rapidly past ~60MB, even for automatons with
 thousands of patterns.)
+
+If you'd like to opt for the less-memory-efficient-but-faster version, then
+you can construct an `AcAutomaton` with a `Sparse` transition strategy:
+
+```rust
+use aho_corasick::{Automaton, AcAutomaton, Match, Sparse};
+
+let aut = AcAutomaton::<Sparse>::with_transitions(vec!["abc", "a"]);
+let matches: Vec<_> = aut.find("abc").collect();
+assert_eq!(matches, vec![Match { pati: 1, start: 0, end: 1}]);
+```
 */
 
-#[deny(missing_docs)]
+#![deny(missing_docs)]
 
 extern crate memchr;
 #[cfg(test)] extern crate quickcheck;
@@ -115,10 +126,20 @@ extern crate memchr;
 
 use std::collections::VecDeque;
 use std::fmt;
-use std::io::{self, BufRead, Read};
 use std::iter::FromIterator;
 
 use memchr::memchr;
+
+pub use self::autiter::{Automaton, Match};
+pub use self::full::FullAcAutomaton;
+
+// We're specifying paths explicitly so that we can use
+// these modules simultaneously from `main.rs`.
+// Should probably make just make `main.rs` a separate crate.
+#[path = "autiter.rs"]
+mod autiter;
+#[path = "full.rs"]
+mod full;
 
 /// The integer type used for the state index.
 ///
@@ -199,82 +220,17 @@ impl<T: Transitions> AcAutomaton<T> {
         }.build(pats.into_iter().map(Into::into).collect())
     }
 
-    /// Returns an iterator of non-overlapping matches in `s`.
-    pub fn find<'a, 's>(&'a self, s: &'s str) -> Matches<'a, 's, T> {
-        Matches {
-            aut: self,
-            text: s.as_bytes(),
-            texti: 0,
-            si: ROOT_STATE,
-        }
-    }
-
-    /// Returns an iterator of overlapping matches in `s`.
-    pub fn find_overlapping<'a, 's>(
-        &'a self,
-        s: &'s str,
-    ) -> MatchesOverlapping<'a, 's, T> {
-        MatchesOverlapping {
-            aut: self,
-            text: s.as_bytes(),
-            texti: 0,
-            si: ROOT_STATE,
-            outi: 0,
-        }
-    }
-
-    /// Returns an iterator of non-overlapping matches in the given reader.
-    pub fn stream_find<'a, R: io::Read>(
-        &'a self,
-        rdr: R,
-    ) -> StreamMatches<'a, R, T> {
-        StreamMatches {
-            aut: self,
-            buf: io::BufReader::new(rdr),
-            texti: 0,
-            si: ROOT_STATE,
-        }
-    }
-
-    /// Returns an iterator of overlapping matches in the given reader.
-    pub fn stream_find_overlapping<'a, R: io::Read>(
-        &'a self,
-        rdr: R,
-    ) -> StreamMatchesOverlapping<'a, R, T> {
-        StreamMatchesOverlapping {
-            aut: self,
-            buf: io::BufReader::new(rdr),
-            texti: 0,
-            si: ROOT_STATE,
-            outi: 0,
-        }
-    }
-
-    /// Returns all of the patterns matched by this automaton.
+    /// Build out the entire automaton into a single matrix.
     ///
-    /// The order of the patterns is the order in which they were added.
-    pub fn patterns(&self) -> &[String] {
-        &self.pats
+    /// This will make searching as fast as possible at the expense of using
+    /// at least `4 * 256 * #states` bytes of memory.
+    pub fn into_full(self) -> FullAcAutomaton {
+        FullAcAutomaton::new(self)
     }
+}
 
-    /// Returns the pattern indexed at `i`.
-    ///
-    /// The index corresponds to the position at which the pattern was added
-    /// to the automaton, starting at `0`.
-    pub fn pattern(&self, i: usize) -> &str {
-        &self.pats[i]
-    }
-
-    /// Return the number of patterns in the automaton.
-    pub fn len(&self) -> usize {
-        self.pats.len()
-    }
-
-    /// Returns true if the automaton has no patterns.
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
+impl<T: Transitions> Automaton for AcAutomaton<T> {
+    #[inline]
     fn next_state(&self, mut si: StateIdx, b: u8) -> StateIdx {
         loop {
             let maybe_si = self.states[si as usize].goto(b);
@@ -288,6 +244,7 @@ impl<T: Transitions> AcAutomaton<T> {
         si
     }
 
+    #[inline]
     fn get_match(&self, si: StateIdx, outi: usize, texti: usize) -> Match {
         let pati = self.states[si as usize].out[outi];
         let patlen = self.pats[pati].len();
@@ -299,12 +256,14 @@ impl<T: Transitions> AcAutomaton<T> {
         }
     }
 
+    #[inline]
     fn has_match(&self, si: StateIdx, outi: usize) -> bool {
         outi < self.states[si as usize].out.len()
     }
 
+    #[inline]
     fn skip_to(&self, si: StateIdx, text: &[u8], at: usize) -> usize {
-        if si != ROOT_STATE || self.start_bytes.len() != 1 {
+        if si != ROOT_STATE || !self.is_skippable() {
             return at;
         }
         let b = self.start_bytes[0];
@@ -313,205 +272,20 @@ impl<T: Transitions> AcAutomaton<T> {
             Some(i) => at + i,
         }
     }
-}
 
-/// Records a match in the search text.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct Match {
-    /// The pattern index.
-    ///
-    /// This corresponds to the ordering in which the matched pattern was
-    /// added to the automaton, starting at `0`.
-    pub pati: usize,
-    /// The starting byte offset of the match in the search text.
-    pub start: usize,
-    /// The ending byte offset of the match in the search text.
-    ///
-    /// (This can be re-captiulated with `pati` and adding the pattern's
-    /// length to `start`, but it is convenient to have it here.)
-    pub end: usize,
-}
-
-/// An iterator of non-overlapping matches for in-memory text.
-///
-/// This iterator yields `Match` values.
-///
-/// `'a` is the lifetime of the automaton and `'s` is the lifetime of the
-/// search text.
-#[derive(Debug)]
-pub struct Matches<'a, 's, T: 'a + Transitions> {
-    aut: &'a AcAutomaton<T>,
-    text: &'s [u8],
-    texti: usize,
-    si: StateIdx,
-}
-
-impl<'a, 's, T: Transitions> Iterator for Matches<'a, 's, T> {
-    type Item = Match;
-
-    fn next(&mut self) -> Option<Match> {
-        self.texti = self.aut.skip_to(self.si, self.text, self.texti);
-        while self.texti < self.text.len() {
-            let b = self.text[self.texti];
-            self.si = self.aut.next_state(self.si, b);
-            if self.aut.has_match(self.si, 0) {
-                let m = self.aut.get_match(self.si, 0, self.texti);
-                self.texti += 1;
-                self.si = ROOT_STATE;
-                return Some(m);
-            }
-            self.texti = self.aut.skip_to(self.si, self.text, self.texti + 1);
-        }
-        None
+    #[inline]
+    fn is_skippable(&self) -> bool {
+        self.start_bytes.len() == 1
     }
-}
 
-/// An iterator of non-overlapping matches for streaming text.
-///
-/// This iterator yields `io::Result<Match>` values.
-///
-/// `'a` is the lifetime of the automaton and `R` is the type of the underlying
-/// `io::Read`er.
-#[derive(Debug)]
-pub struct StreamMatches<'a, R, T: 'a + Transitions> {
-    aut: &'a AcAutomaton<T>,
-    buf: io::BufReader<R>,
-    texti: usize,
-    si: StateIdx,
-}
-
-impl<'a, R: io::Read, T: Transitions> Iterator for StreamMatches<'a, R, T> {
-    type Item = io::Result<Match>;
-
-    fn next(&mut self) -> Option<io::Result<Match>> {
-        let mut m = None;
-        let mut consumed = 0;
-'LOOP:  loop {
-            self.buf.consume(consumed);
-            let bs = match self.buf.fill_buf() {
-                Err(err) => return Some(Err(err)),
-                Ok(bs) if bs.len() == 0 => break,
-                Ok(bs) => bs,
-            };
-            consumed = bs.len(); // is shortened if we find a match
-            for (i, &b) in bs.iter().enumerate() {
-                self.si = self.aut.next_state(self.si, b);
-                if self.aut.has_match(self.si, 0) {
-                    m = Some(Ok(self.aut.get_match(self.si, 0, self.texti)));
-                    consumed = i + 1;
-                    self.texti += 1;
-                    self.si = ROOT_STATE;
-                    break 'LOOP;
-                }
-                self.texti += 1;
-            }
-        }
-        self.buf.consume(consumed);
-        m
+    #[inline]
+    fn patterns(&self) -> &[String] {
+        &self.pats
     }
-}
 
-/// An iterator of overlapping matches for in-memory text.
-///
-/// This iterator yields `Match` values.
-///
-/// `'a` is the lifetime of the automaton and `'s` is the lifetime of the
-/// search text.
-#[derive(Debug)]
-pub struct MatchesOverlapping<'a, 's, T: 'a + Transitions> {
-    aut: &'a AcAutomaton<T>,
-    text: &'s [u8],
-    texti: usize,
-    si: StateIdx,
-    outi: usize,
-}
-
-impl<'a, 's, T: Transitions> Iterator for MatchesOverlapping<'a, 's, T> {
-    type Item = Match;
-
-    fn next(&mut self) -> Option<Match> {
-        if self.aut.has_match(self.si, self.outi) {
-            let m = self.aut.get_match(self.si, self.outi, self.texti);
-            self.outi += 1;
-            if !self.aut.has_match(self.si, self.outi) {
-                self.texti += 1;
-            }
-            return Some(m);
-        }
-
-        self.outi = 0;
-        self.texti = self.aut.skip_to(self.si, self.text, self.texti);
-        while self.texti < self.text.len() {
-            let b = self.text[self.texti];
-            self.si = self.aut.next_state(self.si, b);
-            if self.aut.has_match(self.si, self.outi) {
-                return self.next();
-            }
-            self.texti = self.aut.skip_to(self.si, self.text, self.texti + 1);
-        }
-        None
-    }
-}
-
-/// An iterator of overlapping matches for streaming text.
-///
-/// This iterator yields `io::Result<Match>` values.
-///
-/// `'a` is the lifetime of the automaton and `R` is the type of the underlying
-/// `io::Read`er.
-#[derive(Debug)]
-pub struct StreamMatchesOverlapping<'a, R, T: 'a + Transitions> {
-    aut: &'a AcAutomaton<T>,
-    buf: io::BufReader<R>,
-    texti: usize,
-    si: StateIdx,
-    outi: usize,
-}
-
-impl<
-    'a,
-    R: io::Read,
-    T: Transitions,
-> Iterator for StreamMatchesOverlapping<'a, R, T> {
-    type Item = io::Result<Match>;
-
-    fn next(&mut self) -> Option<io::Result<Match>> {
-        if self.aut.has_match(self.si, self.outi) {
-            let m = self.aut.get_match(self.si, self.outi, self.texti);
-            self.outi += 1;
-            if !self.aut.has_match(self.si, self.outi) {
-                self.texti += 1;
-            }
-            return Some(Ok(m));
-        }
-        let mut m = None;
-        let mut consumed = 0;
-        self.outi = 0;
-'LOOP:  loop {
-            self.buf.consume(consumed);
-            let bs = match self.buf.fill_buf() {
-                Err(err) => return Some(Err(err)),
-                Ok(bs) if bs.len() == 0 => break,
-                Ok(bs) => bs,
-            };
-            consumed = bs.len(); // is shortened if we find a match
-            for (i, &b) in bs.iter().enumerate() {
-                self.si = self.aut.next_state(self.si, b);
-                if self.aut.has_match(self.si, self.outi) {
-                    m = Some(Ok(self.aut.get_match(self.si, self.outi,
-                                                   self.texti)));
-                    consumed = i + 1;
-                    self.outi += 1;
-                    if !self.aut.has_match(self.si, self.outi) {
-                        self.texti += 1;
-                    }
-                    break 'LOOP;
-                }
-                self.texti += 1;
-            }
-        }
-        self.buf.consume(consumed);
-        m
+    #[inline]
+    fn pattern(&self, i: usize) -> &str {
+        &self.pats[i]
     }
 }
 
@@ -609,8 +383,11 @@ impl<T: Transitions> State<T> {
 /// (It's possible that this interface is merely good enough for just the two
 /// implementations in this crate.)
 pub trait Transitions {
+    /// Return a new state at the given depth.
     fn new(depth: u32) -> Self;
+    /// Return the next state index given the next character.
     fn goto(&self, alpha: u8) -> StateIdx;
+    /// Set the next state index for the character given.
     fn set_goto(&mut self, alpha: u8, si: StateIdx);
 }
 
@@ -729,6 +506,43 @@ impl<T: Transitions> fmt::Debug for State<T> {
     }
 }
 
+impl<T: Transitions> AcAutomaton<T> {
+    #[doc(hidden)]
+    pub fn dot(&self) -> String {
+        use std::fmt::Write;
+        let mut out = String::new();
+        macro_rules! w {
+            ($w:expr, $($tt:tt)*) => { {write!($w, $($tt)*)}.unwrap() }
+        }
+
+        w!(out, r#"
+digraph automaton {{
+    label=<<FONT POINT-SIZE="20">{}</FONT>>;
+    labelloc="l";
+    labeljust="l";
+    rankdir="LR";
+"#, self.pats.connect(", "));
+        for (i, s) in self.states.iter().enumerate().skip(1) {
+            let i = i as u32;
+            if s.out.len() == 0 {
+                w!(out, "    {};\n", i);
+            } else {
+                w!(out, "    {} [peripheries=2];\n", i);
+            }
+            w!(out, "    {} -> {} [style=dashed];\n", i, s.fail);
+            for b in (0..256).map(|b| b as u8) {
+                let si = s.goto(b);
+                if si == FAIL_STATE || (i == ROOT_STATE && si == ROOT_STATE) {
+                    continue;
+                }
+                w!(out, "    {} -> {} [label={}];\n", i, si, b as char);
+            }
+        }
+        w!(out, "}}");
+        out
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
@@ -737,7 +551,7 @@ mod tests {
     use quickcheck::{Arbitrary, Gen, quickcheck};
     use rand::Rng;
 
-    use super::{AcAutomaton, Match};
+    use super::{Automaton, AcAutomaton, Match};
 
     fn aut_find<S>(xs: &[S], haystack: &str) -> Vec<Match>
             where S: Clone + Into<String> {
@@ -748,6 +562,19 @@ mod tests {
             where S: Clone + Into<String> {
         let cur = io::Cursor::new(haystack.as_bytes());
         AcAutomaton::new(xs.to_vec())
+            .stream_find(cur).map(|r| r.unwrap()).collect()
+    }
+
+    fn aut_findf<S>(xs: &[S], haystack: &str) -> Vec<Match>
+            where S: Clone + Into<String> {
+        AcAutomaton::new(xs.to_vec()).into_full().find(haystack).collect()
+    }
+
+    fn aut_findfs<S>(xs: &[S], haystack: &str) -> Vec<Match>
+            where S: Clone + Into<String> {
+        let cur = io::Cursor::new(haystack.as_bytes());
+        AcAutomaton::new(xs.to_vec())
+            .into_full()
             .stream_find(cur).map(|r| r.unwrap()).collect()
     }
 
@@ -763,6 +590,20 @@ mod tests {
             .stream_find_overlapping(cur).map(|r| r.unwrap()).collect()
     }
 
+    fn aut_findfo<S>(xs: &[S], haystack: &str) -> Vec<Match>
+            where S: Clone + Into<String> {
+        AcAutomaton::new(xs.to_vec())
+            .into_full().find_overlapping(haystack).collect()
+    }
+
+    fn aut_findfos<S>(xs: &[S], haystack: &str) -> Vec<Match>
+            where S: Clone + Into<String> {
+        let cur = io::Cursor::new(haystack.as_bytes());
+        AcAutomaton::new(xs.to_vec())
+            .into_full()
+            .stream_find_overlapping(cur).map(|r| r.unwrap()).collect()
+    }
+
     #[test]
     fn one_pattern_one_match() {
         let ns = vec!["a"];
@@ -772,6 +613,8 @@ mod tests {
         ];
         assert_eq!(&aut_find(&ns, hay), &matches);
         assert_eq!(&aut_finds(&ns, hay), &matches);
+        assert_eq!(&aut_findf(&ns, hay), &matches);
+        assert_eq!(&aut_findfs(&ns, hay), &matches);
     }
 
     #[test]
@@ -785,6 +628,8 @@ mod tests {
         ];
         assert_eq!(&aut_find(&ns, hay), &matches);
         assert_eq!(&aut_finds(&ns, hay), &matches);
+        assert_eq!(&aut_findf(&ns, hay), &matches);
+        assert_eq!(&aut_findfs(&ns, hay), &matches);
     }
 
     #[test]
@@ -794,6 +639,8 @@ mod tests {
         let matches = vec![ Match { pati: 0, start: 3, end: 6 } ];
         assert_eq!(&aut_find(&ns, hay), &matches);
         assert_eq!(&aut_finds(&ns, hay), &matches);
+        assert_eq!(&aut_findf(&ns, hay), &matches);
+        assert_eq!(&aut_findfs(&ns, hay), &matches);
     }
 
     #[test]
@@ -806,6 +653,8 @@ mod tests {
         ];
         assert_eq!(&aut_find(&ns, hay), &matches);
         assert_eq!(&aut_finds(&ns, hay), &matches);
+        assert_eq!(&aut_findf(&ns, hay), &matches);
+        assert_eq!(&aut_findfs(&ns, hay), &matches);
     }
 
     #[test]
@@ -815,6 +664,8 @@ mod tests {
         let matches = vec![ Match { pati: 1, start: 1, end: 2 } ];
         assert_eq!(&aut_find(&ns, hay), &matches);
         assert_eq!(&aut_finds(&ns, hay), &matches);
+        assert_eq!(&aut_findf(&ns, hay), &matches);
+        assert_eq!(&aut_findfs(&ns, hay), &matches);
     }
 
     #[test]
@@ -828,6 +679,8 @@ mod tests {
         ];
         assert_eq!(&aut_find(&ns, hay), &matches);
         assert_eq!(&aut_finds(&ns, hay), &matches);
+        assert_eq!(&aut_findf(&ns, hay), &matches);
+        assert_eq!(&aut_findfs(&ns, hay), &matches);
     }
 
     #[test]
@@ -837,6 +690,8 @@ mod tests {
         let matches = vec![ Match { pati: 1, start: 3, end: 6 } ];
         assert_eq!(&aut_find(&ns, hay), &matches);
         assert_eq!(&aut_finds(&ns, hay), &matches);
+        assert_eq!(&aut_findf(&ns, hay), &matches);
+        assert_eq!(&aut_findfs(&ns, hay), &matches);
     }
 
     #[test]
@@ -850,6 +705,8 @@ mod tests {
         ];
         assert_eq!(&aut_find(&ns, hay), &matches);
         assert_eq!(&aut_finds(&ns, hay), &matches);
+        assert_eq!(&aut_findf(&ns, hay), &matches);
+        assert_eq!(&aut_findfs(&ns, hay), &matches);
     }
 
     #[test]
@@ -862,6 +719,8 @@ mod tests {
         ];
         assert_eq!(&aut_findo(&ns, hay), &matches);
         assert_eq!(&aut_findos(&ns, hay), &matches);
+        assert_eq!(&aut_findfo(&ns, hay), &matches);
+        assert_eq!(&aut_findfos(&ns, hay), &matches);
     }
 
     #[test]
@@ -871,6 +730,8 @@ mod tests {
         let matches = vec![ Match { pati: 1, start: 1, end: 3 } ];
         assert_eq!(&aut_findo(&ns, hay), &matches);
         assert_eq!(&aut_findos(&ns, hay), &matches);
+        assert_eq!(&aut_findfo(&ns, hay), &matches);
+        assert_eq!(&aut_findfos(&ns, hay), &matches);
     }
 
     #[test]
@@ -887,6 +748,8 @@ mod tests {
         ];
         assert_eq!(&aut_findo(&ns, hay), &matches);
         assert_eq!(&aut_findos(&ns, hay), &matches);
+        assert_eq!(&aut_findfo(&ns, hay), &matches);
+        assert_eq!(&aut_findfos(&ns, hay), &matches);
     }
 
     #[test]
@@ -903,6 +766,8 @@ mod tests {
         ];
         assert_eq!(&aut_findo(&ns, hay), &matches);
         assert_eq!(&aut_findos(&ns, hay), &matches);
+        assert_eq!(&aut_findfo(&ns, hay), &matches);
+        assert_eq!(&aut_findfos(&ns, hay), &matches);
     }
 
     // Quickcheck time.

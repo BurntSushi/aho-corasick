@@ -11,7 +11,7 @@ use std::fs::File;
 use std::io::{self, BufRead, Write};
 use std::process;
 
-use aho_corasick::{AcAutomaton, Match};
+use aho_corasick::{Automaton, AcAutomaton, Match};
 use docopt::Docopt;
 
 static USAGE: &'static str = "
@@ -59,8 +59,8 @@ fn run(args: &Args) -> Result<(), Box<Error>> {
     Ok(())
 }
 
-fn write_matches<I>(aut: &AcAutomaton, it: I) -> Result<(), Box<Error>>
-        where I: Iterator<Item=io::Result<Match>> {
+fn write_matches<A, I>(aut: &A, it: I) -> Result<(), Box<Error>>
+        where A: Automaton, I: Iterator<Item=io::Result<Match>> {
     let mut wtr = csv::Writer::from_writer(io::stdout());
     try!(wtr.encode(("pattern", "start", "end")));
     for m in it {

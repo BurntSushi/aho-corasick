@@ -13,6 +13,12 @@ license = "Unlicense/MIT"
 [lib]
 name = "aho_corasick"
 
+[[bin]]
+name = "aho-corasick-dot"
+test = false
+doc = false
+bench = false
+
 [dependencies]
 memchr = "0.1.*"
 
