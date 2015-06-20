@@ -28,7 +28,7 @@ example as a full program in `examples/dict-search.rs`.
 Here is a quick example showing simple substring matching:
 
 ```rust
-use aho_corasick::{AcAutomaton, Match};
+use aho_corasick::{Automaton, AcAutomaton, Match};
 
 let aut = AcAutomaton::new(vec!["apple", "maple"]);
 let mut it = aut.find("I like maple apples.");
