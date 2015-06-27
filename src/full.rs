@@ -18,7 +18,6 @@ use super::autiter::Automaton;
 #[derive(Clone, Debug)]
 pub struct FullAcAutomaton {
     pats: Vec<String>,
-    // i * #states + si
     trans: Vec<StateIdx>,  // row-major, where states are rows
     out: Vec<Vec<PatIdx>>, // indexed by StateIdx
     start_bytes: Vec<u8>,
