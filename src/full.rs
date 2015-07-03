@@ -1,3 +1,5 @@
+use std::fmt;
+
 use memchr::memchr;
 
 use super::{
@@ -15,7 +17,7 @@ use super::autiter::Automaton;
 /// This is as fast as it gets, but it is guaranteed to use a lot of memory.
 /// Namely, it will use at least `4 * 256 * #states`, where the number of
 /// states is capped at length of all patterns concatenated.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct FullAcAutomaton {
     pats: Vec<String>,
     trans: Vec<StateIdx>,  // row-major, where states are rows
@@ -111,5 +113,11 @@ impl FullAcAutomaton {
                 self.out[si].push(pati);
             }
         }
+    }
+}
+
+impl fmt::Debug for FullAcAutomaton {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "FullAcAutomaton({:?})", self.pats)
     }
 }
