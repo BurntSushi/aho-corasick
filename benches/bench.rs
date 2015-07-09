@@ -10,18 +10,18 @@ use test::Bencher;
 
 const HAYSTACK_RANDOM: &'static str = include_str!("random.txt");
 
-fn bench_aut_no_match<T: Transitions>(
+fn bench_aut_no_match<P: AsRef<[u8]>, T: Transitions>(
     b: &mut Bencher,
-    aut: AcAutomaton<T>,
+    aut: AcAutomaton<P, T>,
     haystack: &str,
 ) {
     b.bytes = haystack.len() as u64;
     b.iter(|| assert!(aut.find(haystack).next().is_none()));
 }
 
-fn bench_full_aut_no_match<T: Transitions>(
+fn bench_full_aut_no_match<P: AsRef<[u8]>, T: Transitions>(
     b: &mut Bencher,
-    aut: AcAutomaton<T>,
+    aut: AcAutomaton<P, T>,
     haystack: &str,
 ) {
     let aut = aut.into_full();
@@ -149,7 +149,7 @@ fn ac_ten_one_prefix_byte_random(b: &mut Bencher) {
 }}}
 
 aut_benches!(dense, AcAutomaton::new, bench_aut_no_match);
-aut_benches!(sparse, AcAutomaton::<Sparse>::with_transitions,
+aut_benches!(sparse, AcAutomaton::<&str, Sparse>::with_transitions,
              bench_aut_no_match);
 aut_benches!(full, AcAutomaton::new, bench_full_aut_no_match);
 
