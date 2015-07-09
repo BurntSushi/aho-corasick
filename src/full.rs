@@ -61,7 +61,7 @@ impl<P: AsRef<[u8]>> Automaton<P> for FullAcAutomaton<P> {
     #[inline]
     fn get_match(&self, si: StateIdx, outi: usize, texti: usize) -> Match {
         let pati = self.out[si as usize][outi];
-        let patlen = self.pats[pati].len();
+        let patlen = self.pats[pati].as_ref().len();
         let start = texti + 1 - patlen;
         Match {
             pati: pati,

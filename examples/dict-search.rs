@@ -74,7 +74,7 @@ fn write_matches<A, I>(aut: &A, it: I) -> Result<(), Box<Error>>
 fn build_automaton(
     dict_path: &str,
     min_len: usize,
-) -> Result<AcAutomaton, Box<Error>> {
+) -> Result<AcAutomaton<String>, Box<Error>> {
     let buf = io::BufReader::new(try!(File::open(dict_path)));
     let mut lines = Vec::with_capacity(1 << 10);
     for line in buf.lines() {

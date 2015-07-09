@@ -20,7 +20,7 @@ use aho_corasick::{Automaton, AcAutomaton};
 let aut = AcAutomaton::new(vec!["apple", "maple"]);
 
 // AcAutomaton also implements `FromIterator`:
-let aut: AcAutomaton = ["apple", "maple"].iter().cloned().collect();
+let aut: AcAutomaton<&str> = ["apple", "maple"].iter().cloned().collect();
 ```
 
 Finding matches can be done with `find`:
@@ -112,7 +112,7 @@ you can construct an `AcAutomaton` with a `Sparse` transition strategy:
 ```rust
 use aho_corasick::{Automaton, AcAutomaton, Match, Sparse};
 
-let aut = AcAutomaton::<Sparse>::with_transitions(vec!["abc", "a"]);
+let aut = AcAutomaton::<&str, Sparse>::with_transitions(vec!["abc", "a"]);
 let matches: Vec<_> = aut.find("abc").collect();
 assert_eq!(matches, vec![Match { pati: 1, start: 0, end: 1}]);
 ```
@@ -201,8 +201,8 @@ impl<P: AsRef<[u8]>> AcAutomaton<P> {
     ///
     /// The patterns must be convertible to Unicode `String` values via the
     /// `Into` trait.
-    pub fn new<S, I>(pats: I) -> AcAutomaton<Dense>
-            where S: AsRef<[u8]>, I: IntoIterator<Item=S> {
+    pub fn new<I>(pats: I) -> AcAutomaton<P, Dense>
+            where I: IntoIterator<Item=P> {
         AcAutomaton::with_transitions(pats)
     }
 }
@@ -214,13 +214,13 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
     ///
     /// The patterns must be convertible to Unicode `String` values via the
     /// `Into` trait.
-    pub fn with_transitions<S, I>(pats: I) -> AcAutomaton<T>
-            where S: AsRef<[u8]>, I: IntoIterator<Item=S> {
+    pub fn with_transitions<I>(pats: I) -> AcAutomaton<P, T>
+            where I: IntoIterator<Item=P> {
         AcAutomaton {
             pats: vec![], // filled in later, avoid wrath of borrow checker
             states: vec![State::new(0), State::new(0)], // empty and root
             start_bytes: vec![], // also filled in later
-        }.build(pats.into_iter().map(Into::into).collect())
+        }.build(pats.into_iter().collect())
     }
 
     /// Build out the entire automaton into a single matrix.
@@ -250,7 +250,7 @@ impl<P: AsRef<[u8]>, T: Transitions> Automaton<P> for AcAutomaton<P, T> {
     #[inline]
     fn get_match(&self, si: StateIdx, outi: usize, texti: usize) -> Match {
         let pati = self.states[si as usize].out[outi];
-        let patlen = self.pats[pati].len();
+        let patlen = self.pats[pati].as_ref().len();
         let start = texti + 1 - patlen;
         Match {
             pati: pati,
@@ -298,9 +298,9 @@ impl<P: AsRef<[u8]>, T: Transitions> Automaton<P> for AcAutomaton<P, T> {
 
 impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
     // This is the first phase and builds the initial keyword tree.
-    fn build(mut self, pats: Vec<&[u8]>) -> AcAutomaton<P, T> {
+    fn build(mut self, pats: Vec<P>) -> AcAutomaton<P, T> {
         for (pati, pat) in pats.iter().enumerate() {
-            if pat.is_empty() {
+            if pat.as_ref().is_empty() {
                 continue;
             }
             let mut previ = ROOT_STATE;
@@ -509,7 +509,7 @@ impl<T: Transitions> fmt::Debug for State<T> {
     }
 }
 
-impl<T: Transitions> AcAutomaton<T> {
+impl<T: Transitions> AcAutomaton<String, T> {
     #[doc(hidden)]
     pub fn dot(&self) -> String {
         use std::fmt::Write;
@@ -557,24 +557,24 @@ mod tests {
     use super::{Automaton, AcAutomaton, Match};
 
     fn aut_find<S>(xs: &[S], haystack: &str) -> Vec<Match>
-            where S: Clone + Into<String> {
+            where S: Clone + AsRef<[u8]> {
         AcAutomaton::new(xs.to_vec()).find(&haystack).collect()
     }
 
     fn aut_finds<S>(xs: &[S], haystack: &str) -> Vec<Match>
-            where S: Clone + Into<String> {
+            where S: Clone + AsRef<[u8]> {
         let cur = io::Cursor::new(haystack.as_bytes());
         AcAutomaton::new(xs.to_vec())
             .stream_find(cur).map(|r| r.unwrap()).collect()
     }
 
     fn aut_findf<S>(xs: &[S], haystack: &str) -> Vec<Match>
-            where S: Clone + Into<String> {
+            where S: Clone + AsRef<[u8]> {
         AcAutomaton::new(xs.to_vec()).into_full().find(haystack).collect()
     }
 
     fn aut_findfs<S>(xs: &[S], haystack: &str) -> Vec<Match>
-            where S: Clone + Into<String> {
+            where S: Clone + AsRef<[u8]> {
         let cur = io::Cursor::new(haystack.as_bytes());
         AcAutomaton::new(xs.to_vec())
             .into_full()
@@ -582,25 +582,25 @@ mod tests {
     }
 
     fn aut_findo<S>(xs: &[S], haystack: &str) -> Vec<Match>
-            where S: Clone + Into<String> {
+            where S: Clone + AsRef<[u8]> {
         AcAutomaton::new(xs.to_vec()).find_overlapping(haystack).collect()
     }
 
     fn aut_findos<S>(xs: &[S], haystack: &str) -> Vec<Match>
-            where S: Clone + Into<String> {
+            where S: Clone + AsRef<[u8]> {
         let cur = io::Cursor::new(haystack.as_bytes());
         AcAutomaton::new(xs.to_vec())
             .stream_find_overlapping(cur).map(|r| r.unwrap()).collect()
     }
 
     fn aut_findfo<S>(xs: &[S], haystack: &str) -> Vec<Match>
-            where S: Clone + Into<String> {
+            where S: Clone + AsRef<[u8]> {
         AcAutomaton::new(xs.to_vec())
             .into_full().find_overlapping(haystack).collect()
     }
 
     fn aut_findfos<S>(xs: &[S], haystack: &str) -> Vec<Match>
-            where S: Clone + Into<String> {
+            where S: Clone + AsRef<[u8]> {
         let cur = io::Cursor::new(haystack.as_bytes());
         AcAutomaton::new(xs.to_vec())
             .into_full()
@@ -795,6 +795,10 @@ mod tests {
 
     impl From<SmallAscii> for String {
         fn from(s: SmallAscii) -> String { s.0 }
+    }
+
+    impl AsRef<[u8]> for SmallAscii {
+        fn as_ref(&self) -> &[u8] { self.0.as_ref() }
     }
 
     // This is the same arbitrary impl as `String`, except it has a bias toward
