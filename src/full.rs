@@ -18,17 +18,17 @@ use super::autiter::Automaton;
 /// Namely, it will use at least `4 * 256 * #states`, where the number of
 /// states is capped at length of all patterns concatenated.
 #[derive(Clone)]
-pub struct FullAcAutomaton {
-    pats: Vec<String>,
+pub struct FullAcAutomaton<P> {
+    pats: Vec<P>,
     trans: Vec<StateIdx>,  // row-major, where states are rows
     out: Vec<Vec<PatIdx>>, // indexed by StateIdx
     start_bytes: Vec<u8>,
 }
 
-impl FullAcAutomaton {
+impl<P: AsRef<[u8]>> FullAcAutomaton<P> {
     /// Build a new expanded Aho-Corasick automaton from an existing
     /// Aho-Corasick automaton.
-    pub fn new<T: Transitions>(ac: AcAutomaton<T>) -> FullAcAutomaton {
+    pub fn new<T: Transitions>(ac: AcAutomaton<P, T>) -> FullAcAutomaton<P> {
         let mut fac = FullAcAutomaton {
             pats: vec![],
             trans: vec![FAIL_STATE; 256 * ac.states.len()],
@@ -52,7 +52,7 @@ impl FullAcAutomaton {
     }
 }
 
-impl Automaton<String> for FullAcAutomaton {
+impl<P: AsRef<[u8]>> Automaton<P> for FullAcAutomaton<P> {
     #[inline]
     fn next_state(&self, si: StateIdx, i: u8) -> StateIdx {
         self.trans[i as usize * self.num_states() + si as usize]
@@ -93,18 +93,18 @@ impl Automaton<String> for FullAcAutomaton {
     }
 
     #[inline]
-    fn patterns(&self) -> &[String] {
+    fn patterns(&self) -> &[P] {
         &self.pats
     }
 
     #[inline]
-    fn pattern(&self, i: usize) -> &String {
+    fn pattern(&self, i: usize) -> &P {
         &self.pats[i]
     }
 }
 
-impl FullAcAutomaton {
-    fn build_matrix<T: Transitions>(&mut self, ac: &AcAutomaton<T>) {
+impl<P: AsRef<[u8]>> FullAcAutomaton<P> {
+    fn build_matrix<T: Transitions>(&mut self, ac: &AcAutomaton<P, T>) {
         for (si, s) in ac.states.iter().enumerate().skip(1) {
             for b in (0..256).map(|b| b as u8) {
                 self.set(si as StateIdx, b, ac.next_state(si as StateIdx, b));
@@ -116,7 +116,7 @@ impl FullAcAutomaton {
     }
 }
 
-impl fmt::Debug for FullAcAutomaton {
+impl<P: AsRef<[u8]> + fmt::Debug> fmt::Debug for FullAcAutomaton<P> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "FullAcAutomaton({:?})", self.pats)
     }

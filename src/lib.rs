@@ -182,8 +182,8 @@ const DENSE_DEPTH_THRESHOLD: u32 = 3;
 
 /// An Aho-Corasick finite automaton.
 #[derive(Clone)]
-pub struct AcAutomaton<T=Dense> {
-    pats: Vec<String>,
+pub struct AcAutomaton<P, T=Dense> {
+    pats: Vec<P>,
     states: Vec<State<T>>,
     start_bytes: Vec<u8>,
 }
@@ -196,18 +196,18 @@ struct State<T> {
     depth: u32,
 }
 
-impl AcAutomaton {
+impl<P: AsRef<[u8]>> AcAutomaton<P> {
     /// Create a new automaton from an iterator of patterns.
     ///
     /// The patterns must be convertible to Unicode `String` values via the
     /// `Into` trait.
     pub fn new<S, I>(pats: I) -> AcAutomaton<Dense>
-            where S: Into<String>, I: IntoIterator<Item=S> {
+            where S: AsRef<[u8]>, I: IntoIterator<Item=S> {
         AcAutomaton::with_transitions(pats)
     }
 }
 
-impl<T: Transitions> AcAutomaton<T> {
+impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
     /// Create a new automaton from an iterator of patterns.
     ///
     /// This constructor allows one to choose the transition representation.
@@ -215,7 +215,7 @@ impl<T: Transitions> AcAutomaton<T> {
     /// The patterns must be convertible to Unicode `String` values via the
     /// `Into` trait.
     pub fn with_transitions<S, I>(pats: I) -> AcAutomaton<T>
-            where S: Into<String>, I: IntoIterator<Item=S> {
+            where S: AsRef<[u8]>, I: IntoIterator<Item=S> {
         AcAutomaton {
             pats: vec![], // filled in later, avoid wrath of borrow checker
             states: vec![State::new(0), State::new(0)], // empty and root
@@ -227,12 +227,12 @@ impl<T: Transitions> AcAutomaton<T> {
     ///
     /// This will make searching as fast as possible at the expense of using
     /// at least `4 * 256 * #states` bytes of memory.
-    pub fn into_full(self) -> FullAcAutomaton {
+    pub fn into_full(self) -> FullAcAutomaton<P> {
         FullAcAutomaton::new(self)
     }
 }
 
-impl<T: Transitions> Automaton<String> for AcAutomaton<T> {
+impl<P: AsRef<[u8]>, T: Transitions> Automaton<P> for AcAutomaton<P, T> {
     #[inline]
     fn next_state(&self, mut si: StateIdx, b: u8) -> StateIdx {
         loop {
@@ -282,12 +282,12 @@ impl<T: Transitions> Automaton<String> for AcAutomaton<T> {
     }
 
     #[inline]
-    fn patterns(&self) -> &[String] {
+    fn patterns(&self) -> &[P] {
         &self.pats
     }
 
     #[inline]
-    fn pattern(&self, i: usize) -> &String {
+    fn pattern(&self, i: usize) -> &P {
         &self.pats[i]
     }
 }
@@ -296,15 +296,15 @@ impl<T: Transitions> Automaton<String> for AcAutomaton<T> {
 // translation of the description/psuedo-code from:
 // http://www.cs.uku.fi/~kilpelai/BSA05/lectures/slides04.pdf
 
-impl<T: Transitions> AcAutomaton<T> {
+impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
     // This is the first phase and builds the initial keyword tree.
-    fn build(mut self, pats: Vec<String>) -> AcAutomaton<T> {
+    fn build(mut self, pats: Vec<&[u8]>) -> AcAutomaton<P, T> {
         for (pati, pat) in pats.iter().enumerate() {
             if pat.is_empty() {
                 continue;
             }
             let mut previ = ROOT_STATE;
-            for &b in pat.as_bytes() {
+            for &b in pat.as_ref() {
                 if self.states[previ as usize].goto(b) != FAIL_STATE {
                     previ = self.states[previ as usize].goto(b);
                 } else {
@@ -328,7 +328,7 @@ impl<T: Transitions> AcAutomaton<T> {
     }
 
     // The second phase that fills in the back links.
-    fn fill(mut self) -> AcAutomaton<T> {
+    fn fill(mut self) -> AcAutomaton<P, T> {
         // Fill up the queue with all non-root transitions out of the root
         // node. Then proceed by breadth first traversal.
         let mut q = VecDeque::new();
@@ -459,9 +459,9 @@ impl Transitions for Sparse {
     }
 }
 
-impl<S: Into<String>> FromIterator<S> for AcAutomaton {
+impl<S: AsRef<[u8]>> FromIterator<S> for AcAutomaton<S> {
     /// Create an automaton from an iterator of strings.
-    fn from_iter<T>(it: T) -> AcAutomaton where T: IntoIterator<Item=S> {
+    fn from_iter<T>(it: T) -> AcAutomaton<S> where T: IntoIterator<Item=S> {
         AcAutomaton::new(it)
     }
 }
@@ -469,7 +469,7 @@ impl<S: Into<String>> FromIterator<S> for AcAutomaton {
 // Provide some question debug impls for viewing automatons.
 // The custom impls mostly exist for special showing of sparse maps.
 
-impl<T: Transitions> fmt::Debug for AcAutomaton<T> {
+impl<P: AsRef<[u8]> + fmt::Debug, T: Transitions> fmt::Debug for AcAutomaton<P, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use std::iter::repeat;
 
