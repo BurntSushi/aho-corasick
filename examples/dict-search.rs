@@ -60,7 +60,7 @@ fn run(args: &Args) -> Result<(), Box<Error>> {
 }
 
 fn write_matches<A, I>(aut: &A, it: I) -> Result<(), Box<Error>>
-        where A: Automaton, I: Iterator<Item=io::Result<Match>> {
+        where A: Automaton<String>, I: Iterator<Item=io::Result<Match>> {
     let mut wtr = csv::Writer::from_writer(io::stdout());
     try!(wtr.encode(("pattern", "start", "end")));
     for m in it {

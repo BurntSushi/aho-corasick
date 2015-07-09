@@ -52,7 +52,7 @@ impl FullAcAutomaton {
     }
 }
 
-impl Automaton for FullAcAutomaton {
+impl Automaton<String> for FullAcAutomaton {
     #[inline]
     fn next_state(&self, si: StateIdx, i: u8) -> StateIdx {
         self.trans[i as usize * self.num_states() + si as usize]
@@ -98,7 +98,7 @@ impl Automaton for FullAcAutomaton {
     }
 
     #[inline]
-    fn pattern(&self, i: usize) -> &str {
+    fn pattern(&self, i: usize) -> &String {
         &self.pats[i]
     }
 }

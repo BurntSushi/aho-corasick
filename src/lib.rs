@@ -232,7 +232,7 @@ impl<T: Transitions> AcAutomaton<T> {
     }
 }
 
-impl<T: Transitions> Automaton for AcAutomaton<T> {
+impl<T: Transitions> Automaton<String> for AcAutomaton<T> {
     #[inline]
     fn next_state(&self, mut si: StateIdx, b: u8) -> StateIdx {
         loop {
@@ -287,7 +287,7 @@ impl<T: Transitions> Automaton for AcAutomaton<T> {
     }
 
     #[inline]
-    fn pattern(&self, i: usize) -> &str {
+    fn pattern(&self, i: usize) -> &String {
         &self.pats[i]
     }
 }
