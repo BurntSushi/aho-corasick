@@ -199,8 +199,8 @@ struct State<T> {
 impl<P: AsRef<[u8]>> AcAutomaton<P> {
     /// Create a new automaton from an iterator of patterns.
     ///
-    /// The patterns must be convertible to Unicode `String` values via the
-    /// `Into` trait.
+    /// The patterns must be convertible to bytes (`&[u8]`) via the `AsRef`
+    /// trait.
     pub fn new<I>(pats: I) -> AcAutomaton<P, Dense>
             where I: IntoIterator<Item=P> {
         AcAutomaton::with_transitions(pats)
@@ -212,8 +212,8 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
     ///
     /// This constructor allows one to choose the transition representation.
     ///
-    /// The patterns must be convertible to Unicode `String` values via the
-    /// `Into` trait.
+    /// The patterns must be convertible to bytes (`&[u8]`) via the `AsRef`
+    /// trait.
     pub fn with_transitions<I>(pats: I) -> AcAutomaton<P, T>
             where I: IntoIterator<Item=P> {
         AcAutomaton {
@@ -771,6 +771,20 @@ mod tests {
         assert_eq!(&aut_findos(&ns, hay), &matches);
         assert_eq!(&aut_findfo(&ns, hay), &matches);
         assert_eq!(&aut_findfos(&ns, hay), &matches);
+    }
+
+    #[test]
+    fn pattern_returns_original_type() {
+        let aut = AcAutomaton::new(vec!["apple", "maple"]);
+
+        // Explicitly given this type to assert that the thing returned
+        // from the function is our original type.
+        let pat: &str = aut.pattern(0);
+        assert_eq!(pat, "apple");
+
+        // Also check the return type of the `patterns` function.
+        let pats: &[&str] = aut.patterns();
+        assert_eq!(pats, &["apple", "maple"]);
     }
 
     // Quickcheck time.
