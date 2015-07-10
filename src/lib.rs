@@ -181,6 +181,9 @@ const ROOT_STATE: u32 = 1;
 const DENSE_DEPTH_THRESHOLD: u32 = 3;
 
 /// An Aho-Corasick finite automaton.
+///
+/// The type parameter `P` is the type of the pattern that was used to
+/// construct this AcAutomaton.
 #[derive(Clone)]
 pub struct AcAutomaton<P, T=Dense> {
     pats: Vec<P>,

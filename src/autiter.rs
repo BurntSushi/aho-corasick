@@ -4,6 +4,8 @@ use std::marker::PhantomData;
 use super::{ROOT_STATE, PatIdx, StateIdx};
 
 /// An abstraction over automatons and their corresponding iterators.
+/// The type parameter `P` is the type of the pattern that was used to
+/// construct this Automaton.
 pub trait Automaton<P>: Sized {
     /// Return the next state given the current state and next character.
     fn next_state(&self, si: StateIdx, b: u8) -> StateIdx;
@@ -130,8 +132,8 @@ pub struct Match {
 ///
 /// This iterator yields `Match` values.
 ///
-/// `'a` is the lifetime of the automaton and `'s` is the lifetime of the
-/// search text.
+/// `'a` is the lifetime of the automaton, `'s` is the lifetime of the
+/// search text, and `P` is the type of the Automaton's pattern.
 #[derive(Debug)]
 pub struct Matches<'a, 's, P, A: 'a + Automaton<P>> {
     aut: &'a A,
@@ -184,8 +186,8 @@ impl<'a, 's, P, A: Automaton<P>> Iterator for Matches<'a, 's, P, A> {
 ///
 /// This iterator yields `io::Result<Match>` values.
 ///
-/// `'a` is the lifetime of the automaton and `R` is the type of the underlying
-/// `io::Read`er.
+/// `'a` is the lifetime of the automaton, `R` is the type of the underlying
+/// `io::Read`er, and P is the type of the Automaton's pattern.
 #[derive(Debug)]
 pub struct StreamMatches<'a, R, P, A: 'a + Automaton<P>> {
     aut: &'a A,
@@ -230,8 +232,8 @@ impl<'a, R: io::Read, P, A: Automaton<P>> Iterator for StreamMatches<'a, R, P, A
 ///
 /// This iterator yields `Match` values.
 ///
-/// `'a` is the lifetime of the automaton and `'s` is the lifetime of the
-/// search text.
+/// `'a` is the lifetime of the automaton, `'s` is the lifetime of the
+/// search text, and `P` is the type of the Automaton's pattern.
 #[derive(Debug)]
 pub struct MatchesOverlapping<'a, 's, P, A: 'a + Automaton<P>> {
     aut: &'a A,
@@ -273,8 +275,8 @@ impl<'a, 's, P, A: Automaton<P>> Iterator for MatchesOverlapping<'a, 's, P, A> {
 ///
 /// This iterator yields `io::Result<Match>` values.
 ///
-/// `'a` is the lifetime of the automaton and `R` is the type of the underlying
-/// `io::Read`er.
+/// `'a` is the lifetime of the automaton, `R` is the type of the underlying
+/// `io::Read`er, and P is the type of the Automaton's pattern.
 #[derive(Debug)]
 pub struct StreamMatchesOverlapping<'a, R, P, A: 'a + Automaton<P>> {
     aut: &'a A,
@@ -332,4 +334,3 @@ impl<
         m
     }
 }
-
