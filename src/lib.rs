@@ -118,6 +118,7 @@ assert_eq!(matches, vec![Match { pati: 1, start: 0, end: 1}]);
 ```
 */
 
+#![allow(deprecated)] // for connect -> join
 #![deny(missing_docs)]
 
 extern crate memchr;
