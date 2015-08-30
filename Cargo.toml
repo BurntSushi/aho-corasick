@@ -23,11 +23,11 @@ bench = false
 memchr = "0.1.*"
 
 [dev-dependencies]
-csv = "*"
-docopt = "*"
-quickcheck = "*"
-rand = "*"
-rustc-serialize = "*"
+csv = "0.14"
+docopt = "0.6"
+quickcheck = "0.2"
+rand = "0.3"
+rustc-serialize = "0.3"
 
 [[bench]]
 name = "bench"
