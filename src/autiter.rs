@@ -143,39 +143,63 @@ pub struct Matches<'a, 's, P, A: 'a + Automaton<P>> {
     _m: PhantomData<P>,
 }
 
+// When there's an initial lone start byte, it is usually worth it
+// to use `memchr` to skip along the input. The problem is that
+// the skipping function is called in the inner match loop, which
+// can be quite costly if the skipping condition is never met.
+// Therefore, we lift the case analysis outside of the inner loop at
+// the cost of repeating code.
+//
+// `step_to_match` is the version of the inner loop without skipping,
+// and `skip_to_match` is the version with skipping.
+fn step_to_match<P, A: Automaton<P>>(
+    aut: &A,
+    text: &[u8],
+    mut texti: usize,
+    mut si: StateIdx
+) -> Option<(usize, StateIdx)> {
+    while texti < text.len() {
+        si = aut.next_state(si, text[texti]);
+        if aut.has_match(si, 0) {
+            return Some((texti, si));
+        }
+        texti += 1;
+    }
+    None
+}
+
+fn skip_to_match<P, A: Automaton<P>>(
+    aut: &A,
+    text: &[u8],
+    mut texti: usize,
+    mut si: StateIdx
+) -> Option<(usize, StateIdx)> {
+    texti = aut.skip_to(si, text, texti);
+    while texti < text.len() {
+        si = aut.next_state(si, text[texti]);
+        if aut.has_match(si, 0) {
+            return Some((texti, si));
+        }
+        texti = aut.skip_to(si, text, texti + 1);
+    }
+    None
+}
+
 impl<'a, 's, P, A: Automaton<P>> Iterator for Matches<'a, 's, P, A> {
     type Item = Match;
 
     fn next(&mut self) -> Option<Match> {
-        // When there's an initial lone start byte, it is usually worth it
-        // to use `memchr` to skip along the input. The problem is that
-        // the skipping function is called in the inner match loop, which
-        // can be quite costly if the skipping condition is never met.
-        // Therefore, we lift the case analysis outside of the main loop at
-        // the cost of repeating code.
         if self.aut.is_skippable() {
-            self.texti = self.aut.skip_to(self.si, self.text, self.texti);
-            while self.texti < self.text.len() {
-                self.si = self.aut.next_state(self.si, self.text[self.texti]);
-                if self.aut.has_match(self.si, 0) {
-                    let m = self.aut.get_match(self.si, 0, self.texti);
-                    self.si = ROOT_STATE;
-                    self.texti += 1;
-                    return Some(m);
-                }
-                self.texti = self.aut.skip_to(
-                    self.si, self.text, self.texti + 1);
+            if let Some((texti, si)) = skip_to_match(self.aut, self.text, self.texti, self.si) {
+                self.texti = texti + 1;
+                self.si = ROOT_STATE;
+                return Some(self.aut.get_match(si, 0, texti));
             }
         } else {
-            while self.texti < self.text.len() {
-                self.si = self.aut.next_state(self.si, self.text[self.texti]);
-                if self.aut.has_match(self.si, 0) {
-                    let m = self.aut.get_match(self.si, 0, self.texti);
-                    self.si = ROOT_STATE;
-                    self.texti += 1;
-                    return Some(m);
-                }
-                self.texti += 1;
+            if let Some((texti, si)) = step_to_match(self.aut, self.text, self.texti, self.si) {
+                self.texti = texti + 1;
+                self.si = ROOT_STATE;
+                return Some(self.aut.get_match(si, 0, texti));
             }
         }
         None
@@ -258,14 +282,18 @@ impl<'a, 's, P, A: Automaton<P>> Iterator for MatchesOverlapping<'a, 's, P, A> {
         }
 
         self.outi = 0;
-        self.texti = self.aut.skip_to(self.si, self.text, self.texti);
-        while self.texti < self.text.len() {
-            let b = self.text[self.texti];
-            self.si = self.aut.next_state(self.si, b);
-            if self.aut.has_match(self.si, self.outi) {
+        if self.aut.is_skippable() {
+            if let Some((texti, si)) = skip_to_match(self.aut, self.text, self.texti, self.si) {
+                self.texti = texti;
+                self.si = si;
                 return self.next();
             }
-            self.texti = self.aut.skip_to(self.si, self.text, self.texti + 1);
+        } else {
+            if let Some((texti, si)) = step_to_match(self.aut, self.text, self.texti, self.si) {
+                self.texti = texti;
+                self.si = si;
+                return self.next();
+            }
         }
         None
     }

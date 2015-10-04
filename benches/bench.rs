@@ -29,6 +29,16 @@ fn bench_full_aut_no_match<P: AsRef<[u8]>, T: Transitions>(
     b.iter(|| assert!(aut.find(haystack).next().is_none()));
 }
 
+fn bench_full_aut_overlapping_no_match<P: AsRef<[u8]>, T: Transitions>(
+    b: &mut Bencher,
+    aut: AcAutomaton<P, T>,
+    haystack: &str,
+) {
+    let aut = aut.into_full();
+    b.bytes = haystack.len() as u64;
+    b.iter(|| assert!(aut.find_overlapping(haystack).count() == 0));
+}
+
 fn bench_naive_no_match<S>(b: &mut Bencher, needles: Vec<S>, haystack: &str)
         where S: Into<String> {
     b.bytes = haystack.len() as u64;
@@ -49,6 +59,7 @@ use test::Bencher;
 use super::{
     HAYSTACK_RANDOM, haystack_same,
     bench_aut_no_match, bench_full_aut_no_match,
+    bench_full_aut_overlapping_no_match,
 };
 
 #[bench]
@@ -152,6 +163,7 @@ aut_benches!(dense, AcAutomaton::new, bench_aut_no_match);
 aut_benches!(sparse, AcAutomaton::<&str, Sparse>::with_transitions,
              bench_aut_no_match);
 aut_benches!(full, AcAutomaton::new, bench_full_aut_no_match);
+aut_benches!(full_overlap, AcAutomaton::new, bench_full_aut_overlapping_no_match);
 
 // A naive multi-pattern search.
 // We use this to benchmark *throughput*, so it should never match anything.
