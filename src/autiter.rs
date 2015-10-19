@@ -53,13 +53,13 @@ pub trait Automaton<P>: Sized {
     }
 
     /// Returns an iterator of non-overlapping matches in `s`.
-    fn find<'a, 's>(
+    fn find<'a, 's, Q: ?Sized + AsRef<[u8]>>(
         &'a self,
-        s: &'s str,
+        s: &'s Q,
     ) -> Matches<'a, 's, P, Self> {
         Matches {
             aut: self,
-            text: s.as_bytes(),
+            text: s.as_ref(),
             texti: 0,
             si: ROOT_STATE,
             _m: PhantomData,
@@ -67,13 +67,13 @@ pub trait Automaton<P>: Sized {
     }
 
     /// Returns an iterator of overlapping matches in `s`.
-    fn find_overlapping<'a, 's>(
+    fn find_overlapping<'a, 's, Q: ?Sized + AsRef<[u8]>>(
         &'a self,
-        s: &'s str,
+        s: &'s Q,
     ) -> MatchesOverlapping<'a, 's, P, Self> {
         MatchesOverlapping {
             aut: self,
-            text: s.as_bytes(),
+            text: s.as_ref(),
             texti: 0,
             si: ROOT_STATE,
             outi: 0,
