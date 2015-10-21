@@ -19,6 +19,16 @@ fn bench_aut_no_match<P: AsRef<[u8]>, T: Transitions>(
     b.iter(|| assert!(aut.find(haystack).next().is_none()));
 }
 
+fn bench_box_aut_no_match<P: AsRef<[u8]>, T: Transitions>(
+    b: &mut Bencher,
+    aut: AcAutomaton<P, T>,
+    haystack: &str,
+) {
+    b.bytes = haystack.len() as u64;
+    let aut: &Automaton<P> = &aut;
+    b.iter(|| assert!(Automaton::find(&aut, haystack).next().is_none()));
+}
+
 fn bench_full_aut_no_match<P: AsRef<[u8]>, T: Transitions>(
     b: &mut Bencher,
     aut: AcAutomaton<P, T>,
@@ -58,8 +68,8 @@ use test::Bencher;
 
 use super::{
     HAYSTACK_RANDOM, haystack_same,
-    bench_aut_no_match, bench_full_aut_no_match,
-    bench_full_aut_overlapping_no_match,
+    bench_aut_no_match, bench_box_aut_no_match,
+    bench_full_aut_no_match, bench_full_aut_overlapping_no_match,
 };
 
 #[bench]
@@ -160,6 +170,7 @@ fn ac_ten_one_prefix_byte_random(b: &mut Bencher) {
 }}}
 
 aut_benches!(dense, AcAutomaton::new, bench_aut_no_match);
+aut_benches!(dense_boxed, AcAutomaton::new, bench_box_aut_no_match);
 aut_benches!(sparse, AcAutomaton::<&str, Sparse>::with_transitions,
              bench_aut_no_match);
 aut_benches!(full, AcAutomaton::new, bench_full_aut_no_match);
