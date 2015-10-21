@@ -6,7 +6,7 @@ use super::{ROOT_STATE, PatIdx, StateIdx};
 /// An abstraction over automatons and their corresponding iterators.
 /// The type parameter `P` is the type of the pattern that was used to
 /// construct this Automaton.
-pub trait Automaton<P>: Sized {
+pub trait Automaton<P> {
     /// Return the next state given the current state and next character.
     fn next_state(&self, si: StateIdx, b: u8) -> StateIdx;
 
@@ -56,7 +56,8 @@ pub trait Automaton<P>: Sized {
     fn find<'a, 's, Q: ?Sized + AsRef<[u8]>>(
         &'a self,
         s: &'s Q,
-    ) -> Matches<'a, 's, P, Self> {
+    ) -> Matches<'a, 's, P, Self>
+    where Self: Sized {
         Matches {
             aut: self,
             text: s.as_ref(),
@@ -70,7 +71,8 @@ pub trait Automaton<P>: Sized {
     fn find_overlapping<'a, 's, Q: ?Sized + AsRef<[u8]>>(
         &'a self,
         s: &'s Q,
-    ) -> MatchesOverlapping<'a, 's, P, Self> {
+    ) -> MatchesOverlapping<'a, 's, P, Self>
+    where Self: Sized {
         MatchesOverlapping {
             aut: self,
             text: s.as_ref(),
@@ -85,7 +87,8 @@ pub trait Automaton<P>: Sized {
     fn stream_find<'a, R: io::Read>(
         &'a self,
         rdr: R,
-    ) -> StreamMatches<'a, R, P, Self> {
+    ) -> StreamMatches<'a, R, P, Self>
+    where Self: Sized {
         StreamMatches {
             aut: self,
             buf: io::BufReader::new(rdr),
@@ -99,7 +102,8 @@ pub trait Automaton<P>: Sized {
     fn stream_find_overlapping<'a, R: io::Read>(
         &'a self,
         rdr: R,
-    ) -> StreamMatchesOverlapping<'a, R, P, Self> {
+    ) -> StreamMatchesOverlapping<'a, R, P, Self>
+    where Self: Sized {
         StreamMatchesOverlapping {
             aut: self,
             buf: io::BufReader::new(rdr),
@@ -108,6 +112,18 @@ pub trait Automaton<P>: Sized {
             outi: 0,
             _m: PhantomData,
         }
+    }
+}
+
+impl<'a, P: AsRef<[u8]>, A: 'a + Automaton<P> + ?Sized> Automaton<P> for &'a A {
+    fn next_state(&self, si: StateIdx, b: u8) -> StateIdx { (**self).next_state(si, b) }
+    fn has_match(&self, si: StateIdx, outi: PatIdx) -> bool { (**self).has_match(si, outi) }
+    fn skip_to(&self, si: StateIdx, text: &[u8], at: usize) -> usize { (**self).skip_to(si, text, at) }
+    fn is_skippable(&self) -> bool { (**self).is_skippable() }
+    fn patterns(&self) -> &[P] { (**self).patterns() }
+    fn pattern(&self, i: usize) -> &P { (**self).pattern(i) }
+    fn get_match(&self, si: StateIdx, outi: PatIdx, texti: usize) -> Match {
+        (**self).get_match(si, outi, texti)
     }
 }
 
@@ -135,7 +151,7 @@ pub struct Match {
 /// `'a` is the lifetime of the automaton, `'s` is the lifetime of the
 /// search text, and `P` is the type of the Automaton's pattern.
 #[derive(Debug)]
-pub struct Matches<'a, 's, P, A: 'a + Automaton<P>> {
+pub struct Matches<'a, 's, P, A: 'a + Automaton<P> + ?Sized> {
     aut: &'a A,
     text: &'s [u8],
     texti: usize,
@@ -152,7 +168,7 @@ pub struct Matches<'a, 's, P, A: 'a + Automaton<P>> {
 //
 // `step_to_match` is the version of the inner loop without skipping,
 // and `skip_to_match` is the version with skipping.
-fn step_to_match<P, A: Automaton<P>>(
+fn step_to_match<P, A: Automaton<P> + ?Sized>(
     aut: &A,
     text: &[u8],
     mut texti: usize,
@@ -168,7 +184,7 @@ fn step_to_match<P, A: Automaton<P>>(
     None
 }
 
-fn skip_to_match<P, A: Automaton<P>>(
+fn skip_to_match<P, A: Automaton<P> + ?Sized>(
     aut: &A,
     text: &[u8],
     mut texti: usize,
@@ -185,7 +201,7 @@ fn skip_to_match<P, A: Automaton<P>>(
     None
 }
 
-impl<'a, 's, P, A: Automaton<P>> Iterator for Matches<'a, 's, P, A> {
+impl<'a, 's, P, A: Automaton<P> + ?Sized> Iterator for Matches<'a, 's, P, A> {
     type Item = Match;
 
     fn next(&mut self) -> Option<Match> {
@@ -213,7 +229,7 @@ impl<'a, 's, P, A: Automaton<P>> Iterator for Matches<'a, 's, P, A> {
 /// `'a` is the lifetime of the automaton, `R` is the type of the underlying
 /// `io::Read`er, and P is the type of the Automaton's pattern.
 #[derive(Debug)]
-pub struct StreamMatches<'a, R, P, A: 'a + Automaton<P>> {
+pub struct StreamMatches<'a, R, P, A: 'a + Automaton<P> + ?Sized> {
     aut: &'a A,
     buf: io::BufReader<R>,
     texti: usize,
@@ -259,7 +275,7 @@ impl<'a, R: io::Read, P, A: Automaton<P>> Iterator for StreamMatches<'a, R, P, A
 /// `'a` is the lifetime of the automaton, `'s` is the lifetime of the
 /// search text, and `P` is the type of the Automaton's pattern.
 #[derive(Debug)]
-pub struct MatchesOverlapping<'a, 's, P, A: 'a + Automaton<P>> {
+pub struct MatchesOverlapping<'a, 's, P, A: 'a + Automaton<P> + ?Sized> {
     aut: &'a A,
     text: &'s [u8],
     texti: usize,
@@ -268,7 +284,7 @@ pub struct MatchesOverlapping<'a, 's, P, A: 'a + Automaton<P>> {
     _m: PhantomData<P>,
 }
 
-impl<'a, 's, P, A: Automaton<P>> Iterator for MatchesOverlapping<'a, 's, P, A> {
+impl<'a, 's, P, A: Automaton<P> + ?Sized> Iterator for MatchesOverlapping<'a, 's, P, A> {
     type Item = Match;
 
     fn next(&mut self) -> Option<Match> {
@@ -306,7 +322,7 @@ impl<'a, 's, P, A: Automaton<P>> Iterator for MatchesOverlapping<'a, 's, P, A> {
 /// `'a` is the lifetime of the automaton, `R` is the type of the underlying
 /// `io::Read`er, and P is the type of the Automaton's pattern.
 #[derive(Debug)]
-pub struct StreamMatchesOverlapping<'a, R, P, A: 'a + Automaton<P>> {
+pub struct StreamMatchesOverlapping<'a, R, P, A: 'a + Automaton<P> + ?Sized> {
     aut: &'a A,
     buf: io::BufReader<R>,
     texti: usize,
@@ -319,7 +335,7 @@ impl<
     'a,
     R: io::Read,
     P,
-    A: Automaton<P>,
+    A: Automaton<P> + ?Sized,
 > Iterator for StreamMatchesOverlapping<'a, R, P, A> {
     type Item = io::Result<Match>;
 
