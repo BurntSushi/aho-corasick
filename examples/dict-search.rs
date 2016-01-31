@@ -24,6 +24,9 @@ Options:
     -m <len>, --min-len <len>  The minimum length for a keyword in UTF-8
                                encoded bytes. [default: 5]
     --overlapping              Report overlapping matches.
+    --memory-usage             Show memory usage of automaton.
+    --full                     Use fully expanded transition matrix.
+                               Warning: may use lots of memory.
     -h, --help                 Show this usage message.
 ";
 
@@ -33,6 +36,8 @@ struct Args {
     flag_dict: String,
     flag_min_len: usize,
     flag_overlapping: bool,
+    flag_memory_usage: bool,
+    flag_full: bool,
 }
 
 fn main() {
@@ -50,11 +55,31 @@ fn main() {
 
 fn run(args: &Args) -> Result<(), Box<Error>> {
     let aut = try!(build_automaton(&args.flag_dict, args.flag_min_len));
+    if args.flag_memory_usage {
+        let (bytes, states) = if args.flag_full {
+            let aut = aut.into_full();
+            (aut.heap_bytes(), aut.num_states())
+        } else {
+            (aut.heap_bytes(), aut.num_states())
+        };
+        println!("{} bytes, {} states", bytes, states);
+        return Ok(());
+    }
+
     let rdr = try!(File::open(&args.arg_input));
-    if args.flag_overlapping {
-        try!(write_matches(&aut, aut.stream_find_overlapping(rdr)));
+    if args.flag_full {
+        let aut = aut.into_full();
+        if args.flag_overlapping {
+            try!(write_matches(&aut, aut.stream_find_overlapping(rdr)));
+        } else {
+            try!(write_matches(&aut, aut.stream_find(rdr)));
+        }
     } else {
-        try!(write_matches(&aut, aut.stream_find(rdr)));
+        if args.flag_overlapping {
+            try!(write_matches(&aut, aut.stream_find_overlapping(rdr)));
+        } else {
+            try!(write_matches(&aut, aut.stream_find(rdr)));
+        }
     }
     Ok(())
 }
@@ -62,10 +87,14 @@ fn run(args: &Args) -> Result<(), Box<Error>> {
 fn write_matches<A, I>(aut: &A, it: I) -> Result<(), Box<Error>>
         where A: Automaton<String>, I: Iterator<Item=io::Result<Match>> {
     let mut wtr = csv::Writer::from_writer(io::stdout());
-    try!(wtr.encode(("pattern", "start", "end")));
+    try!(wtr.write(["pattern", "start", "end"].iter()));
     for m in it {
         let m = try!(m);
-        try!(wtr.encode((aut.pattern(m.pati), m.start, m.end)));
+        try!(wtr.write([
+            aut.pattern(m.pati),
+            &m.start.to_string(),
+            &m.end.to_string(),
+        ].iter()));
     }
     try!(wtr.flush());
     Ok(())
@@ -83,5 +112,5 @@ fn build_automaton(
             lines.push(line);
         }
     }
-    Ok(AcAutomaton::new(lines))
+    Ok(AcAutomaton::with_transitions(lines))
 }
