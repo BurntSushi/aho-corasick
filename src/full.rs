@@ -1,11 +1,12 @@
 use std::fmt;
+use std::mem;
 
 use memchr::memchr;
 
 use super::{
     FAIL_STATE, ROOT_STATE,
-    StateIdx, PatIdx,
-    AcAutomaton, Transitions, Match,
+    StateIdx, AcAutomaton, Transitions, Match,
+    usize_bytes, vec_bytes,
 };
 use super::autiter::Automaton;
 
@@ -21,7 +22,7 @@ use super::autiter::Automaton;
 pub struct FullAcAutomaton<P> {
     pats: Vec<P>,
     trans: Vec<StateIdx>,  // row-major, where states are rows
-    out: Vec<Vec<PatIdx>>, // indexed by StateIdx
+    out: Vec<Vec<usize>>, // indexed by StateIdx
     start_bytes: Vec<u8>,
 }
 
@@ -41,13 +42,38 @@ impl<P: AsRef<[u8]>> FullAcAutomaton<P> {
         fac
     }
 
+    #[doc(hidden)]
+    pub fn memory_usage(&self) -> usize {
+        self.pats.iter()
+            .map(|p| vec_bytes() + p.as_ref().len())
+            .fold(0, |a, b| a + b)
+        + (4 * self.trans.len())
+        + self.out.iter()
+              .map(|v| vec_bytes() + (usize_bytes() * v.len()))
+              .fold(0, |a, b| a + b)
+        + self.start_bytes.len()
+    }
+
+    #[doc(hidden)]
+    pub fn heap_bytes(&self) -> usize {
+        self.pats.iter()
+            .map(|p| mem::size_of::<P>() + p.as_ref().len())
+            .fold(0, |a, b| a + b)
+        + (4 * self.trans.len())
+        + self.out.iter()
+              .map(|v| vec_bytes() + (usize_bytes() * v.len()))
+              .fold(0, |a, b| a + b)
+        + self.start_bytes.len()
+    }
+
     fn set(&mut self, si: StateIdx, i: u8, goto: StateIdx) {
         let ns = self.num_states();
         self.trans[i as usize * ns + si as usize] = goto;
     }
 
+    #[doc(hidden)]
     #[inline]
-    fn num_states(&self) -> usize {
+    pub fn num_states(&self) -> usize {
         self.out.len()
     }
 }
