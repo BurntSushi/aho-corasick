@@ -1,10 +1,8 @@
 use std::fmt;
 use std::mem;
 
-use memchr::memchr;
-
 use super::{
-    FAIL_STATE, ROOT_STATE,
+    FAIL_STATE,
     StateIdx, AcAutomaton, Transitions, Match,
     usize_bytes, vec_bytes,
 };
@@ -102,20 +100,8 @@ impl<P: AsRef<[u8]>> Automaton<P> for FullAcAutomaton<P> {
     }
 
     #[inline]
-    fn skip_to(&self, si: StateIdx, text: &[u8], at: usize) -> usize {
-        if si != ROOT_STATE || !self.is_skippable() {
-            return at;
-        }
-        let b = self.start_bytes[0];
-        match memchr(b, &text[at..]) {
-            None => text.len(),
-            Some(i) => at + i,
-        }
-    }
-
-    #[inline]
-    fn is_skippable(&self) -> bool {
-        self.start_bytes.len() == 1
+    fn start_bytes(&self) -> &[u8] {
+        &self.start_bytes
     }
 
     #[inline]
