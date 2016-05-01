@@ -176,6 +176,7 @@ pub struct Matches<'a, 's, P, A: 'a + Automaton<P> + ?Sized> {
 //
 // `step_to_match` is the version of the inner loop without skipping,
 // and `skip_to_match` is the version with skipping.
+#[inline(never)]
 fn step_to_match<P, A: Automaton<P> + ?Sized>(
     aut: &A,
     text: &[u8],
@@ -188,6 +189,33 @@ fn step_to_match<P, A: Automaton<P> + ?Sized>(
             return Some((texti, si));
         }
         texti += 1;
+        if texti + 4 < text.len() {
+            si = aut.next_state(si, text[texti]);
+            if aut.has_match(si, 0) {
+                return Some((texti, si));
+            }
+            texti += 1;
+            si = aut.next_state(si, text[texti]);
+            if aut.has_match(si, 0) {
+                return Some((texti, si));
+            }
+            texti += 1;
+            si = aut.next_state(si, text[texti]);
+            if aut.has_match(si, 0) {
+                return Some((texti, si));
+            }
+            texti += 1;
+            si = aut.next_state(si, text[texti]);
+            if aut.has_match(si, 0) {
+                return Some((texti, si));
+            }
+            texti += 1;
+            si = aut.next_state(si, text[texti]);
+            if aut.has_match(si, 0) {
+                return Some((texti, si));
+            }
+            texti += 1;
+        }
     }
     None
 }

@@ -9,6 +9,7 @@ use aho_corasick::{Automaton, AcAutomaton, Transitions};
 use test::Bencher;
 
 const HAYSTACK_RANDOM: &'static str = include_str!("random.txt");
+const HAYSTACK_SHERLOCK: &'static str = include_str!("sherlock.txt");
 
 fn bench_aut_no_match<P: AsRef<[u8]>, T: Transitions>(
     b: &mut Bencher,
@@ -61,7 +62,8 @@ fn haystack_same(letter: char) -> String {
 }
 
 macro_rules! aut_benches {
-    ($prefix:ident, $aut:expr, $bench:expr) => { mod $prefix {
+    ($prefix:ident, $aut:expr, $bench:expr) => {
+        mod $prefix {
 #![allow(unused_imports)]
 use aho_corasick::{Automaton, AcAutomaton, Sparse};
 use test::Bencher;
@@ -167,7 +169,9 @@ fn ac_ten_one_prefix_byte_random(b: &mut Bencher) {
                         "zjcdef\x00"]);
     $bench(b, aut, HAYSTACK_RANDOM);
 }
-}}}
+        }
+    }
+}
 
 aut_benches!(dense, AcAutomaton::new, bench_aut_no_match);
 aut_benches!(dense_boxed, AcAutomaton::new, bench_box_aut_no_match);
@@ -278,4 +282,58 @@ fn naive_ten_one_prefix_byte_random(b: &mut Bencher) {
                        "zgcdef\x00", "zhcdef\x00", "zicdef\x00",
                        "zjcdef\x00"];
     bench_naive_no_match(b, needles, HAYSTACK_RANDOM);
+}
+
+
+// The organization above is just awful. Let's start over...
+
+mod sherlock {
+    use aho_corasick::{Automaton, AcAutomaton};
+    use test::Bencher;
+    use super::HAYSTACK_SHERLOCK;
+
+    macro_rules! sherlock {
+        ($name:ident, $count:expr, $pats:expr) => {
+            #[bench]
+            fn $name(b: &mut Bencher) {
+                let haystack = HAYSTACK_SHERLOCK;
+                let aut = AcAutomaton::new($pats).into_full();
+                b.bytes = haystack.len() as u64;
+                b.iter(|| assert_eq!($count, aut.find(haystack).count()));
+            }
+        }
+    }
+
+    sherlock!(name_alt1, 158, vec!["Sherlock", "Street"]);
+
+    sherlock!(name_alt2, 558, vec!["Sherlock", "Holmes"]);
+
+    sherlock!(name_alt3, 740, vec![
+        "Sherlock", "Holmes", "Watson", "Irene", "Adler", "John", "Baker",
+    ]);
+
+    sherlock!(name_alt3_nocase, 1764, vec![
+        "ADL", "ADl", "AdL", "Adl", "BAK", "BAk", "BAK", "BaK", "Bak", "BaK",
+        "HOL", "HOl", "HoL", "Hol", "IRE", "IRe", "IrE", "Ire", "JOH", "JOh",
+        "JoH", "Joh", "SHE", "SHe", "ShE", "She", "WAT", "WAt", "WaT", "Wat",
+        "aDL", "aDl", "adL", "adl", "bAK", "bAk", "bAK", "baK", "bak", "baK",
+        "hOL", "hOl", "hoL", "hol", "iRE", "iRe", "irE", "ire", "jOH", "jOh",
+        "joH", "joh", "sHE", "sHe", "shE", "she", "wAT", "wAt", "waT", "wat",
+        "ſHE", "ſHe", "ſhE", "ſhe",
+    ]);
+
+    sherlock!(name_alt4, 582, vec!["Sher", "Hol"]);
+
+    sherlock!(name_alt4_nocase, 1307, vec![
+        "HOL", "HOl", "HoL", "Hol", "SHE", "SHe", "ShE", "She", "hOL", "hOl",
+        "hoL", "hol", "sHE", "sHe", "shE", "she", "ſHE", "ſHe", "ſhE", "ſhe",
+    ]);
+
+    sherlock!(name_alt5, 639, vec!["Sherlock", "Holmes", "Watson"]);
+
+    sherlock!(name_alt5_nocase, 1442, vec![
+        "HOL", "HOl", "HoL", "Hol", "SHE", "SHe", "ShE", "She", "WAT", "WAt",
+        "WaT", "Wat", "hOL", "hOl", "hoL", "hol", "sHE", "sHe", "shE", "she",
+        "wAT", "wAt", "waT", "wat", "ſHE", "ſHe", "ſhE", "ſhe",
+    ]);
 }

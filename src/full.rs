@@ -79,7 +79,8 @@ impl<P: AsRef<[u8]>> FullAcAutomaton<P> {
 impl<P: AsRef<[u8]>> Automaton<P> for FullAcAutomaton<P> {
     #[inline]
     fn next_state(&self, si: StateIdx, i: u8) -> StateIdx {
-        self.trans[i as usize * self.num_states() + si as usize]
+        let at = i as usize * self.num_states() + si as usize;
+        unsafe { *self.trans.get_unchecked(at) }
     }
 
     #[inline]
@@ -96,7 +97,7 @@ impl<P: AsRef<[u8]>> Automaton<P> for FullAcAutomaton<P> {
 
     #[inline]
     fn has_match(&self, si: StateIdx, outi: usize) -> bool {
-        outi < self.out[si as usize].len()
+        unsafe { outi < self.out.get_unchecked(si as usize).len() }
     }
 
     #[inline]
