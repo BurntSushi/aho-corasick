@@ -328,6 +328,13 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
                 self.start_bytes.push(c);
             }
         }
+        // If any of the start bytes are non-ASCII, then remove them all,
+        // because we don't want to be calling memchr on non-ASCII bytes.
+        // (Well, we could, but it requires being more clever. Simply using
+        // the prefix byte isn't good enough.)
+        if self.start_bytes.iter().any(|&b| b > 0x7F) {
+            self.start_bytes.clear();
+        }
         self.pats = pats;
         self.fill()
     }
@@ -590,7 +597,6 @@ mod tests {
     use std::io;
 
     use quickcheck::{Arbitrary, Gen, quickcheck};
-    use rand::Rng;
 
     use super::{Automaton, AcAutomaton, Match};
 
