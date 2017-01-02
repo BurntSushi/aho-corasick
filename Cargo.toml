@@ -20,13 +20,13 @@ doc = false
 bench = false
 
 [dependencies]
-memchr = "0.1.9"
+memchr = "1"
 
 [dev-dependencies]
-csv = "0.14"
+csv = "0.15"
 docopt = "0.6"
 memmap = "0.2"
-quickcheck = "0.2"
+quickcheck = { version = "0.4", default-features = false }
 rand = "0.3"
 rustc-serialize = "0.3"
 
