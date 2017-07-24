@@ -11,6 +11,9 @@ keywords = ["string", "search", "text", "aho", "corasick"]
 license = "Unlicense/MIT"
 exclude = ["benches/sherlock.txt"]
 
+[badges]
+travis-ci = { repository = "BurntSushi/aho-corasick" }
+
 [lib]
 name = "aho_corasick"
 
