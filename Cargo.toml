@@ -27,11 +27,12 @@ memchr = "1"
 
 [dev-dependencies]
 csv = "0.15"
-docopt = "0.7"
+docopt = "0.8"
 memmap = "0.5"
 quickcheck = { version = "0.4", default-features = false }
 rand = "0.3"
-rustc-serialize = "0.3"
+serde = "1.0"
+serde_derive = "1.0"
 
 [[bench]]
 name = "bench"

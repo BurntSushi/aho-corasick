@@ -5,7 +5,8 @@ extern crate aho_corasick;
 extern crate csv;
 extern crate docopt;
 extern crate memmap;
-extern crate rustc_serialize;
+#[macro_use]
+extern crate serde_derive;
 
 use std::error::Error;
 use std::fs::File;
@@ -33,7 +34,7 @@ Options:
     -h, --help                 Show this usage message.
 ";
 
-#[derive(Clone, Debug, RustcDecodable)]
+#[derive(Clone, Debug, Deserialize)]
 struct Args {
     arg_input: String,
     flag_dict: String,
@@ -46,7 +47,7 @@ struct Args {
 
 fn main() {
     let args: Args = Docopt::new(USAGE)
-                            .and_then(|d| d.decode())
+                            .and_then(|d| d.deserialize())
                             .unwrap_or_else(|e| e.exit());
     match run(&args) {
         Ok(()) => {}
