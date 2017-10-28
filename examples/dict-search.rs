@@ -14,7 +14,7 @@ use std::process;
 
 use aho_corasick::{Automaton, AcAutomaton, Match};
 use docopt::Docopt;
-use memmap::{Mmap, Protection};
+use memmap::Mmap;
 
 static USAGE: &'static str = "
 Usage: dict-search [options] <input>
@@ -70,48 +70,37 @@ fn run(args: &Args) -> Result<(), Box<Error>> {
         return Ok(());
     }
 
+    let rdr = try!(File::open(&args.arg_input));
     if args.flag_full {
         let aut = aut.into_full();
         if args.flag_overlapping {
             if args.flag_count {
-                let mmap = Mmap::open_path(
-                    &args.arg_input, Protection::Read).unwrap();
-                let text = unsafe { mmap.as_slice() };
-                println!("{}", aut.find_overlapping(text).count());
+                let mmap = unsafe { try!(Mmap::map(&rdr)) };
+                println!("{}", aut.find_overlapping(&*mmap).count());
             } else {
-                let rdr = try!(File::open(&args.arg_input));
                 try!(write_matches(&aut, aut.stream_find_overlapping(rdr)));
             }
         } else {
             if args.flag_count {
-                let mmap = Mmap::open_path(
-                    &args.arg_input, Protection::Read).unwrap();
-                let text = unsafe { mmap.as_slice() };
-                println!("{}", aut.find(text).count());
+                let mmap = unsafe { try!(Mmap::map(&rdr)) };
+                println!("{}", aut.find(&*mmap).count());
             } else {
-                let rdr = try!(File::open(&args.arg_input));
                 try!(write_matches(&aut, aut.stream_find(rdr)));
             }
         }
     } else {
         if args.flag_overlapping {
             if args.flag_count {
-                let mmap = Mmap::open_path(
-                    &args.arg_input, Protection::Read).unwrap();
-                let text = unsafe { mmap.as_slice() };
-                println!("{}", aut.find_overlapping(text).count());
+                let mmap = unsafe { try!(Mmap::map(&rdr)) };
+                println!("{}", aut.find_overlapping(&*mmap).count());
             } else {
-                let rdr = try!(File::open(&args.arg_input));
                 try!(write_matches(&aut, aut.stream_find_overlapping(rdr)));
             }
         } else {
             if args.flag_count {
-                let mmap = Mmap::open_path(
-                    &args.arg_input, Protection::Read).unwrap();
-                let text = unsafe { mmap.as_slice() };
-                println!("{}", aut.find(text).count());
+                let mmap = unsafe { try!(Mmap::map(&rdr)) };
+                println!("{}", aut.find(&*mmap).count());
             } else {
-                let rdr = try!(File::open(&args.arg_input));
                 try!(write_matches(&aut, aut.stream_find(rdr)));
             }
         }
