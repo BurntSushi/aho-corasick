@@ -23,7 +23,7 @@ doc = false
 bench = false
 
 [dependencies]
-memchr = "1"
+memchr = "2"
 
 [dev-dependencies]
 csv = "0.15"
