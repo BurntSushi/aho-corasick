@@ -22,8 +22,12 @@ test = false
 doc = false
 bench = false
 
+[features]
+default = ["use_std"]
+use_std = ["memchr/use_std"]
+
 [dependencies]
-memchr = "2"
+memchr = { version = "2", default-features = false }
 
 [dev-dependencies]
 csv = "0.15"
