@@ -5,7 +5,9 @@ extern crate aho_corasick;
 extern crate csv;
 extern crate docopt;
 extern crate memmap;
-extern crate rustc_serialize;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 
 use std::error::Error;
 use std::fs::File;
@@ -33,7 +35,7 @@ Options:
     -h, --help                 Show this usage message.
 ";
 
-#[derive(Clone, Debug, RustcDecodable)]
+#[derive(Clone, Debug, Deserialize)]
 struct Args {
     arg_input: String,
     flag_dict: String,
@@ -46,7 +48,7 @@ struct Args {
 
 fn main() {
     let args: Args = Docopt::new(USAGE)
-                            .and_then(|d| d.decode())
+                            .and_then(|d| d.deserialize())
                             .unwrap_or_else(|e| e.exit());
     match run(&args) {
         Ok(()) => {}
@@ -111,14 +113,10 @@ fn run(args: &Args) -> Result<(), Box<Error>> {
 fn write_matches<A, I>(aut: &A, it: I) -> Result<(), Box<Error>>
         where A: Automaton<String>, I: Iterator<Item=io::Result<Match>> {
     let mut wtr = csv::Writer::from_writer(io::stdout());
-    try!(wtr.write(["pattern", "start", "end"].iter()));
+    try!(wtr.serialize(("pattern", "start", "end")));
     for m in it {
         let m = try!(m);
-        try!(wtr.write([
-            aut.pattern(m.pati),
-            &m.start.to_string(),
-            &m.end.to_string(),
-        ].iter()));
+        try!(wtr.serialize((aut.pattern(m.pati), m.start, m.end)));
     }
     try!(wtr.flush());
     Ok(())
