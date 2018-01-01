@@ -18,6 +18,7 @@ name = "aho_corasick"
 
 [[bin]]
 name = "aho-corasick-dot"
+path = "src/main.rs"
 test = false
 doc = false
 bench = false
@@ -26,12 +27,13 @@ bench = false
 memchr = "2"
 
 [dev-dependencies]
-csv = "0.15"
-docopt = "0.7"
+csv = "1.0.0-beta.5"
+docopt = "0.8"
 memmap = "0.6"
 quickcheck = { version = "0.6", default-features = false }
 rand = "0.4"
-rustc-serialize = "0.3"
+serde = "1"
+serde_derive = "1"
 
 [[bench]]
 name = "bench"
