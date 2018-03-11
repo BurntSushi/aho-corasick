@@ -121,8 +121,8 @@ assert_eq!(matches, vec![Match { pati: 1, start: 0, end: 1}]);
 #![deny(missing_docs)]
 
 extern crate memchr;
-#[cfg(test)] extern crate quickcheck;
-#[cfg(test)] extern crate rand;
+#[cfg(test)]
+extern crate quickcheck;
 
 use std::collections::VecDeque;
 use std::fmt;
