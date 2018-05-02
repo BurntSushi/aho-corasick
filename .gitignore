@@ -1,4 +1,5 @@
 .*.swp
+.idea
 doc
 tags
 examples/ss10pusa.csv

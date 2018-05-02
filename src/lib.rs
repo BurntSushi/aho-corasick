@@ -64,7 +64,7 @@ Finally, there are also methods for finding matches on *streams*. Namely, the
 search text does not have to live in memory. It's useful to run this on files
 that can't fit into memory:
 
-```no_run
+```ignore
 use std::fs::File;
 
 use aho_corasick::{Automaton, AcAutomaton};
@@ -119,15 +119,47 @@ assert_eq!(matches, vec![Match { pati: 1, start: 0, end: 1}]);
 */
 
 #![deny(missing_docs)]
+#![cfg_attr(not(feature = "use_std"), no_std)]
+#![cfg_attr(not(feature = "use_std"), feature(alloc))]
+#![cfg_attr(not(feature = "use_std"), feature(slice_concat_ext))]
+
+#[macro_use]
+extern crate cfg_if;
+
+#[cfg(all(test, not(feature = "use_std")))]
+#[macro_use]
+extern crate std;
+
+#[cfg(not(feature = "use_std"))]
+#[macro_use]
+extern crate alloc;
+
+#[cfg(not(feature = "use_std"))]
+extern crate core_io as io;
 
 extern crate memchr;
 #[cfg(test)]
 extern crate quickcheck;
 
-use std::collections::VecDeque;
-use std::fmt;
-use std::iter::FromIterator;
-use std::mem;
+cfg_if! {
+    if #[cfg(feature = "use_std")] {
+        use std::collections::VecDeque;
+        use std::string::String;
+        use std::vec::Vec;
+        use std::fmt;
+        use std::iter::FromIterator;
+        use std::mem;
+    } else {
+        use alloc::slice::SliceConcatExt;
+        use alloc::string::String;
+        use alloc::vec_deque::VecDeque;
+        use alloc::vec::Vec;
+        use core::fmt;
+        use core::iter::FromIterator;
+        use core::mem;
+    }
+}
+
 
 pub use self::autiter::{
     Automaton, Match,
@@ -507,7 +539,10 @@ impl<S: AsRef<[u8]>> FromIterator<S> for AcAutomaton<S> {
 impl<P: AsRef<[u8]> + fmt::Debug, T: Transitions>
         fmt::Debug for AcAutomaton<P, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        #[cfg(feature = "use_std")]
         use std::iter::repeat;
+        #[cfg(not(feature = "use_std"))]
+        use core::iter::repeat;
 
         try!(writeln!(f, "{}", repeat('-').take(79).collect::<String>()));
         try!(writeln!(f, "Patterns: {:?}", self.pats));
@@ -525,7 +560,10 @@ impl<T: Transitions> State<T> {
     }
 
     fn goto_string(&self, root: bool) -> String {
+        #[cfg(feature = "use_std")]
         use std::char::from_u32;
+        #[cfg(not(feature = "use_std"))]
+        use core::char::from_u32;
 
         let mut goto = vec![];
         for b in (0..256).map(|b| b as u8) {
@@ -548,7 +586,10 @@ impl<T: Transitions> fmt::Debug for State<T> {
 impl<T: Transitions> AcAutomaton<String, T> {
     #[doc(hidden)]
     pub fn dot(&self) -> String {
+        #[cfg(feature = "use_std")]
         use std::fmt::Write;
+        #[cfg(not(feature = "use_std"))]
+        use core::fmt::Write;
         let mut out = String::new();
         macro_rules! w {
             ($w:expr, $($tt:tt)*) => { {write!($w, $($tt)*)}.unwrap() }
@@ -593,8 +634,20 @@ fn usize_bytes() -> usize {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
-    use std::io;
+    cfg_if! {
+        if #[cfg(feature = "use_std")] {
+            use std::boxed::Box;
+            use std::collections::HashSet;
+            use std::string::String;
+            use std::vec::Vec;
+            use std::io::Cursor;
+        } else {
+            use alloc::boxed::Box;
+            use alloc::string::String;
+            use alloc::vec::Vec;
+            use io::Cursor;
+        }
+    }
 
     use quickcheck::{Arbitrary, Gen, quickcheck};
 
@@ -607,7 +660,7 @@ mod tests {
 
     fn aut_finds<S>(xs: &[S], haystack: &str) -> Vec<Match>
             where S: Clone + AsRef<[u8]> {
-        let cur = io::Cursor::new(haystack.as_bytes());
+        let cur = Cursor::new(haystack.as_bytes());
         AcAutomaton::new(xs.to_vec())
             .stream_find(cur).map(|r| r.unwrap()).collect()
     }
@@ -619,7 +672,7 @@ mod tests {
 
     fn aut_findfs<S>(xs: &[S], haystack: &str) -> Vec<Match>
             where S: Clone + AsRef<[u8]> {
-        let cur = io::Cursor::new(haystack.as_bytes());
+        let cur = Cursor::new(haystack.as_bytes());
         AcAutomaton::new(xs.to_vec())
             .into_full()
             .stream_find(cur).map(|r| r.unwrap()).collect()
@@ -632,7 +685,7 @@ mod tests {
 
     fn aut_findos<S>(xs: &[S], haystack: &str) -> Vec<Match>
             where S: Clone + AsRef<[u8]> {
-        let cur = io::Cursor::new(haystack.as_bytes());
+        let cur = Cursor::new(haystack.as_bytes());
         AcAutomaton::new(xs.to_vec())
             .stream_find_overlapping(cur).map(|r| r.unwrap()).collect()
     }
@@ -645,7 +698,7 @@ mod tests {
 
     fn aut_findfos<S>(xs: &[S], haystack: &str) -> Vec<Match>
             where S: Clone + AsRef<[u8]> {
-        let cur = io::Cursor::new(haystack.as_bytes());
+        let cur = Cursor::new(haystack.as_bytes());
         AcAutomaton::new(xs.to_vec())
             .into_full()
             .stream_find_overlapping(cur).map(|r| r.unwrap()).collect()
@@ -909,6 +962,7 @@ mod tests {
         matches
     }
 
+    #[cfg(feature = "use_std")]
     #[test]
     fn qc_ac_equals_naive() {
         fn prop(needles: Vec<SmallAscii>, haystack: BiasAscii) -> bool {

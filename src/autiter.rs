@@ -1,5 +1,14 @@
-use std::io::{self, BufRead};
-use std::marker::PhantomData;
+cfg_if! {
+
+    if #[cfg(feature = "use_std")] {
+        use std::marker::PhantomData;
+        use std::io::{BufRead, BufReader, Read, Result as IoResult};
+    } else {
+        use core::marker::PhantomData;
+        use io::{BufRead, BufReader, Read, Result as IoResult};
+    }
+}
+
 
 use memchr::{memchr, memchr2, memchr3};
 
@@ -77,14 +86,14 @@ pub trait Automaton<P> {
     }
 
     /// Returns an iterator of non-overlapping matches in the given reader.
-    fn stream_find<'a, R: io::Read>(
+    fn stream_find<'a, R: Read>(
         &'a self,
         rdr: R,
     ) -> StreamMatches<'a, R, P, Self>
     where Self: Sized {
         StreamMatches {
             aut: self,
-            buf: io::BufReader::new(rdr),
+            buf: BufReader::new(rdr),
             texti: 0,
             si: ROOT_STATE,
             _m: PhantomData,
@@ -92,14 +101,14 @@ pub trait Automaton<P> {
     }
 
     /// Returns an iterator of overlapping matches in the given reader.
-    fn stream_find_overlapping<'a, R: io::Read>(
+    fn stream_find_overlapping<'a, R: Read>(
         &'a self,
         rdr: R,
     ) -> StreamMatchesOverlapping<'a, R, P, Self>
     where Self: Sized {
         StreamMatchesOverlapping {
             aut: self,
-            buf: io::BufReader::new(rdr),
+            buf: BufReader::new(rdr),
             texti: 0,
             si: ROOT_STATE,
             outi: 0,
@@ -364,17 +373,17 @@ impl<'a, 's, P, A: Automaton<P> + ?Sized> Iterator for Matches<'a, 's, P, A> {
 #[derive(Debug)]
 pub struct StreamMatches<'a, R, P, A: 'a + Automaton<P> + ?Sized> {
     aut: &'a A,
-    buf: io::BufReader<R>,
+    buf: BufReader<R>,
     texti: usize,
     si: StateIdx,
     _m: PhantomData<P>,
 }
 
-impl<'a, R: io::Read, P, A: Automaton<P>>
+impl<'a, R: Read, P, A: Automaton<P>>
         Iterator for StreamMatches<'a, R, P, A> {
-    type Item = io::Result<Match>;
+    type Item = IoResult<Match>;
 
-    fn next(&mut self) -> Option<io::Result<Match>> {
+    fn next(&mut self) -> Option<IoResult<Match>> {
         let mut m = None;
         let mut consumed = 0;
 'LOOP:  loop {
@@ -478,18 +487,18 @@ impl<'a, 's, P, A: Automaton<P> + ?Sized>
 #[derive(Debug)]
 pub struct StreamMatchesOverlapping<'a, R, P, A: 'a + Automaton<P> + ?Sized> {
     aut: &'a A,
-    buf: io::BufReader<R>,
+    buf: BufReader<R>,
     texti: usize,
     si: StateIdx,
     outi: usize,
     _m: PhantomData<P>,
 }
 
-impl<'a, R: io::Read, P, A: Automaton<P> + ?Sized>
+impl<'a, R: Read, P, A: Automaton<P> + ?Sized>
         Iterator for StreamMatchesOverlapping<'a, R, P, A> {
-    type Item = io::Result<Match>;
+    type Item = IoResult<Match>;
 
-    fn next(&mut self) -> Option<io::Result<Match>> {
+    fn next(&mut self) -> Option<IoResult<Match>> {
         if self.aut.has_match(self.si, self.outi) {
             let m = self.aut.get_match(self.si, self.outi, self.texti);
             self.outi += 1;

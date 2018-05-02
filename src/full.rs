@@ -1,5 +1,14 @@
-use std::fmt;
-use std::mem;
+cfg_if! {
+    if #[cfg(feature = "use_std")] {
+        use std::vec::Vec;
+        use std::fmt;
+        use std::mem;
+    } else {
+        use alloc::vec::Vec;
+        use core::fmt;
+        use core::mem;
+    }
+}
 
 use super::{
     FAIL_STATE,

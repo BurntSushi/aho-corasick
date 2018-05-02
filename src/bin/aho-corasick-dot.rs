@@ -1,11 +1,7 @@
-extern crate memchr;
-
+extern crate aho_corasick;
 use std::env;
 
-use lib::AcAutomaton;
-
-#[allow(dead_code)]
-mod lib;
+use aho_corasick::AcAutomaton;
 
 fn main() {
     let aut = AcAutomaton::new(env::args().skip(1));

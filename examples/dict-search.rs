@@ -58,7 +58,12 @@ fn main() {
         }
     }
 }
+#[cfg(not(feature = "use_std"))]
+fn run(_: &Args) -> Result<(), Box<Error>> {
+   Err("The use_std feature is mandatory for the dict-search example to work".into())
+}
 
+#[cfg(feature = "use_std")]
 fn run(args: &Args) -> Result<(), Box<Error>> {
     let aut = try!(build_automaton(&args.flag_dict, args.flag_min_len));
     if args.flag_memory_usage {
@@ -110,6 +115,7 @@ fn run(args: &Args) -> Result<(), Box<Error>> {
     Ok(())
 }
 
+#[cfg(feature = "use_std")]
 fn write_matches<A, I>(aut: &A, it: I) -> Result<(), Box<Error>>
         where A: Automaton<String>, I: Iterator<Item=io::Result<Match>> {
     let mut wtr = csv::Writer::from_writer(io::stdout());
@@ -122,6 +128,7 @@ fn write_matches<A, I>(aut: &A, it: I) -> Result<(), Box<Error>>
     Ok(())
 }
 
+#[cfg(feature = "use_std")]
 fn build_automaton(
     dict_path: &str,
     min_len: usize,

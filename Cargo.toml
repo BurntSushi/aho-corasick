@@ -18,13 +18,16 @@ name = "aho_corasick"
 
 [[bin]]
 name = "aho-corasick-dot"
-path = "src/main.rs"
+path = "src/bin/aho-corasick-dot.rs"
 test = false
 doc = false
 bench = false
 
 [dependencies]
-memchr = "2"
+cfg-if = "0.1"
+memchr = { version = "2", default-features = false }
+# TODO - move to a non-specific-nightly-version-linked core io alternative
+core_io = { version = "0.1.20180307", optional = true, default-features = false, features = ["collections"] }
 
 [dev-dependencies]
 csv = "1.0.0-beta.5"
@@ -33,6 +36,12 @@ memmap = "0.6"
 quickcheck = { version = "0.6", default-features = false }
 serde = "1"
 serde_derive = "1"
+
+[features]
+
+default = ["use_std"]
+use_std = ["memchr/use_std", "memchr/libc"]
+alloc = ["core_io"]
 
 [[bench]]
 name = "bench"
