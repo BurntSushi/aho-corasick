@@ -26,12 +26,11 @@ bench = false
 [dependencies]
 cfg-if = "0.1"
 memchr = { version = "2", default-features = false }
-# TODO - move to a non-specific-nightly-version-linked core io alternative
-core_io = { version = "0.1.20180307", optional = true, default-features = false, features = ["collections"] }
 
 [dev-dependencies]
 csv = "1.0.0-beta.5"
 docopt = "0.8"
+hashmap_core = "0.1"
 memmap = "0.6"
 quickcheck = { version = "0.6", default-features = false }
 serde = "1"
@@ -39,9 +38,9 @@ serde_derive = "1"
 
 [features]
 
-default = ["use_std"]
-use_std = ["memchr/use_std", "memchr/libc"]
-alloc = ["core_io"]
+default = ["std"]
+std = ["memchr/use_std", "memchr/libc"]
+alloc = []
 
 [[bench]]
 name = "bench"

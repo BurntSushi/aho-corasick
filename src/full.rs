@@ -1,5 +1,5 @@
 cfg_if! {
-    if #[cfg(feature = "use_std")] {
+    if #[cfg(feature = "std")] {
         use std::vec::Vec;
         use std::fmt;
         use std::mem;

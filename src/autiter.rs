@@ -1,14 +1,11 @@
 cfg_if! {
-
-    if #[cfg(feature = "use_std")] {
+    if #[cfg(feature = "std")] {
+        use std::io::{self, BufRead};
         use std::marker::PhantomData;
-        use std::io::{BufRead, BufReader, Read, Result as IoResult};
     } else {
         use core::marker::PhantomData;
-        use io::{BufRead, BufReader, Read, Result as IoResult};
     }
 }
-
 
 use memchr::{memchr, memchr2, memchr3};
 
@@ -86,14 +83,17 @@ pub trait Automaton<P> {
     }
 
     /// Returns an iterator of non-overlapping matches in the given reader.
-    fn stream_find<'a, R: Read>(
+    ///
+    /// Only available when the feature flag "std" is present
+    #[cfg(feature = "std")]
+    fn stream_find<'a, R: io::Read>(
         &'a self,
         rdr: R,
     ) -> StreamMatches<'a, R, P, Self>
     where Self: Sized {
         StreamMatches {
             aut: self,
-            buf: BufReader::new(rdr),
+            buf: io::BufReader::new(rdr),
             texti: 0,
             si: ROOT_STATE,
             _m: PhantomData,
@@ -101,14 +101,17 @@ pub trait Automaton<P> {
     }
 
     /// Returns an iterator of overlapping matches in the given reader.
-    fn stream_find_overlapping<'a, R: Read>(
+    ///
+    /// Only available when the feature flag "std" is present
+    #[cfg(feature = "std")]
+    fn stream_find_overlapping<'a, R: io::Read>(
         &'a self,
         rdr: R,
     ) -> StreamMatchesOverlapping<'a, R, P, Self>
     where Self: Sized {
         StreamMatchesOverlapping {
             aut: self,
-            buf: BufReader::new(rdr),
+            buf: io::BufReader::new(rdr),
             texti: 0,
             si: ROOT_STATE,
             outi: 0,
@@ -370,20 +373,24 @@ impl<'a, 's, P, A: Automaton<P> + ?Sized> Iterator for Matches<'a, 's, P, A> {
 ///
 /// `'a` is the lifetime of the automaton, `R` is the type of the underlying
 /// `io::Read`er, and P is the type of the Automaton's pattern.
+///
+/// Only available when the feature flag "std" is present
+#[cfg(feature = "std")]
 #[derive(Debug)]
 pub struct StreamMatches<'a, R, P, A: 'a + Automaton<P> + ?Sized> {
     aut: &'a A,
-    buf: BufReader<R>,
+    buf: io::BufReader<R>,
     texti: usize,
     si: StateIdx,
     _m: PhantomData<P>,
 }
 
-impl<'a, R: Read, P, A: Automaton<P>>
+#[cfg(feature = "std")]
+impl<'a, R: io::Read, P, A: Automaton<P>>
         Iterator for StreamMatches<'a, R, P, A> {
-    type Item = IoResult<Match>;
+    type Item = io::Result<Match>;
 
-    fn next(&mut self) -> Option<IoResult<Match>> {
+    fn next(&mut self) -> Option<io::Result<Match>> {
         let mut m = None;
         let mut consumed = 0;
 'LOOP:  loop {
@@ -484,21 +491,25 @@ impl<'a, 's, P, A: Automaton<P> + ?Sized>
 ///
 /// `'a` is the lifetime of the automaton, `R` is the type of the underlying
 /// `io::Read`er, and P is the type of the Automaton's pattern.
+///
+/// Only available when the feature flag "std" is present
+#[cfg(feature = "std")]
 #[derive(Debug)]
 pub struct StreamMatchesOverlapping<'a, R, P, A: 'a + Automaton<P> + ?Sized> {
     aut: &'a A,
-    buf: BufReader<R>,
+    buf: io::BufReader<R>,
     texti: usize,
     si: StateIdx,
     outi: usize,
     _m: PhantomData<P>,
 }
 
-impl<'a, R: Read, P, A: Automaton<P> + ?Sized>
+#[cfg(feature = "std")]
+impl<'a, R: io::Read, P, A: Automaton<P> + ?Sized>
         Iterator for StreamMatchesOverlapping<'a, R, P, A> {
-    type Item = IoResult<Match>;
+    type Item = io::Result<Match>;
 
-    fn next(&mut self) -> Option<IoResult<Match>> {
+    fn next(&mut self) -> Option<io::Result<Match>> {
         if self.aut.has_match(self.si, self.outi) {
             let m = self.aut.get_match(self.si, self.outi, self.texti);
             self.outi += 1;
