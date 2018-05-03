@@ -85,6 +85,9 @@ Please see `dict-search.rs` in this crate's `examples` directory for a more
 complete example. It creates a large automaton from a dictionary and can do a
 streaming match over arbitrarily large data.
 
+Note that the streaming methods are only available when the "std" feature
+flag is present.
+
 # Memory usage
 
 A key aspect of an Aho-Corasick implementation is how the state transitions
@@ -116,6 +119,22 @@ let aut = AcAutomaton::<&str, Sparse>::with_transitions(vec!["abc", "a"]);
 let matches: Vec<_> = aut.find("abc").collect();
 assert_eq!(matches, vec![Match { pati: 1, start: 0, end: 1}]);
 ```
+
+## Use in no_std environments
+
+This library can function in `#![no_std]` environments that have access to
+a heap allocator. To do so, disable the library's default features
+(to remove the on-by-default "std" feature) and add the "alloc" feature.
+
+```toml
+[dependencies.aho_corasick]
+version = "*"
+default-features = false
+features = ["alloc"]
+```
+
+Presently using a nightly compiler toolchain is required for this option.
+
 */
 
 #![deny(missing_docs)]
@@ -129,9 +148,6 @@ extern crate cfg_if;
 #[cfg(all(test, not(feature = "std")))]
 #[macro_use]
 extern crate std;
-
-#[cfg(all(test, not(feature = "std")))]
-extern crate hashmap_core;
 
 #[cfg(not(feature = "std"))]
 #[macro_use]
@@ -638,22 +654,22 @@ fn usize_bytes() -> usize {
 
 #[cfg(test)]
 mod tests {
+    use quickcheck::{Arbitrary, Gen};
     cfg_if! {
         if #[cfg(feature = "std")] {
+            use quickcheck::quickcheck;
             use std::boxed::Box;
             use std::collections::HashSet;
+            use std::io::Cursor;
             use std::string::String;
             use std::vec::Vec;
-            use std::io::Cursor;
         } else {
             use alloc::boxed::Box;
             use alloc::string::String;
             use alloc::vec::Vec;
-            use hashmap_core::HashSet;
         }
     }
 
-    use quickcheck::{Arbitrary, Gen, quickcheck};
 
     use super::{Automaton, AcAutomaton, Match};
 
@@ -926,6 +942,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "std")]
     fn naive_find<S>(xs: &[S], haystack: &str) -> Vec<Match>
             where S: Clone + Into<String> {
         let needles: Vec<String> =
@@ -949,6 +966,7 @@ mod tests {
         matches
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn qc_ac_equals_naive() {
         fn prop(needles: Vec<SmallAscii>, haystack: BiasAscii) -> bool {

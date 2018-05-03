@@ -17,4 +17,5 @@ fi
 cargo test --verbose
 if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
   cargo bench --verbose --no-run
+  cargo test --verbose --no-default-features --features "alloc"
 fi
