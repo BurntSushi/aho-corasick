@@ -24,7 +24,6 @@ doc = false
 bench = false
 
 [dependencies]
-cfg-if = "0.1"
 memchr = { version = "2", default-features = false }
 
 [dev-dependencies]

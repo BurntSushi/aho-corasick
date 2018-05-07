@@ -139,17 +139,17 @@ Presently using a nightly compiler toolchain is required for this option.
 
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(not(feature = "std"), feature(alloc))]
-#![cfg_attr(not(feature = "std"), feature(slice_concat_ext))]
+#![cfg_attr(all(feature = "alloc", not(feature = "std")), feature(alloc))]
+#![cfg_attr(all(feature = "alloc", not(feature = "std")), feature(slice_concat_ext))]
 
+#[cfg(test)]
+extern crate std as std_test;
+
+#[cfg(feature = "std")]
 #[macro_use]
-extern crate cfg_if;
+extern crate std as core;
 
-#[cfg(all(test, not(feature = "std")))]
-#[macro_use]
-extern crate std;
-
-#[cfg(not(feature = "std"))]
+#[cfg(all(feature = "alloc", not(feature = "std")))]
 #[macro_use]
 extern crate alloc;
 
@@ -157,25 +157,19 @@ extern crate memchr;
 #[cfg(test)]
 extern crate quickcheck;
 
-cfg_if! {
-    if #[cfg(feature = "std")] {
-        use std::collections::VecDeque;
-        use std::string::String;
-        use std::vec::Vec;
-        use std::fmt;
-        use std::iter::FromIterator;
-        use std::mem;
-    } else {
-        use alloc::slice::SliceConcatExt;
-        use alloc::string::String;
-        use alloc::vec_deque::VecDeque;
-        use alloc::vec::Vec;
-        use core::fmt;
-        use core::iter::FromIterator;
-        use core::mem;
-    }
-}
+#[cfg(feature = "std")]
+use core::collections::VecDeque;
+#[cfg(feature = "std")]
+use core::prelude::v1::*;
 
+#[cfg(all(feature = "alloc", not(feature = "std")))]
+use alloc::slice::SliceConcatExt;
+#[cfg(all(feature = "alloc", not(feature = "std")))]
+use alloc::{String, Vec, VecDeque};
+
+use core::fmt;
+use core::iter::FromIterator;
+use core::mem;
 
 pub use self::autiter::{
     Automaton, Match,
@@ -655,21 +649,13 @@ fn usize_bytes() -> usize {
 #[cfg(test)]
 mod tests {
     use quickcheck::{Arbitrary, Gen};
-    cfg_if! {
-        if #[cfg(feature = "std")] {
-            use quickcheck::quickcheck;
-            use std::boxed::Box;
-            use std::collections::HashSet;
-            use std::io::Cursor;
-            use std::string::String;
-            use std::vec::Vec;
-        } else {
-            use alloc::boxed::Box;
-            use alloc::string::String;
-            use alloc::vec::Vec;
-        }
-    }
-
+    use std_test::prelude::v1::*;
+    #[cfg(feature = "std")]
+    use quickcheck::quickcheck;
+    #[cfg(feature = "std")]
+    use std::collections::HashSet;
+    #[cfg(feature = "std")]
+    use std::io::Cursor;
 
     use super::{Automaton, AcAutomaton, Match};
 
@@ -899,7 +885,7 @@ mod tests {
 
     impl Arbitrary for SmallAscii {
         fn arbitrary<G: Gen>(g: &mut G) -> SmallAscii {
-            use std::char::from_u32;
+            use core::char::from_u32;
             SmallAscii((0..2)
                        .map(|_| from_u32(g.gen_range(97, 123)).unwrap()) .collect()) }
         fn shrink(&self) -> Box<Iterator<Item=SmallAscii>> {
@@ -922,7 +908,7 @@ mod tests {
 
     impl Arbitrary for BiasAscii {
         fn arbitrary<G: Gen>(g: &mut G) -> BiasAscii {
-            use std::char::from_u32;
+            use core::char::from_u32;
             let size = { let s = g.size(); g.gen_range(0, s) };
             let mut s = String::with_capacity(size);
             for _ in 0..size {

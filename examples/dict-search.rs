@@ -8,23 +8,19 @@ extern crate memmap;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-#[macro_use]
-extern crate cfg_if;
-
-cfg_if! {
-    if #[cfg(feature = "std")] {
-        use std::fs::File;
-        use std::io::BufRead;
-        use aho_corasick::{Automaton, AcAutomaton, Match};
-        use memmap::Mmap;
-    }
-}
+#[cfg(feature = "std")]
+use std::fs::File;
+#[cfg(feature = "std")]
+use std::io::BufRead;
+#[cfg(feature = "std")]
+use aho_corasick::{Automaton, AcAutomaton, Match};
+#[cfg(feature = "std")]
+use memmap::Mmap;
 use std::error::Error;
 use std::io::{self, Write};
 use std::process;
 
 use docopt::Docopt;
-
 static USAGE: &'static str = "
 Usage: dict-search [options] <input>
        dict-search --help

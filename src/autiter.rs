@@ -1,11 +1,6 @@
-cfg_if! {
-    if #[cfg(feature = "std")] {
-        use std::io::{self, BufRead};
-        use std::marker::PhantomData;
-    } else {
-        use core::marker::PhantomData;
-    }
-}
+#[cfg(feature = "std")]
+use core::io::{self, BufRead};
+use core::marker::PhantomData;
 
 use memchr::{memchr, memchr2, memchr3};
 

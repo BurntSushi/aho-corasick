@@ -1,14 +1,9 @@
-cfg_if! {
-    if #[cfg(feature = "std")] {
-        use std::vec::Vec;
-        use std::fmt;
-        use std::mem;
-    } else {
-        use alloc::vec::Vec;
-        use core::fmt;
-        use core::mem;
-    }
-}
+use core::fmt;
+use core::mem;
+#[cfg(feature = "std")]
+use std::vec::Vec;
+#[cfg(all(feature = "alloc", not(feature = "std")))]
+use alloc::vec::Vec;
 
 use super::{
     FAIL_STATE,
