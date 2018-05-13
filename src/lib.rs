@@ -64,7 +64,7 @@ Finally, there are also methods for finding matches on *streams*. Namely, the
 search text does not have to live in memory. It's useful to run this on files
 that can't fit into memory:
 
-```no_run
+```ignore
 use std::fs::File;
 
 use aho_corasick::{Automaton, AcAutomaton};
@@ -84,6 +84,9 @@ but it operates on streams.
 Please see `dict-search.rs` in this crate's `examples` directory for a more
 complete example. It creates a large automaton from a dictionary and can do a
 streaming match over arbitrarily large data.
+
+Note that the streaming methods are only available when the "std" feature
+flag is present.
 
 # Memory usage
 
@@ -116,22 +119,65 @@ let aut = AcAutomaton::<&str, Sparse>::with_transitions(vec!["abc", "a"]);
 let matches: Vec<_> = aut.find("abc").collect();
 assert_eq!(matches, vec![Match { pati: 1, start: 0, end: 1}]);
 ```
+
+## Use in no_std environments
+
+This library can function in `#![no_std]` environments that have access to
+a heap allocator. To do so, disable the library's default features
+(to remove the on-by-default "std" feature) and add the "alloc" feature.
+
+```toml
+[dependencies.aho_corasick]
+version = "*"
+default-features = false
+features = ["alloc"]
+```
+
+Presently using a nightly compiler toolchain is required for this option.
+
 */
 
 #![deny(missing_docs)]
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(all(feature = "alloc", not(feature = "std")), feature(alloc))]
+#![cfg_attr(all(feature = "alloc", not(feature = "std")), feature(slice_concat_ext))]
+
+#[cfg(test)]
+extern crate std as std_test;
+
+#[cfg(feature = "std")]
+#[macro_use]
+extern crate std as core;
+
+#[cfg(all(feature = "alloc", not(feature = "std")))]
+#[macro_use]
+extern crate alloc;
 
 extern crate memchr;
 #[cfg(test)]
 extern crate quickcheck;
 
-use std::collections::VecDeque;
-use std::fmt;
-use std::iter::FromIterator;
-use std::mem;
+#[cfg(feature = "std")]
+use core::collections::VecDeque;
+#[cfg(feature = "std")]
+use core::prelude::v1::*;
+
+#[cfg(all(feature = "alloc", not(feature = "std")))]
+use alloc::slice::SliceConcatExt;
+#[cfg(all(feature = "alloc", not(feature = "std")))]
+use alloc::{String, Vec, VecDeque};
+
+use core::fmt;
+use core::iter::FromIterator;
+use core::mem;
 
 pub use self::autiter::{
     Automaton, Match,
-    Matches, MatchesOverlapping, StreamMatches, StreamMatchesOverlapping,
+    Matches, MatchesOverlapping,
+};
+#[cfg(feature = "std")]
+pub use self::autiter::{
+    StreamMatches, StreamMatchesOverlapping
 };
 pub use self::full::FullAcAutomaton;
 
@@ -507,7 +553,10 @@ impl<S: AsRef<[u8]>> FromIterator<S> for AcAutomaton<S> {
 impl<P: AsRef<[u8]> + fmt::Debug, T: Transitions>
         fmt::Debug for AcAutomaton<P, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        #[cfg(feature = "std")]
         use std::iter::repeat;
+        #[cfg(not(feature = "std"))]
+        use core::iter::repeat;
 
         try!(writeln!(f, "{}", repeat('-').take(79).collect::<String>()));
         try!(writeln!(f, "Patterns: {:?}", self.pats));
@@ -525,7 +574,10 @@ impl<T: Transitions> State<T> {
     }
 
     fn goto_string(&self, root: bool) -> String {
+        #[cfg(feature = "std")]
         use std::char::from_u32;
+        #[cfg(not(feature = "std"))]
+        use core::char::from_u32;
 
         let mut goto = vec![];
         for b in (0..256).map(|b| b as u8) {
@@ -548,7 +600,10 @@ impl<T: Transitions> fmt::Debug for State<T> {
 impl<T: Transitions> AcAutomaton<String, T> {
     #[doc(hidden)]
     pub fn dot(&self) -> String {
+        #[cfg(feature = "std")]
         use std::fmt::Write;
+        #[cfg(not(feature = "std"))]
+        use core::fmt::Write;
         let mut out = String::new();
         macro_rules! w {
             ($w:expr, $($tt:tt)*) => { {write!($w, $($tt)*)}.unwrap() }
@@ -593,10 +648,14 @@ fn usize_bytes() -> usize {
 
 #[cfg(test)]
 mod tests {
+    use quickcheck::{Arbitrary, Gen};
+    use std_test::prelude::v1::*;
+    #[cfg(feature = "std")]
+    use quickcheck::quickcheck;
+    #[cfg(feature = "std")]
     use std::collections::HashSet;
-    use std::io;
-
-    use quickcheck::{Arbitrary, Gen, quickcheck};
+    #[cfg(feature = "std")]
+    use std::io::Cursor;
 
     use super::{Automaton, AcAutomaton, Match};
 
@@ -605,9 +664,10 @@ mod tests {
         AcAutomaton::new(xs.to_vec()).find(&haystack).collect()
     }
 
+    #[cfg(feature = "std")]
     fn aut_finds<S>(xs: &[S], haystack: &str) -> Vec<Match>
             where S: Clone + AsRef<[u8]> {
-        let cur = io::Cursor::new(haystack.as_bytes());
+        let cur = Cursor::new(haystack.as_bytes());
         AcAutomaton::new(xs.to_vec())
             .stream_find(cur).map(|r| r.unwrap()).collect()
     }
@@ -617,9 +677,10 @@ mod tests {
         AcAutomaton::new(xs.to_vec()).into_full().find(haystack).collect()
     }
 
+    #[cfg(feature = "std")]
     fn aut_findfs<S>(xs: &[S], haystack: &str) -> Vec<Match>
             where S: Clone + AsRef<[u8]> {
-        let cur = io::Cursor::new(haystack.as_bytes());
+        let cur = Cursor::new(haystack.as_bytes());
         AcAutomaton::new(xs.to_vec())
             .into_full()
             .stream_find(cur).map(|r| r.unwrap()).collect()
@@ -630,9 +691,10 @@ mod tests {
         AcAutomaton::new(xs.to_vec()).find_overlapping(haystack).collect()
     }
 
+    #[cfg(feature = "std")]
     fn aut_findos<S>(xs: &[S], haystack: &str) -> Vec<Match>
             where S: Clone + AsRef<[u8]> {
-        let cur = io::Cursor::new(haystack.as_bytes());
+        let cur = Cursor::new(haystack.as_bytes());
         AcAutomaton::new(xs.to_vec())
             .stream_find_overlapping(cur).map(|r| r.unwrap()).collect()
     }
@@ -643,9 +705,10 @@ mod tests {
             .into_full().find_overlapping(haystack).collect()
     }
 
+    #[cfg(feature = "std")]
     fn aut_findfos<S>(xs: &[S], haystack: &str) -> Vec<Match>
             where S: Clone + AsRef<[u8]> {
-        let cur = io::Cursor::new(haystack.as_bytes());
+        let cur = Cursor::new(haystack.as_bytes());
         AcAutomaton::new(xs.to_vec())
             .into_full()
             .stream_find_overlapping(cur).map(|r| r.unwrap()).collect()
@@ -658,10 +721,25 @@ mod tests {
         let matches = vec![
             Match { pati: 0, start: 1, end: 2 },
         ];
+        assert_finds_equivalent(ns, hay, matches);
+    }
+
+    fn assert_finds_equivalent(ns: Vec<&str>, hay: &str, matches: Vec<Match>) {
         assert_eq!(&aut_find(&ns, hay), &matches);
+        #[cfg(feature = "std")]
         assert_eq!(&aut_finds(&ns, hay), &matches);
         assert_eq!(&aut_findf(&ns, hay), &matches);
+        #[cfg(feature = "std")]
         assert_eq!(&aut_findfs(&ns, hay), &matches);
+    }
+
+    fn assert_overlapping_finds_equivalent(ns: Vec<&str>, hay: &str, matches: Vec<Match>) {
+        assert_eq!(&aut_findo(&ns, hay), &matches);
+        #[cfg(feature = "std")]
+        assert_eq!(&aut_findos(&ns, hay), &matches);
+        assert_eq!(&aut_findfo(&ns, hay), &matches);
+        #[cfg(feature = "std")]
+        assert_eq!(&aut_findfos(&ns, hay), &matches);
     }
 
     #[test]
@@ -673,10 +751,7 @@ mod tests {
             Match { pati: 0, start: 3, end: 4 },
             Match { pati: 0, start: 8, end: 9 },
         ];
-        assert_eq!(&aut_find(&ns, hay), &matches);
-        assert_eq!(&aut_finds(&ns, hay), &matches);
-        assert_eq!(&aut_findf(&ns, hay), &matches);
-        assert_eq!(&aut_findfs(&ns, hay), &matches);
+        assert_finds_equivalent(ns, hay, matches);
     }
 
     #[test]
@@ -684,10 +759,7 @@ mod tests {
         let ns = vec!["abc"];
         let hay = "zazabcz";
         let matches = vec![ Match { pati: 0, start: 3, end: 6 } ];
-        assert_eq!(&aut_find(&ns, hay), &matches);
-        assert_eq!(&aut_finds(&ns, hay), &matches);
-        assert_eq!(&aut_findf(&ns, hay), &matches);
-        assert_eq!(&aut_findfs(&ns, hay), &matches);
+        assert_finds_equivalent(ns, hay, matches);
     }
 
     #[test]
@@ -698,10 +770,7 @@ mod tests {
             Match { pati: 0, start: 3, end: 6 },
             Match { pati: 0, start: 14, end: 17 },
         ];
-        assert_eq!(&aut_find(&ns, hay), &matches);
-        assert_eq!(&aut_finds(&ns, hay), &matches);
-        assert_eq!(&aut_findf(&ns, hay), &matches);
-        assert_eq!(&aut_findfs(&ns, hay), &matches);
+        assert_finds_equivalent(ns, hay, matches);
     }
 
     #[test]
@@ -709,10 +778,7 @@ mod tests {
         let ns = vec!["a", "b"];
         let hay = "zb";
         let matches = vec![ Match { pati: 1, start: 1, end: 2 } ];
-        assert_eq!(&aut_find(&ns, hay), &matches);
-        assert_eq!(&aut_finds(&ns, hay), &matches);
-        assert_eq!(&aut_findf(&ns, hay), &matches);
-        assert_eq!(&aut_findfs(&ns, hay), &matches);
+        assert_finds_equivalent(ns, hay, matches);
     }
 
     #[test]
@@ -724,10 +790,7 @@ mod tests {
             Match { pati: 0, start: 3, end: 4 },
             Match { pati: 1, start: 8, end: 9 },
         ];
-        assert_eq!(&aut_find(&ns, hay), &matches);
-        assert_eq!(&aut_finds(&ns, hay), &matches);
-        assert_eq!(&aut_findf(&ns, hay), &matches);
-        assert_eq!(&aut_findfs(&ns, hay), &matches);
+        assert_finds_equivalent(ns, hay, matches);
     }
 
     #[test]
@@ -735,10 +798,7 @@ mod tests {
         let ns = vec!["abc", "xyz"];
         let hay = "zazxyzz";
         let matches = vec![ Match { pati: 1, start: 3, end: 6 } ];
-        assert_eq!(&aut_find(&ns, hay), &matches);
-        assert_eq!(&aut_finds(&ns, hay), &matches);
-        assert_eq!(&aut_findf(&ns, hay), &matches);
-        assert_eq!(&aut_findfs(&ns, hay), &matches);
+        assert_finds_equivalent(ns, hay, matches);
     }
 
     #[test]
@@ -750,10 +810,7 @@ mod tests {
             Match { pati: 0, start: 14, end: 17 },
             Match { pati: 1, start: 17, end: 20 },
         ];
-        assert_eq!(&aut_find(&ns, hay), &matches);
-        assert_eq!(&aut_finds(&ns, hay), &matches);
-        assert_eq!(&aut_findf(&ns, hay), &matches);
-        assert_eq!(&aut_findfs(&ns, hay), &matches);
+        assert_finds_equivalent(ns, hay, matches);
     }
 
     #[test]
@@ -764,10 +821,7 @@ mod tests {
             Match { pati: 0, start: 3, end: 6 },
             Match { pati: 1, start: 4, end: 6 },
         ];
-        assert_eq!(&aut_findo(&ns, hay), &matches);
-        assert_eq!(&aut_findos(&ns, hay), &matches);
-        assert_eq!(&aut_findfo(&ns, hay), &matches);
-        assert_eq!(&aut_findfos(&ns, hay), &matches);
+        assert_overlapping_finds_equivalent(ns, hay, matches);
     }
 
     #[test]
@@ -775,10 +829,7 @@ mod tests {
         let ns = vec!["abc", "bc"];
         let hay = "xbc";
         let matches = vec![ Match { pati: 1, start: 1, end: 3 } ];
-        assert_eq!(&aut_findo(&ns, hay), &matches);
-        assert_eq!(&aut_findos(&ns, hay), &matches);
-        assert_eq!(&aut_findfo(&ns, hay), &matches);
-        assert_eq!(&aut_findfos(&ns, hay), &matches);
+        assert_overlapping_finds_equivalent(ns, hay, matches);
     }
 
     #[test]
@@ -793,10 +844,7 @@ mod tests {
             Match { pati: 2, start: 10, end: 11 },
             Match { pati: 2, start: 14, end: 15 },
         ];
-        assert_eq!(&aut_findo(&ns, hay), &matches);
-        assert_eq!(&aut_findos(&ns, hay), &matches);
-        assert_eq!(&aut_findfo(&ns, hay), &matches);
-        assert_eq!(&aut_findfos(&ns, hay), &matches);
+        assert_overlapping_finds_equivalent(ns, hay, matches);
     }
 
     #[test]
@@ -811,10 +859,7 @@ mod tests {
             Match { pati: 1, start: 13, end: 15 },
             Match { pati: 2, start: 14, end: 15 },
         ];
-        assert_eq!(&aut_findo(&ns, hay), &matches);
-        assert_eq!(&aut_findos(&ns, hay), &matches);
-        assert_eq!(&aut_findfo(&ns, hay), &matches);
-        assert_eq!(&aut_findfos(&ns, hay), &matches);
+        assert_overlapping_finds_equivalent(ns, hay, matches);
     }
 
     #[test]
@@ -840,12 +885,9 @@ mod tests {
 
     impl Arbitrary for SmallAscii {
         fn arbitrary<G: Gen>(g: &mut G) -> SmallAscii {
-            use std::char::from_u32;
+            use core::char::from_u32;
             SmallAscii((0..2)
-                       .map(|_| from_u32(g.gen_range(97, 123)).unwrap())
-                       .collect())
-        }
-
+                       .map(|_| from_u32(g.gen_range(97, 123)).unwrap()) .collect()) }
         fn shrink(&self) -> Box<Iterator<Item=SmallAscii>> {
             Box::new(self.0.shrink().map(SmallAscii))
         }
@@ -866,7 +908,7 @@ mod tests {
 
     impl Arbitrary for BiasAscii {
         fn arbitrary<G: Gen>(g: &mut G) -> BiasAscii {
-            use std::char::from_u32;
+            use core::char::from_u32;
             let size = { let s = g.size(); g.gen_range(0, s) };
             let mut s = String::with_capacity(size);
             for _ in 0..size {
@@ -886,6 +928,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "std")]
     fn naive_find<S>(xs: &[S], haystack: &str) -> Vec<Match>
             where S: Clone + Into<String> {
         let needles: Vec<String> =
@@ -909,6 +952,7 @@ mod tests {
         matches
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn qc_ac_equals_naive() {
         fn prop(needles: Vec<SmallAscii>, haystack: BiasAscii) -> bool {

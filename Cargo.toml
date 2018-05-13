@@ -18,13 +18,13 @@ name = "aho_corasick"
 
 [[bin]]
 name = "aho-corasick-dot"
-path = "src/main.rs"
+path = "src/bin/aho-corasick-dot.rs"
 test = false
 doc = false
 bench = false
 
 [dependencies]
-memchr = "2"
+memchr = { version = "2", default-features = false }
 
 [dev-dependencies]
 csv = "1"
@@ -33,6 +33,12 @@ memmap = "0.6"
 quickcheck = { version = "0.6", default-features = false }
 serde = "1"
 serde_derive = "1"
+
+[features]
+
+default = ["std"]
+std = ["memchr/use_std", "memchr/libc"]
+alloc = []
 
 [[bench]]
 name = "bench"

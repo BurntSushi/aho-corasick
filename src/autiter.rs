@@ -1,5 +1,6 @@
-use std::io::{self, BufRead};
-use std::marker::PhantomData;
+#[cfg(feature = "std")]
+use core::io::{self, BufRead};
+use core::marker::PhantomData;
 
 use memchr::{memchr, memchr2, memchr3};
 
@@ -77,6 +78,9 @@ pub trait Automaton<P> {
     }
 
     /// Returns an iterator of non-overlapping matches in the given reader.
+    ///
+    /// Only available when the feature flag "std" is present
+    #[cfg(feature = "std")]
     fn stream_find<'a, R: io::Read>(
         &'a self,
         rdr: R,
@@ -92,6 +96,9 @@ pub trait Automaton<P> {
     }
 
     /// Returns an iterator of overlapping matches in the given reader.
+    ///
+    /// Only available when the feature flag "std" is present
+    #[cfg(feature = "std")]
     fn stream_find_overlapping<'a, R: io::Read>(
         &'a self,
         rdr: R,
@@ -361,6 +368,9 @@ impl<'a, 's, P, A: Automaton<P> + ?Sized> Iterator for Matches<'a, 's, P, A> {
 ///
 /// `'a` is the lifetime of the automaton, `R` is the type of the underlying
 /// `io::Read`er, and P is the type of the Automaton's pattern.
+///
+/// Only available when the feature flag "std" is present
+#[cfg(feature = "std")]
 #[derive(Debug)]
 pub struct StreamMatches<'a, R, P, A: 'a + Automaton<P> + ?Sized> {
     aut: &'a A,
@@ -370,6 +380,7 @@ pub struct StreamMatches<'a, R, P, A: 'a + Automaton<P> + ?Sized> {
     _m: PhantomData<P>,
 }
 
+#[cfg(feature = "std")]
 impl<'a, R: io::Read, P, A: Automaton<P>>
         Iterator for StreamMatches<'a, R, P, A> {
     type Item = io::Result<Match>;
@@ -475,6 +486,9 @@ impl<'a, 's, P, A: Automaton<P> + ?Sized>
 ///
 /// `'a` is the lifetime of the automaton, `R` is the type of the underlying
 /// `io::Read`er, and P is the type of the Automaton's pattern.
+///
+/// Only available when the feature flag "std" is present
+#[cfg(feature = "std")]
 #[derive(Debug)]
 pub struct StreamMatchesOverlapping<'a, R, P, A: 'a + Automaton<P> + ?Sized> {
     aut: &'a A,
@@ -485,6 +499,7 @@ pub struct StreamMatchesOverlapping<'a, R, P, A: 'a + Automaton<P> + ?Sized> {
     _m: PhantomData<P>,
 }
 
+#[cfg(feature = "std")]
 impl<'a, R: io::Read, P, A: Automaton<P> + ?Sized>
         Iterator for StreamMatchesOverlapping<'a, R, P, A> {
     type Item = io::Result<Match>;

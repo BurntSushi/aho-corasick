@@ -8,16 +8,19 @@ extern crate memmap;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-
-use std::error::Error;
+#[cfg(feature = "std")]
 use std::fs::File;
-use std::io::{self, BufRead, Write};
+#[cfg(feature = "std")]
+use std::io::BufRead;
+#[cfg(feature = "std")]
+use aho_corasick::{Automaton, AcAutomaton, Match};
+#[cfg(feature = "std")]
+use memmap::Mmap;
+use std::error::Error;
+use std::io::{self, Write};
 use std::process;
 
-use aho_corasick::{Automaton, AcAutomaton, Match};
 use docopt::Docopt;
-use memmap::Mmap;
-
 static USAGE: &'static str = "
 Usage: dict-search [options] <input>
        dict-search --help
@@ -58,7 +61,12 @@ fn main() {
         }
     }
 }
+#[cfg(not(feature = "std"))]
+fn run(_: &Args) -> Result<(), Box<Error>> {
+   Err("The std feature is mandatory for the dict-search example to work".into())
+}
 
+#[cfg(feature = "std")]
 fn run(args: &Args) -> Result<(), Box<Error>> {
     let aut = try!(build_automaton(&args.flag_dict, args.flag_min_len));
     if args.flag_memory_usage {
@@ -110,6 +118,7 @@ fn run(args: &Args) -> Result<(), Box<Error>> {
     Ok(())
 }
 
+#[cfg(feature = "std")]
 fn write_matches<A, I>(aut: &A, it: I) -> Result<(), Box<Error>>
         where A: Automaton<String>, I: Iterator<Item=io::Result<Match>> {
     let mut wtr = csv::Writer::from_writer(io::stdout());
@@ -122,6 +131,7 @@ fn write_matches<A, I>(aut: &A, it: I) -> Result<(), Box<Error>>
     Ok(())
 }
 
+#[cfg(feature = "std")]
 fn build_automaton(
     dict_path: &str,
     min_len: usize,
