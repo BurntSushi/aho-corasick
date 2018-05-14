@@ -563,7 +563,7 @@ digraph automaton {{
 "#, self.pats.join(", "));
         for (i, s) in self.states.iter().enumerate().skip(1) {
             let i = i as u32;
-            if s.out.len() == 0 {
+            if s.out.is_empty() {
                 w!(out, "    {};\n", i);
             } else {
                 w!(out, "    {} [peripheries=2];\n", i);
