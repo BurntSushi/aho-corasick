@@ -241,10 +241,10 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
     pub fn heap_bytes(&self) -> usize {
         self.pats.iter()
             .map(|p| mem::size_of::<P>() + p.as_ref().len())
-            .fold(0, |a, b| a + b)
+            .sum::<usize>()
         + self.states.iter()
               .map(|s| mem::size_of::<State<T>>() + s.heap_bytes())
-              .fold(0, |a, b| a + b)
+              .sum::<usize>()
         + self.start_bytes.len()
     }
 }
