@@ -525,15 +525,13 @@ impl<T: Transitions> State<T> {
     }
 
     fn goto_string(&self, root: bool) -> String {
-        use std::char::from_u32;
-
         let mut goto = vec![];
         for b in (0..256).map(|b| b as u8) {
             let si = self.goto(b);
             if (!root && si == FAIL_STATE) || (root && si == ROOT_STATE) {
                 continue;
             }
-            goto.push(format!("{} => {}", from_u32(b as u32).unwrap(), si));
+            goto.push(format!("{} => {}", b as char, si));
         }
         goto.join(", ")
     }
