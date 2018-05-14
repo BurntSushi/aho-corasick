@@ -44,11 +44,11 @@ impl<P: AsRef<[u8]>> FullAcAutomaton<P> {
     pub fn memory_usage(&self) -> usize {
         self.pats.iter()
             .map(|p| vec_bytes() + p.as_ref().len())
-            .fold(0, |a, b| a + b)
+            .sum::<usize>()
         + (4 * self.trans.len())
         + self.out.iter()
               .map(|v| vec_bytes() + (usize_bytes() * v.len()))
-              .fold(0, |a, b| a + b)
+              .sum::<usize>()
         + self.start_bytes.len()
     }
 
@@ -56,11 +56,11 @@ impl<P: AsRef<[u8]>> FullAcAutomaton<P> {
     pub fn heap_bytes(&self) -> usize {
         self.pats.iter()
             .map(|p| mem::size_of::<P>() + p.as_ref().len())
-            .fold(0, |a, b| a + b)
+            .sum::<usize>()
         + (4 * self.trans.len())
         + self.out.iter()
               .map(|v| vec_bytes() + (usize_bytes() * v.len()))
-              .fold(0, |a, b| a + b)
+              .sum::<usize>()
         + self.start_bytes.len()
     }
 

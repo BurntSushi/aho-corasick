@@ -241,10 +241,10 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
     pub fn heap_bytes(&self) -> usize {
         self.pats.iter()
             .map(|p| mem::size_of::<P>() + p.as_ref().len())
-            .fold(0, |a, b| a + b)
+            .sum::<usize>()
         + self.states.iter()
               .map(|s| mem::size_of::<State<T>>() + s.heap_bytes())
-              .fold(0, |a, b| a + b)
+              .sum::<usize>()
         + self.start_bytes.len()
     }
 }
@@ -525,15 +525,13 @@ impl<T: Transitions> State<T> {
     }
 
     fn goto_string(&self, root: bool) -> String {
-        use std::char::from_u32;
-
         let mut goto = vec![];
         for b in (0..256).map(|b| b as u8) {
             let si = self.goto(b);
             if (!root && si == FAIL_STATE) || (root && si == ROOT_STATE) {
                 continue;
             }
-            goto.push(format!("{} => {}", from_u32(b as u32).unwrap(), si));
+            goto.push(format!("{} => {}", b as char, si));
         }
         goto.join(", ")
     }
@@ -563,7 +561,7 @@ digraph automaton {{
 "#, self.pats.join(", "));
         for (i, s) in self.states.iter().enumerate().skip(1) {
             let i = i as u32;
-            if s.out.len() == 0 {
+            if s.out.is_empty() {
                 w!(out, "    {};\n", i);
             } else {
                 w!(out, "    {} [peripheries=2];\n", i);
