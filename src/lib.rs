@@ -321,11 +321,14 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
             }
             self.states[previ as usize].out.push(pati);
         }
-        for c in (0..256).into_iter().map(|c| c as u8) {
-            if self.states[ROOT_STATE as usize].goto(c) == FAIL_STATE {
-                self.states[ROOT_STATE as usize].set_goto(c, ROOT_STATE);
-            } else {
-                self.start_bytes.push(c);
+        {
+            let root_state = &mut self.states[ROOT_STATE as usize];
+            for c in (0..256).into_iter().map(|c| c as u8) {
+                if root_state.goto(c) == FAIL_STATE {
+                    root_state.set_goto(c, ROOT_STATE);
+                } else {
+                    self.start_bytes.push(c);
+                }
             }
         }
         // If any of the start bytes are non-ASCII, then remove them all,
@@ -426,14 +429,14 @@ pub struct Dense(DenseChoice);
 
 #[derive(Clone, Debug)]
 enum DenseChoice {
-    Sparse(Vec<StateIdx>), // indexed by alphabet
+    Sparse(Sparse),
     Dense(Vec<(u8, StateIdx)>),
 }
 
 impl Transitions for Dense {
     fn new(depth: u32) -> Dense {
         if depth <= DENSE_DEPTH_THRESHOLD {
-            Dense(DenseChoice::Sparse(vec![0; 256]))
+            Dense(DenseChoice::Sparse(Sparse::new(depth)))
         } else {
             Dense(DenseChoice::Dense(vec![]))
         }
@@ -441,7 +444,7 @@ impl Transitions for Dense {
 
     fn goto(&self, b1: u8) -> StateIdx {
         match self.0 {
-            DenseChoice::Sparse(ref m) => m[b1 as usize],
+            DenseChoice::Sparse(ref m) => m.goto(b1),
             DenseChoice::Dense(ref m) => {
                 for &(b2, si) in m {
                     if b1 == b2 {
@@ -455,14 +458,14 @@ impl Transitions for Dense {
 
     fn set_goto(&mut self, b: u8, si: StateIdx) {
         match self.0 {
-            DenseChoice::Sparse(ref mut m) => m[b as usize] = si,
+            DenseChoice::Sparse(ref mut m) => m.set_goto(b, si),
             DenseChoice::Dense(ref mut m) => m.push((b, si)),
         }
     }
 
     fn heap_bytes(&self) -> usize {
         match self.0 {
-            DenseChoice::Sparse(ref m) => m.len() * 4,
+            DenseChoice::Sparse(ref m) => m.heap_bytes(),
             DenseChoice::Dense(ref m) => m.len() * (1 + 4),
         }
     }
@@ -482,11 +485,13 @@ impl Transitions for Sparse {
 
     #[inline]
     fn goto(&self, b: u8) -> StateIdx {
-        self.0[b as usize]
+        unsafe { *self.0.get_unchecked(b as usize) }
     }
 
     fn set_goto(&mut self, b: u8, si: StateIdx) {
-        self.0[b as usize] = si;
+        unsafe {
+            *self.0.get_unchecked_mut(b as usize) = si;
+        }
     }
 
     fn heap_bytes(&self) -> usize {
