@@ -386,8 +386,18 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
                     }
                     let ufail = self.states[v as usize].goto(c);
                     self.states[u as usize].fail = ufail;
-                    let ufail_out = self.states[ufail as usize].out.clone();
-                    self.states[u as usize].out.extend(ufail_out);
+
+                    fn get_two<T>(xs: &mut [T], i: usize, j: usize) -> (&mut T, &mut T) {
+                        assert!(i != j && i < xs.len() && j < xs.len());
+                        unsafe {
+                            let x = &mut *(xs.get_unchecked_mut(i) as *mut T);
+                            let y = &mut *xs.get_unchecked_mut(j);
+                            (x, y)
+                        }
+                    }
+
+                    let (ufail_out, out) = get_two(&mut self.states, ufail as usize, u as usize);
+                    out.out.extend_from_slice(&ufail_out.out);
                 }
             }
         }
