@@ -297,6 +297,28 @@ impl<P: AsRef<[u8]>, T: Transitions> Automaton<P> for AcAutomaton<P, T> {
     }
 }
 
+// `(0..256).map(|b| b as u8)` optimizes poorly in debug builds so
+// we use this small explicit iterator instead
+struct AllBytesIter(i32);
+impl Iterator for AllBytesIter {
+    type Item = u8;
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.0 <= 256 {
+            let b = self.0 as u8;
+            self.0 += 1;
+            Some(b)
+        } else {
+            None
+        }
+    }
+}
+
+#[inline]
+fn all_bytes() -> AllBytesIter {
+    AllBytesIter(0)
+}
+
 // Below contains code for *building* the automaton. It's a reasonably faithful
 // translation of the description/psuedo-code from:
 // http://www.cs.uku.fi/~kilpelai/BSA05/lectures/slides04.pdf
@@ -323,7 +345,7 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
         }
         {
             let root_state = &mut self.states[ROOT_STATE as usize];
-            for c in (0..256).into_iter().map(|c| c as u8) {
+            for c in all_bytes() {
                 if root_state.goto(c) == FAIL_STATE {
                     root_state.set_goto(c, ROOT_STATE);
                 } else {
@@ -347,14 +369,14 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
         // Fill up the queue with all non-root transitions out of the root
         // node. Then proceed by breadth first traversal.
         let mut q = VecDeque::new();
-        for c in (0..256).into_iter().map(|c| c as u8) {
+        for c in all_bytes() {
             let si = self.states[ROOT_STATE as usize].goto(c);
             if si != ROOT_STATE {
                 q.push_front(si);
             }
         }
         while let Some(si) = q.pop_back() {
-            for c in (0..256).into_iter().map(|c| c as u8) {
+            for c in all_bytes() {
                 let u = self.states[si as usize].goto(c);
                 if u != FAIL_STATE {
                     q.push_front(u);
@@ -537,7 +559,7 @@ impl<T: Transitions> State<T> {
 
     fn goto_string(&self, root: bool) -> String {
         let mut goto = vec![];
-        for b in (0..256).map(|b| b as u8) {
+        for b in all_bytes() {
             let si = self.goto(b);
             if (!root && si == FAIL_STATE) || (root && si == ROOT_STATE) {
                 continue;
@@ -578,7 +600,7 @@ digraph automaton {{
                 w!(out, "    {} [peripheries=2];\n", i);
             }
             w!(out, "    {} -> {} [style=dashed];\n", i, s.fail);
-            for b in (0..256).map(|b| b as u8) {
+            for b in all_bytes() {
                 let si = s.goto(b);
                 if si == FAIL_STATE || (i == ROOT_STATE && si == ROOT_STATE) {
                     continue;
