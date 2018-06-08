@@ -429,14 +429,14 @@ pub struct Dense(DenseChoice);
 
 #[derive(Clone, Debug)]
 enum DenseChoice {
-    Sparse(Sparse),
+    Sparse(Box<Sparse>),
     Dense(Vec<(u8, StateIdx)>),
 }
 
 impl Transitions for Dense {
     fn new(depth: u32) -> Dense {
         if depth <= DENSE_DEPTH_THRESHOLD {
-            Dense(DenseChoice::Sparse(Sparse::new(depth)))
+            Dense(DenseChoice::Sparse(Box::new(Sparse::new(depth))))
         } else {
             Dense(DenseChoice::Dense(vec![]))
         }
@@ -465,7 +465,7 @@ impl Transitions for Dense {
 
     fn heap_bytes(&self) -> usize {
         match self.0 {
-            DenseChoice::Sparse(ref m) => m.heap_bytes(),
+            DenseChoice::Sparse(_) => mem::size_of::<Sparse>(),
             DenseChoice::Dense(ref m) => m.len() * (1 + 4),
         }
     }
@@ -475,12 +475,18 @@ impl Transitions for Dense {
 ///
 /// This can use enormous amounts of memory when there are many patterns,
 /// but matching is very fast.
-#[derive(Clone, Debug)]
-pub struct Sparse(Vec<StateIdx>);
+#[derive(Clone)]
+pub struct Sparse([StateIdx; 256]);
+
+impl fmt::Debug for Sparse {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_tuple("Sparse").field(&&self.0[..]).finish()
+    }
+}
 
 impl Transitions for Sparse {
     fn new(_: u32) -> Sparse {
-        Sparse(vec![0; 256])
+        Sparse([0; 256])
     }
 
     #[inline]
@@ -495,7 +501,7 @@ impl Transitions for Sparse {
     }
 
     fn heap_bytes(&self) -> usize {
-        self.0.len() * 4
+        0
     }
 }
 
