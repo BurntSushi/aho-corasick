@@ -388,7 +388,11 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
                     self.states[u as usize].fail = ufail;
 
                     fn get_two<T>(xs: &mut [T], i: usize, j: usize) -> (&mut T, &mut T) {
-                        assert!(i != j && i < xs.len() && j < xs.len());
+                        if i < j {
+                            assert!(j < xs.len());
+                        } else {
+                            assert!(i != j && i < xs.len());
+                        }
                         unsafe {
                             let x = &mut *(xs.get_unchecked_mut(i) as *mut T);
                             let y = &mut *xs.get_unchecked_mut(j);
