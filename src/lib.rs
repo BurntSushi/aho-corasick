@@ -511,8 +511,13 @@ impl Transitions for Dense {
 ///
 /// This can use enormous amounts of memory when there are many patterns,
 /// but matching is very fast.
-#[derive(Clone)]
 pub struct Sparse([StateIdx; 256]);
+
+impl Clone for Sparse {
+    fn clone(&self) -> Sparse {
+        Sparse(self.0)
+    }
+}
 
 impl fmt::Debug for Sparse {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
