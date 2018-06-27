@@ -530,13 +530,11 @@ impl Transitions for Sparse {
 
     #[inline]
     fn goto(&self, b: u8) -> StateIdx {
-        unsafe { *self.0.get_unchecked(b as usize) }
+        self.0[b as usize]
     }
 
     fn set_goto(&mut self, b: u8, si: StateIdx) {
-        unsafe {
-            *self.0.get_unchecked_mut(b as usize) = si;
-        }
+        self.0[b as usize] = si;
     }
 
     fn heap_bytes(&self) -> usize {
