@@ -389,14 +389,11 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
 
                     fn get_two<T>(xs: &mut [T], i: usize, j: usize) -> (&mut T, &mut T) {
                         if i < j {
-                            assert!(j < xs.len());
+                            let (before, after) = xs.split_at_mut(j);
+                            (&mut before[i], &mut after[0])
                         } else {
-                            assert!(i != j && i < xs.len());
-                        }
-                        unsafe {
-                            let x = &mut *(xs.get_unchecked_mut(i) as *mut T);
-                            let y = &mut *xs.get_unchecked_mut(j);
-                            (x, y)
+                            let (before, after) = xs.split_at_mut(i);
+                            (&mut after[0], &mut before[j])
                         }
                     }
 
