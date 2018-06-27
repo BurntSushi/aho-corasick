@@ -297,6 +297,29 @@ impl<P: AsRef<[u8]>, T: Transitions> Automaton<P> for AcAutomaton<P, T> {
     }
 }
 
+// `(0..256).map(|b| b as u8)` optimizes poorly in debug builds so
+// we use this small explicit iterator instead
+struct AllBytesIter(i32);
+impl Iterator for AllBytesIter {
+    type Item = u8;
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.0 <= 256 {
+            let b = self.0 as u8;
+            self.0 += 1;
+            Some(b)
+        } else {
+            None
+        }
+    }
+}
+
+impl AllBytesIter {
+    fn new() -> AllBytesIter {
+        AllBytesIter(0)
+    }
+}
+
 // Below contains code for *building* the automaton. It's a reasonably faithful
 // translation of the description/psuedo-code from:
 // http://www.cs.uku.fi/~kilpelai/BSA05/lectures/slides04.pdf
@@ -321,11 +344,14 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
             }
             self.states[previ as usize].out.push(pati);
         }
-        for c in (0..256).into_iter().map(|c| c as u8) {
-            if self.states[ROOT_STATE as usize].goto(c) == FAIL_STATE {
-                self.states[ROOT_STATE as usize].set_goto(c, ROOT_STATE);
-            } else {
-                self.start_bytes.push(c);
+        {
+            let root_state = &mut self.states[ROOT_STATE as usize];
+            for c in AllBytesIter::new() {
+                if root_state.goto(c) == FAIL_STATE {
+                    root_state.set_goto(c, ROOT_STATE);
+                } else {
+                    self.start_bytes.push(c);
+                }
             }
         }
         // If any of the start bytes are non-ASCII, then remove them all,
@@ -344,14 +370,14 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
         // Fill up the queue with all non-root transitions out of the root
         // node. Then proceed by breadth first traversal.
         let mut q = VecDeque::new();
-        for c in (0..256).into_iter().map(|c| c as u8) {
+        for c in AllBytesIter::new() {
             let si = self.states[ROOT_STATE as usize].goto(c);
             if si != ROOT_STATE {
                 q.push_front(si);
             }
         }
         while let Some(si) = q.pop_back() {
-            for c in (0..256).into_iter().map(|c| c as u8) {
+            for c in AllBytesIter::new() {
                 let u = self.states[si as usize].goto(c);
                 if u != FAIL_STATE {
                     q.push_front(u);
@@ -361,8 +387,19 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
                     }
                     let ufail = self.states[v as usize].goto(c);
                     self.states[u as usize].fail = ufail;
-                    let ufail_out = self.states[ufail as usize].out.clone();
-                    self.states[u as usize].out.extend(ufail_out);
+
+                    fn get_two<T>(xs: &mut [T], i: usize, j: usize) -> (&mut T, &mut T) {
+                        if i < j {
+                            let (before, after) = xs.split_at_mut(j);
+                            (&mut before[i], &mut after[0])
+                        } else {
+                            let (before, after) = xs.split_at_mut(i);
+                            (&mut after[0], &mut before[j])
+                        }
+                    }
+
+                    let (ufail_out, out) = get_two(&mut self.states, ufail as usize, u as usize);
+                    out.out.extend_from_slice(&ufail_out.out);
                 }
             }
         }
@@ -426,14 +463,14 @@ pub struct Dense(DenseChoice);
 
 #[derive(Clone, Debug)]
 enum DenseChoice {
-    Sparse(Vec<StateIdx>), // indexed by alphabet
+    Sparse(Box<Sparse>),
     Dense(Vec<(u8, StateIdx)>),
 }
 
 impl Transitions for Dense {
     fn new(depth: u32) -> Dense {
         if depth <= DENSE_DEPTH_THRESHOLD {
-            Dense(DenseChoice::Sparse(vec![0; 256]))
+            Dense(DenseChoice::Sparse(Box::new(Sparse::new(depth))))
         } else {
             Dense(DenseChoice::Dense(vec![]))
         }
@@ -441,7 +478,7 @@ impl Transitions for Dense {
 
     fn goto(&self, b1: u8) -> StateIdx {
         match self.0 {
-            DenseChoice::Sparse(ref m) => m[b1 as usize],
+            DenseChoice::Sparse(ref m) => m.goto(b1),
             DenseChoice::Dense(ref m) => {
                 for &(b2, si) in m {
                     if b1 == b2 {
@@ -455,14 +492,14 @@ impl Transitions for Dense {
 
     fn set_goto(&mut self, b: u8, si: StateIdx) {
         match self.0 {
-            DenseChoice::Sparse(ref mut m) => m[b as usize] = si,
+            DenseChoice::Sparse(ref mut m) => m.set_goto(b, si),
             DenseChoice::Dense(ref mut m) => m.push((b, si)),
         }
     }
 
     fn heap_bytes(&self) -> usize {
         match self.0 {
-            DenseChoice::Sparse(ref m) => m.len() * 4,
+            DenseChoice::Sparse(_) => mem::size_of::<Sparse>(),
             DenseChoice::Dense(ref m) => m.len() * (1 + 4),
         }
     }
@@ -472,12 +509,23 @@ impl Transitions for Dense {
 ///
 /// This can use enormous amounts of memory when there are many patterns,
 /// but matching is very fast.
-#[derive(Clone, Debug)]
-pub struct Sparse(Vec<StateIdx>);
+pub struct Sparse([StateIdx; 256]);
+
+impl Clone for Sparse {
+    fn clone(&self) -> Sparse {
+        Sparse(self.0)
+    }
+}
+
+impl fmt::Debug for Sparse {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_tuple("Sparse").field(&&self.0[..]).finish()
+    }
+}
 
 impl Transitions for Sparse {
     fn new(_: u32) -> Sparse {
-        Sparse(vec![0; 256])
+        Sparse([0; 256])
     }
 
     #[inline]
@@ -490,7 +538,7 @@ impl Transitions for Sparse {
     }
 
     fn heap_bytes(&self) -> usize {
-        self.0.len() * 4
+        0
     }
 }
 
@@ -526,7 +574,7 @@ impl<T: Transitions> State<T> {
 
     fn goto_string(&self, root: bool) -> String {
         let mut goto = vec![];
-        for b in (0..256).map(|b| b as u8) {
+        for b in AllBytesIter::new() {
             let si = self.goto(b);
             if (!root && si == FAIL_STATE) || (root && si == ROOT_STATE) {
                 continue;
@@ -567,7 +615,7 @@ digraph automaton {{
                 w!(out, "    {} [peripheries=2];\n", i);
             }
             w!(out, "    {} -> {} [style=dashed];\n", i, s.fail);
-            for b in (0..256).map(|b| b as u8) {
+            for b in AllBytesIter::new() {
                 let si = s.goto(b);
                 if si == FAIL_STATE || (i == ROOT_STATE && si == ROOT_STATE) {
                     continue;
