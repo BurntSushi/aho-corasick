@@ -314,9 +314,10 @@ impl Iterator for AllBytesIter {
     }
 }
 
-#[inline]
-fn all_bytes() -> AllBytesIter {
-    AllBytesIter(0)
+impl AllBytesIter {
+    fn new() -> AllBytesIter {
+        AllBytesIter(0)
+    }
 }
 
 // Below contains code for *building* the automaton. It's a reasonably faithful
@@ -345,7 +346,7 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
         }
         {
             let root_state = &mut self.states[ROOT_STATE as usize];
-            for c in all_bytes() {
+            for c in AllBytesIter::new() {
                 if root_state.goto(c) == FAIL_STATE {
                     root_state.set_goto(c, ROOT_STATE);
                 } else {
@@ -369,14 +370,14 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
         // Fill up the queue with all non-root transitions out of the root
         // node. Then proceed by breadth first traversal.
         let mut q = VecDeque::new();
-        for c in all_bytes() {
+        for c in AllBytesIter::new() {
             let si = self.states[ROOT_STATE as usize].goto(c);
             if si != ROOT_STATE {
                 q.push_front(si);
             }
         }
         while let Some(si) = q.pop_back() {
-            for c in all_bytes() {
+            for c in AllBytesIter::new() {
                 let u = self.states[si as usize].goto(c);
                 if u != FAIL_STATE {
                     q.push_front(u);
@@ -575,7 +576,7 @@ impl<T: Transitions> State<T> {
 
     fn goto_string(&self, root: bool) -> String {
         let mut goto = vec![];
-        for b in all_bytes() {
+        for b in AllBytesIter::new() {
             let si = self.goto(b);
             if (!root && si == FAIL_STATE) || (root && si == ROOT_STATE) {
                 continue;
@@ -616,7 +617,7 @@ digraph automaton {{
                 w!(out, "    {} [peripheries=2];\n", i);
             }
             w!(out, "    {} -> {} [style=dashed];\n", i, s.fail);
-            for b in all_bytes() {
+            for b in AllBytesIter::new() {
                 let si = s.goto(b);
                 if si == FAIL_STATE || (i == ROOT_STATE && si == ROOT_STATE) {
                     continue;
