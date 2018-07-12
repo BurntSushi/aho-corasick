@@ -120,8 +120,9 @@ impl<P: AsRef<[u8]>> Automaton<P> for FullAcAutomaton<P> {
 impl<P: AsRef<[u8]>> FullAcAutomaton<P> {
     fn build_matrix<T: Transitions>(&mut self, ac: &AcAutomaton<P, T>) {
         for (si, s) in ac.states.iter().enumerate().skip(1) {
-            for b in AllBytesIter::new() {
-                self.set(si as StateIdx, b, ac.next_state(si as StateIdx, b));
+            for i in AllBytesIter::new() {
+                let goto = ac.memoized_next_state(self, si as StateIdx, i);
+                self.set(si as StateIdx, i, goto);
             }
             self.out[si].extend_from_slice(&s.out);
         }
