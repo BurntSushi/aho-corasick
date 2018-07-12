@@ -304,7 +304,7 @@ impl Iterator for AllBytesIter {
     type Item = u8;
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        if self.0 <= 256 {
+        if self.0 < 256 {
             let b = self.0 as u8;
             self.0 += 1;
             Some(b)
@@ -644,7 +644,7 @@ mod tests {
 
     use quickcheck::{Arbitrary, Gen, quickcheck};
 
-    use super::{Automaton, AcAutomaton, Match};
+    use super::{AcAutomaton, Automaton, Match, AllBytesIter};
 
     fn aut_find<S>(xs: &[S], haystack: &str) -> Vec<Match>
             where S: Clone + AsRef<[u8]> {
@@ -967,5 +967,14 @@ mod tests {
             aset == nset
         }
         quickcheck(prop as fn(Vec<SmallAscii>, BiasAscii) -> bool);
+    }
+
+
+    #[test]
+    fn all_bytes_iter() {
+        let all_bytes = AllBytesIter::new().collect::<Vec<_>>();
+        assert_eq!(all_bytes[0], 0);
+        assert_eq!(all_bytes[255], 255);
+        assert!(AllBytesIter::new().enumerate().all(|(i, b)| b as usize == i));
     }
 }
