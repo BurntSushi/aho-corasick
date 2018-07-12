@@ -252,24 +252,22 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
     fn memoized_next_state(
         &self,
         full_automaton: &FullAcAutomaton<P>,
+        current_si: StateIdx,
         mut si: StateIdx,
         b: u8,
     ) -> StateIdx {
-        let current_si = si;
         loop {
+            if si < current_si {
+                return full_automaton.next_state(si, b);
+            }
             let state = &self.states[si as usize];
             let maybe_si = state.goto(b);
             if maybe_si != FAIL_STATE {
-                si = maybe_si;
-                break;
+                return maybe_si;
             } else {
                 si = state.fail;
-                if si < current_si {
-                    return full_automaton.next_state(si, b);
-                }
             }
         }
-        si
     }
 }
 
@@ -460,6 +458,12 @@ impl<T: Transitions> State<T> {
         (self.out.len() * usize_bytes())
         + self.goto.heap_bytes()
     }
+
+    fn for_each_transition<F>(&self, f: F)
+        where F: FnMut(u8, StateIdx)
+    {
+        self.goto.for_each_transition(f)
+    }
 }
 
 /// An abstraction over state transition strategies.
@@ -478,6 +482,15 @@ pub trait Transitions {
     fn set_goto(&mut self, alpha: u8, si: StateIdx);
     /// The memory use in bytes (on the heap) of this set of transitions.
     fn heap_bytes(&self) -> usize;
+
+    /// Iterates over each state
+    fn for_each_transition<F>(&self, mut f: F)
+        where F: FnMut(u8, StateIdx)
+    {
+        for b in AllBytesIter::new() {
+            f(b, self.goto(b));
+        }
+    }
 }
 
 /// State transitions that can be stored either sparsely or densely.
@@ -526,6 +539,30 @@ impl Transitions for Dense {
         match self.0 {
             DenseChoice::Sparse(_) => mem::size_of::<Sparse>(),
             DenseChoice::Dense(ref m) => m.len() * (1 + 4),
+        }
+    }
+
+    fn for_each_transition<F>(&self, mut f: F)
+        where F: FnMut(u8, StateIdx)
+    {
+        match self.0 {
+            DenseChoice::Sparse(ref m) => m.for_each_transition(f),
+            DenseChoice::Dense(ref m) => {
+                let mut iter = m.iter();
+                let mut b = 0i32;
+                while let Some(&(next_b, next_si)) = iter.next() {
+                    while (b as u8) < next_b {
+                        f(b as u8, FAIL_STATE);
+                        b += 1;
+                    }
+                    f(b as u8, next_si);
+                    b += 1;
+                }
+                while b < 256 {
+                    f(b as u8, FAIL_STATE);
+                    b += 1;
+                }
+            }
         }
     }
 }
