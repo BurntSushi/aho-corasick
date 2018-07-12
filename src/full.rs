@@ -3,7 +3,6 @@ use std::mem;
 
 use super::{
     FAIL_STATE,
-    AllBytesIter,
     StateIdx, AcAutomaton, Transitions, Match,
     usize_bytes, vec_bytes,
 };
@@ -120,12 +119,22 @@ impl<P: AsRef<[u8]>> Automaton<P> for FullAcAutomaton<P> {
 impl<P: AsRef<[u8]>> FullAcAutomaton<P> {
     fn build_matrix<T: Transitions>(&mut self, ac: &AcAutomaton<P, T>) {
         for (si, s) in ac.states.iter().enumerate().skip(1) {
-            for i in AllBytesIter::new() {
-                let goto = ac.memoized_next_state(self, si as StateIdx, i);
-                self.set(si as StateIdx, i, goto);
-            }
+            self.set_states(ac, si as StateIdx);
             self.out[si].extend_from_slice(&s.out);
         }
+    }
+
+    fn set_states<T: Transitions>(&mut self, ac: &AcAutomaton<P, T>, si: StateIdx) {
+        let current_state = &ac.states[si as usize];
+        let first_fail_state = current_state.fail;
+        current_state.for_each_transition(move |b, maybe_si| {
+            let goto = if maybe_si == FAIL_STATE {
+                ac.memoized_next_state(self, si, first_fail_state, b)
+            } else {
+                maybe_si
+            };
+            self.set(si, b, goto);
+        });
     }
 }
 
