@@ -123,9 +123,7 @@ impl<P: AsRef<[u8]>> FullAcAutomaton<P> {
             for b in AllBytesIter::new() {
                 self.set(si as StateIdx, b, ac.next_state(si as StateIdx, b));
             }
-            for &pati in &s.out {
-                self.out[si].push(pati);
-            }
+            self.out[si].extend_from_slice(&s.out);
         }
     }
 }
