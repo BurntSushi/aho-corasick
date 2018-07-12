@@ -253,12 +253,13 @@ impl<P: AsRef<[u8]>, T: Transitions> Automaton<P> for AcAutomaton<P, T> {
     #[inline]
     fn next_state(&self, mut si: StateIdx, b: u8) -> StateIdx {
         loop {
-            let maybe_si = self.states[si as usize].goto(b);
+            let state = &self.states[si as usize];
+            let maybe_si = state.goto(b);
             if maybe_si != FAIL_STATE {
                 si = maybe_si;
                 break;
             } else {
-                si = self.states[si as usize].fail;
+                si = state.fail;
             }
         }
         si
