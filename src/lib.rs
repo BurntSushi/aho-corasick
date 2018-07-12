@@ -247,6 +247,30 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
               .sum::<usize>()
         + self.start_bytes.len()
     }
+
+    // The states of `full_automaton` should be set for all states < si
+    fn memoized_next_state(
+        &self,
+        full_automaton: &FullAcAutomaton<P>,
+        mut si: StateIdx,
+        b: u8,
+    ) -> StateIdx {
+        let current_si = si;
+        loop {
+            let state = &self.states[si as usize];
+            let maybe_si = state.goto(b);
+            if maybe_si != FAIL_STATE {
+                si = maybe_si;
+                break;
+            } else {
+                si = state.fail;
+                if si < current_si {
+                    return full_automaton.next_state(si, b);
+                }
+            }
+        }
+        si
+    }
 }
 
 impl<P: AsRef<[u8]>, T: Transitions> Automaton<P> for AcAutomaton<P, T> {
