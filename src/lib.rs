@@ -395,37 +395,47 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
         // Fill up the queue with all non-root transitions out of the root
         // node. Then proceed by breadth first traversal.
         let mut q = VecDeque::new();
-        for c in AllBytesIter::new() {
-            let si = self.states[ROOT_STATE as usize].goto(c);
+        self.states[ROOT_STATE as usize].for_each_transition(|_, si| {
             if si != ROOT_STATE {
                 q.push_front(si);
             }
-        }
+        });
+
+        let mut transitions = Vec::new();
+
         while let Some(si) = q.pop_back() {
-            for c in AllBytesIter::new() {
-                let u = self.states[si as usize].goto(c);
+            self.states[si as usize].for_each_transition(|c, u| {
                 if u != FAIL_STATE {
+                    transitions.push((c, u));
                     q.push_front(u);
-                    let mut v = self.states[si as usize].fail;
-                    while self.states[v as usize].goto(c) == FAIL_STATE {
-                        v = self.states[v as usize].fail;
-                    }
-                    let ufail = self.states[v as usize].goto(c);
-                    self.states[u as usize].fail = ufail;
-
-                    fn get_two<T>(xs: &mut [T], i: usize, j: usize) -> (&mut T, &mut T) {
-                        if i < j {
-                            let (before, after) = xs.split_at_mut(j);
-                            (&mut before[i], &mut after[0])
-                        } else {
-                            let (before, after) = xs.split_at_mut(i);
-                            (&mut after[0], &mut before[j])
-                        }
-                    }
-
-                    let (ufail_out, out) = get_two(&mut self.states, ufail as usize, u as usize);
-                    out.out.extend_from_slice(&ufail_out.out);
                 }
+            });
+
+            for (c, u) in transitions.drain(..) {
+                let mut v = self.states[si as usize].fail;
+                loop {
+                    let state = &self.states[v as usize];
+                    if state.goto(c) == FAIL_STATE {
+                        v = state.fail;
+                    } else {
+                        break;
+                    }
+                }
+                let ufail = self.states[v as usize].goto(c);
+                self.states[u as usize].fail = ufail;
+
+                fn get_two<T>(xs: &mut [T], i: usize, j: usize) -> (&mut T, &mut T) {
+                    if i < j {
+                        let (before, after) = xs.split_at_mut(j);
+                        (&mut before[i], &mut after[0])
+                    } else {
+                        let (before, after) = xs.split_at_mut(i);
+                        (&mut after[0], &mut before[j])
+                    }
+                }
+
+                let (ufail_out, out) = get_two(&mut self.states, ufail as usize, u as usize);
+                out.out.extend_from_slice(&ufail_out.out);
             }
         }
         self
