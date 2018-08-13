@@ -404,11 +404,9 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
         let mut transitions = Vec::new();
 
         while let Some(si) = q.pop_back() {
-            self.states[si as usize].for_each_transition(|c, u| {
-                if u != FAIL_STATE {
-                    transitions.push((c, u));
-                    q.push_front(u);
-                }
+            self.states[si as usize].for_each_ok_transition(|c, u| {
+                transitions.push((c, u));
+                q.push_front(u);
             });
 
             for (c, u) in transitions.drain(..) {
@@ -476,6 +474,12 @@ impl<T: Transitions> State<T> {
     {
         self.goto.for_each_transition(f)
     }
+
+    fn for_each_ok_transition<F>(&self, f: F)
+        where F: FnMut(u8, StateIdx)
+    {
+        self.goto.for_each_ok_transition(f)
+    }
 }
 
 /// An abstraction over state transition strategies.
@@ -502,6 +506,18 @@ pub trait Transitions {
         for b in AllBytesIter::new() {
             f(b, self.goto(b));
         }
+    }
+
+    /// Iterates over each non-fail state
+    fn for_each_ok_transition<F>(&self, mut f: F)
+    where
+        F: FnMut(u8, StateIdx),
+    {
+        self.for_each_transition(|b, si| {
+            if si != FAIL_STATE {
+                f(b, si);
+            }
+        });
     }
 }
 
@@ -574,6 +590,17 @@ impl Transitions for Dense {
                     f(b as u8, FAIL_STATE);
                     b += 1;
                 }
+            }
+        }
+    }
+    fn for_each_ok_transition<F>(&self, mut f: F)
+    where
+        F: FnMut(u8, StateIdx),
+    {
+        match self.0 {
+            DenseChoice::Sparse(ref m) => m.for_each_ok_transition(f),
+            DenseChoice::Dense(ref m) => for &(b, si) in m {
+                f(b, si)
             }
         }
     }
