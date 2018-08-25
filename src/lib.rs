@@ -123,6 +123,8 @@ assert_eq!(matches, vec![Match { pati: 1, start: 0, end: 1}]);
 extern crate memchr;
 #[cfg(test)]
 extern crate quickcheck;
+#[cfg(test)]
+extern crate rand;
 
 use std::collections::VecDeque;
 use std::fmt;
@@ -668,6 +670,7 @@ mod tests {
     use std::io;
 
     use quickcheck::{Arbitrary, Gen, quickcheck};
+    use rand::Rng;
 
     use super::{AcAutomaton, Automaton, Match, AllBytesIter};
 
@@ -941,7 +944,7 @@ mod tests {
             let size = { let s = g.size(); g.gen_range(0, s) };
             let mut s = String::with_capacity(size);
             for _ in 0..size {
-                if g.gen_weighted_bool(3) {
+                if g.gen_bool(0.3) {
                     s.push(char::arbitrary(g));
                 } else {
                     for _ in 0..5 {
