@@ -254,24 +254,22 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
     fn memoized_next_state(
         &self,
         full_automaton: &FullAcAutomaton<P>,
+        current_si: StateIdx,
         mut si: StateIdx,
         b: u8,
     ) -> StateIdx {
-        let current_si = si;
         loop {
+            if si < current_si {
+                return full_automaton.next_state(si, b);
+            }
             let state = &self.states[si as usize];
             let maybe_si = state.goto(b);
             if maybe_si != FAIL_STATE {
-                si = maybe_si;
-                break;
+                return maybe_si;
             } else {
                 si = state.fail;
-                if si < current_si {
-                    return full_automaton.next_state(si, b);
-                }
             }
         }
-        si
     }
 }
 
@@ -397,37 +395,45 @@ impl<P: AsRef<[u8]>, T: Transitions> AcAutomaton<P, T> {
         // Fill up the queue with all non-root transitions out of the root
         // node. Then proceed by breadth first traversal.
         let mut q = VecDeque::new();
-        for c in AllBytesIter::new() {
-            let si = self.states[ROOT_STATE as usize].goto(c);
+        self.states[ROOT_STATE as usize].for_each_transition(|_, si| {
             if si != ROOT_STATE {
                 q.push_front(si);
             }
-        }
+        });
+
+        let mut transitions = Vec::new();
+
         while let Some(si) = q.pop_back() {
-            for c in AllBytesIter::new() {
-                let u = self.states[si as usize].goto(c);
-                if u != FAIL_STATE {
-                    q.push_front(u);
-                    let mut v = self.states[si as usize].fail;
-                    while self.states[v as usize].goto(c) == FAIL_STATE {
-                        v = self.states[v as usize].fail;
-                    }
-                    let ufail = self.states[v as usize].goto(c);
-                    self.states[u as usize].fail = ufail;
+            self.states[si as usize].for_each_ok_transition(|c, u| {
+                transitions.push((c, u));
+                q.push_front(u);
+            });
 
-                    fn get_two<T>(xs: &mut [T], i: usize, j: usize) -> (&mut T, &mut T) {
-                        if i < j {
-                            let (before, after) = xs.split_at_mut(j);
-                            (&mut before[i], &mut after[0])
-                        } else {
-                            let (before, after) = xs.split_at_mut(i);
-                            (&mut after[0], &mut before[j])
-                        }
+            for (c, u) in transitions.drain(..) {
+                let mut v = self.states[si as usize].fail;
+                loop {
+                    let state = &self.states[v as usize];
+                    if state.goto(c) == FAIL_STATE {
+                        v = state.fail;
+                    } else {
+                        break;
                     }
-
-                    let (ufail_out, out) = get_two(&mut self.states, ufail as usize, u as usize);
-                    out.out.extend_from_slice(&ufail_out.out);
                 }
+                let ufail = self.states[v as usize].goto(c);
+                self.states[u as usize].fail = ufail;
+
+                fn get_two<T>(xs: &mut [T], i: usize, j: usize) -> (&mut T, &mut T) {
+                    if i < j {
+                        let (before, after) = xs.split_at_mut(j);
+                        (&mut before[i], &mut after[0])
+                    } else {
+                        let (before, after) = xs.split_at_mut(i);
+                        (&mut after[0], &mut before[j])
+                    }
+                }
+
+                let (ufail_out, out) = get_two(&mut self.states, ufail as usize, u as usize);
+                out.out.extend_from_slice(&ufail_out.out);
             }
         }
         self
@@ -462,6 +468,18 @@ impl<T: Transitions> State<T> {
         (self.out.len() * usize_bytes())
         + self.goto.heap_bytes()
     }
+
+    fn for_each_transition<F>(&self, f: F)
+        where F: FnMut(u8, StateIdx)
+    {
+        self.goto.for_each_transition(f)
+    }
+
+    fn for_each_ok_transition<F>(&self, f: F)
+        where F: FnMut(u8, StateIdx)
+    {
+        self.goto.for_each_ok_transition(f)
+    }
 }
 
 /// An abstraction over state transition strategies.
@@ -480,6 +498,27 @@ pub trait Transitions {
     fn set_goto(&mut self, alpha: u8, si: StateIdx);
     /// The memory use in bytes (on the heap) of this set of transitions.
     fn heap_bytes(&self) -> usize;
+
+    /// Iterates over each state
+    fn for_each_transition<F>(&self, mut f: F)
+        where F: FnMut(u8, StateIdx)
+    {
+        for b in AllBytesIter::new() {
+            f(b, self.goto(b));
+        }
+    }
+
+    /// Iterates over each non-fail state
+    fn for_each_ok_transition<F>(&self, mut f: F)
+    where
+        F: FnMut(u8, StateIdx),
+    {
+        self.for_each_transition(|b, si| {
+            if si != FAIL_STATE {
+                f(b, si);
+            }
+        });
+    }
 }
 
 /// State transitions that can be stored either sparsely or densely.
@@ -528,6 +567,41 @@ impl Transitions for Dense {
         match self.0 {
             DenseChoice::Sparse(_) => mem::size_of::<Sparse>(),
             DenseChoice::Dense(ref m) => m.len() * (1 + 4),
+        }
+    }
+
+    fn for_each_transition<F>(&self, mut f: F)
+        where F: FnMut(u8, StateIdx)
+    {
+        match self.0 {
+            DenseChoice::Sparse(ref m) => m.for_each_transition(f),
+            DenseChoice::Dense(ref m) => {
+                let mut iter = m.iter();
+                let mut b = 0i32;
+                while let Some(&(next_b, next_si)) = iter.next() {
+                    while (b as u8) < next_b {
+                        f(b as u8, FAIL_STATE);
+                        b += 1;
+                    }
+                    f(b as u8, next_si);
+                    b += 1;
+                }
+                while b < 256 {
+                    f(b as u8, FAIL_STATE);
+                    b += 1;
+                }
+            }
+        }
+    }
+    fn for_each_ok_transition<F>(&self, mut f: F)
+    where
+        F: FnMut(u8, StateIdx),
+    {
+        match self.0 {
+            DenseChoice::Sparse(ref m) => m.for_each_ok_transition(f),
+            DenseChoice::Dense(ref m) => for &(b, si) in m {
+                f(b, si)
+            }
         }
     }
 }
