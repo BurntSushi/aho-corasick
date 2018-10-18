@@ -1062,20 +1062,27 @@ mod tests {
         matches
     }
 
-    #[test]
-    fn qc_ac_equals_naive() {
-        fn prop(needles: Vec<SmallAscii>, haystack: BiasAscii) -> bool {
-            let aut_matches = aut_findo(&needles, &haystack.0);
-            let naive_matches = naive_find(&needles, &haystack.0);
-            // Ordering isn't always the same. I don't think we care, so do
-            // an unordered comparison.
-            let aset: HashSet<Match> = aut_matches.iter().cloned().collect();
-            let nset: HashSet<Match> = naive_matches.iter().cloned().collect();
-            aset == nset
-        }
-        quickcheck(prop as fn(Vec<SmallAscii>, BiasAscii) -> bool);
+    fn prop_ac_equals_naive<F>(
+        needles: Vec<SmallAscii>,
+        haystack: BiasAscii,
+        ac_find: F
+    ) -> bool where F: Fn(&[SmallAscii], &str) -> Vec<Match> {
+        let aut_matches = ac_find(&needles, &haystack.0);
+        let naive_matches = naive_find(&needles, &haystack.0);
+        // Ordering isn't always the same. I don't think we care, so do
+        // an unordered comparison.
+        let aset: HashSet<Match> = aut_matches.iter().cloned().collect();
+        let nset: HashSet<Match> = naive_matches.iter().cloned().collect();
+        aset == nset
     }
 
+    #[test]
+    fn qc_ac_equals_naive() {
+        let prop: fn(Vec<SmallAscii>, BiasAscii) -> bool = |needles, haystack| {
+            prop_ac_equals_naive(needles, haystack, aut_findo)
+        };
+        quickcheck(prop);
+    }
 
     #[test]
     fn all_bytes_iter() {
