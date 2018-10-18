@@ -748,7 +748,7 @@ mod tests {
     use std::collections::HashSet;
     use std::io;
 
-    use quickcheck::{Arbitrary, Gen, quickcheck};
+    use quickcheck::{Arbitrary, Gen, QuickCheck};
     use rand::Rng;
 
     use super::{AcAutomaton, Automaton, Match, AllBytesIter, Dense, Sparse};
@@ -1017,7 +1017,8 @@ mod tests {
     impl Arbitrary for SmallAscii {
         fn arbitrary<G: Gen>(g: &mut G) -> SmallAscii {
             use std::char::from_u32;
-            SmallAscii((0..2)
+            let len = g.gen_range(0, 10);
+            SmallAscii((0..len)
                        .map(|_| from_u32(g.gen_range(97, 123)).unwrap())
                        .collect())
         }
@@ -1104,7 +1105,7 @@ mod tests {
         let prop: fn(Vec<SmallAscii>, BiasAscii) -> bool = |needles, haystack| {
             prop_ac_equals_naive(needles, haystack, aut_findo)
         };
-        quickcheck(prop);
+        QuickCheck::new().tests(400).quickcheck(prop);
     }
 
     #[test]
@@ -1112,7 +1113,7 @@ mod tests {
         let prop: fn(Vec<SmallAscii>, BiasAscii) -> bool = |needles, haystack| {
             prop_ac_equals_naive(needles, haystack, aut_findfo)
         };
-        quickcheck(prop);
+        QuickCheck::new().tests(400).quickcheck(prop);
     }
 
     #[test]
@@ -1120,7 +1121,7 @@ mod tests {
         let prop: fn(Vec<SmallAscii>, BiasAscii) -> bool = |needles, haystack| {
             prop_ac_equals_naive(needles, haystack, aut_findso)
         };
-        quickcheck(prop);
+        QuickCheck::new().tests(400).quickcheck(prop);
     }
 
     #[test]
@@ -1128,7 +1129,7 @@ mod tests {
         let prop: fn(Vec<SmallAscii>, BiasAscii) -> bool = |needles, haystack| {
             prop_ac_equals_naive(needles, haystack, aut_findsfo)
         };
-        quickcheck(prop);
+        QuickCheck::new().tests(400).quickcheck(prop);
     }
 
     #[test]
