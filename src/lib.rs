@@ -746,7 +746,7 @@ mod tests {
     use quickcheck::{Arbitrary, Gen, quickcheck};
     use rand::Rng;
 
-    use super::{AcAutomaton, Automaton, Match, AllBytesIter};
+    use super::{AcAutomaton, Automaton, Match, AllBytesIter, Sparse};
 
     fn aut_find<S>(xs: &[S], haystack: &str) -> Vec<Match>
             where S: Clone + AsRef<[u8]> {
@@ -797,6 +797,21 @@ mod tests {
         AcAutomaton::new(xs.to_vec())
             .into_full()
             .stream_find_overlapping(cur).map(|r| r.unwrap()).collect()
+    }
+
+    fn aut_findso<S>(xs: &[S], haystack: &str) -> Vec<Match>
+            where S: Clone + AsRef<[u8]> {
+        AcAutomaton::<_, Sparse>::with_transitions(xs.to_vec())
+            .find_overlapping(haystack)
+            .collect()
+    }
+
+    fn aut_findsfo<S>(xs: &[S], haystack: &str) -> Vec<Match>
+            where S: Clone + AsRef<[u8]> {
+        AcAutomaton::<_, Sparse>::with_transitions(xs.to_vec())
+            .into_full()
+            .find_overlapping(haystack)
+            .collect()
     }
 
     #[test]
@@ -916,6 +931,8 @@ mod tests {
         assert_eq!(&aut_findos(&ns, hay), &matches);
         assert_eq!(&aut_findfo(&ns, hay), &matches);
         assert_eq!(&aut_findfos(&ns, hay), &matches);
+        assert_eq!(&aut_findso(&ns, hay), &matches);
+        assert_eq!(&aut_findsfo(&ns, hay), &matches);
     }
 
     #[test]
@@ -927,6 +944,8 @@ mod tests {
         assert_eq!(&aut_findos(&ns, hay), &matches);
         assert_eq!(&aut_findfo(&ns, hay), &matches);
         assert_eq!(&aut_findfos(&ns, hay), &matches);
+        assert_eq!(&aut_findso(&ns, hay), &matches);
+        assert_eq!(&aut_findsfo(&ns, hay), &matches);
     }
 
     #[test]
@@ -945,6 +964,8 @@ mod tests {
         assert_eq!(&aut_findos(&ns, hay), &matches);
         assert_eq!(&aut_findfo(&ns, hay), &matches);
         assert_eq!(&aut_findfos(&ns, hay), &matches);
+        assert_eq!(&aut_findso(&ns, hay), &matches);
+        assert_eq!(&aut_findsfo(&ns, hay), &matches);
     }
 
     #[test]
@@ -963,6 +984,8 @@ mod tests {
         assert_eq!(&aut_findos(&ns, hay), &matches);
         assert_eq!(&aut_findfo(&ns, hay), &matches);
         assert_eq!(&aut_findfos(&ns, hay), &matches);
+        assert_eq!(&aut_findso(&ns, hay), &matches);
+        assert_eq!(&aut_findsfo(&ns, hay), &matches);
     }
 
     #[test]
@@ -1072,9 +1095,33 @@ mod tests {
     }
 
     #[test]
-    fn qc_ac_equals_naive() {
+    fn qc_ac_dense_equals_naive() {
         let prop: fn(Vec<SmallAscii>, BiasAscii) -> bool = |needles, haystack| {
             prop_ac_equals_naive(needles, haystack, aut_findo)
+        };
+        quickcheck(prop);
+    }
+
+    #[test]
+    fn qc_ac_dense_full_equals_naive() {
+        let prop: fn(Vec<SmallAscii>, BiasAscii) -> bool = |needles, haystack| {
+            prop_ac_equals_naive(needles, haystack, aut_findfo)
+        };
+        quickcheck(prop);
+    }
+
+    #[test]
+    fn qc_ac_sparse_equals_naive() {
+        let prop: fn(Vec<SmallAscii>, BiasAscii) -> bool = |needles, haystack| {
+            prop_ac_equals_naive(needles, haystack, aut_findso)
+        };
+        quickcheck(prop);
+    }
+
+    #[test]
+    fn qc_ac_sparse_full_equals_naive() {
+        let prop: fn(Vec<SmallAscii>, BiasAscii) -> bool = |needles, haystack| {
+            prop_ac_equals_naive(needles, haystack, aut_findsfo)
         };
         quickcheck(prop);
     }
