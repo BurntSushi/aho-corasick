@@ -8,7 +8,7 @@ repository = "https://github.com/BurntSushi/aho-corasick"
 readme = "README.md"
 keywords = ["string", "search", "text", "aho", "corasick"]
 license = "Unlicense/MIT"
-exclude = ["benches/sherlock.txt"]
+exclude = ["/benches/sherlock.txt", "/ci/*", "/.travis.yml", "/Makefile", "/ctags.rust", "/session.vim"]
 
 [badges]
 travis-ci = { repository = "BurntSushi/aho-corasick" }
