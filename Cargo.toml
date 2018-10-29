@@ -1,6 +1,6 @@
 [package]
 name = "aho-corasick"
-version = "0.6.8"  #:version
+version = "0.6.9"  #:version
 authors = ["Andrew Gallant <jamslam@gmail.com>"]
 description = "Fast multiple substring searching with finite state machines."
 homepage = "https://github.com/BurntSushi/aho-corasick"
