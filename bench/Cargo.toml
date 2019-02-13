@@ -1,0 +1,24 @@
+[package]
+publish = false
+name = "aho-corasick-bench"
+version = "0.0.1"
+authors = ["Andrew Gallant <jamslam@gmail.com>"]
+description = "Criterion benchmark suite for aho-corasick."
+homepage = "https://github.com/BurntSushi/aho-corasick"
+repository = "https://github.com/BurntSushi/aho-corasick"
+license = "Unlicense OR MIT"
+
+[lib]
+bench = false
+
+[[bench]]
+name = "aho-corasick"
+harness = false
+path = "src/bench.rs"
+
+[dependencies]
+criterion = "0.2"
+aho-corasick = { version = "*", path = ".." }
+
+[profile.release]
+debug = true
