@@ -751,7 +751,7 @@ mod tests {
     use quickcheck::{Arbitrary, Gen, quickcheck};
     use rand::Rng;
 
-    use super::{AcAutomaton, Automaton, Match, AllBytesIter};
+    use super::{AcAutomaton, Automaton, Match, AllBytesIter, Dense};
 
     fn aut_find<S>(xs: &[S], haystack: &str) -> Vec<Match>
             where S: Clone + AsRef<[u8]> {
@@ -1112,5 +1112,19 @@ mod tests {
             .map(|m| (m.start, m.end))
             .collect::<Vec<(usize, usize)>>();
         assert_eq!(matches1, matches2);
+    }
+
+    // See: https://github.com/BurntSushi/aho-corasick/issues/35
+    #[test]
+    fn regression_full_order3() {
+        let haystack: &'static [u8] = &[0, 0, 0];
+        let needles: Vec<&'static [u8]> = vec![
+            &[0, 0, 1],
+            &[0, 0, 0],
+        ];
+
+        let aut = AcAutomaton::<_, Dense>::with_transitions(&needles[..])
+            .into_full();
+        assert_eq!(aut.find(&haystack).count(), 1);
     }
 }
