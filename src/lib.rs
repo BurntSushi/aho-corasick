@@ -559,7 +559,12 @@ impl Transitions for Dense {
     fn set_goto(&mut self, b: u8, si: StateIdx) {
         match self.0 {
             DenseChoice::Sparse(ref mut m) => m.set_goto(b, si),
-            DenseChoice::Dense(ref mut m) => m.push((b, si)),
+            DenseChoice::Dense(ref mut m) => {
+                match m.binary_search_by_key(&b, |&(b, _)| b) {
+                    Ok(i) => m[i] = (b, si),
+                    Err(i) => m.insert(i, (b, si)),
+                }
+            }
         }
     }
 
@@ -1078,5 +1083,34 @@ mod tests {
         assert_eq!(all_bytes[0], 0);
         assert_eq!(all_bytes[255], 255);
         assert!(AllBytesIter::new().enumerate().all(|(i, b)| b as usize == i));
+    }
+
+    #[test]
+    fn regression_full_order1() {
+        let matches1 = aut_findfo(&["inf", "ind"], "infind")
+            .into_iter()
+            .map(|m| (m.start, m.end))
+            .collect::<Vec<(usize, usize)>>();
+        let matches2 = aut_findfo(&["ind", "inf"], "infind")
+            .into_iter()
+            .map(|m| (m.start, m.end))
+            .collect::<Vec<(usize, usize)>>();
+        assert_eq!(matches1, matches2);
+    }
+
+    // See: https://github.com/BurntSushi/aho-corasick/issues/37
+    #[test]
+    fn regression_full_order2() {
+        let haystack = "libcore/char/methods.rs";
+
+        let matches1 = aut_findfo(&["libcore/", "libstd/"], haystack)
+            .into_iter()
+            .map(|m| (m.start, m.end))
+            .collect::<Vec<(usize, usize)>>();
+        let matches2 = aut_findfo(&["libstd/", "libcore/"], haystack)
+            .into_iter()
+            .map(|m| (m.start, m.end))
+            .collect::<Vec<(usize, usize)>>();
+        assert_eq!(matches1, matches2);
     }
 }
