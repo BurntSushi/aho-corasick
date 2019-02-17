@@ -19,6 +19,3 @@ path = "src/bench.rs"
 [dependencies]
 criterion = "0.2"
 aho-corasick = { version = "*", path = ".." }
-
-[profile.release]
-debug = true

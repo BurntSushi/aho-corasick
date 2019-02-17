@@ -2,50 +2,35 @@
 name = "aho-corasick"
 version = "0.6.10"  #:version
 authors = ["Andrew Gallant <jamslam@gmail.com>"]
-description = "Fast multiple substring searching with finite state machines."
+description = "Fast multiple substring searching."
 homepage = "https://github.com/BurntSushi/aho-corasick"
 repository = "https://github.com/BurntSushi/aho-corasick"
 readme = "README.md"
-keywords = ["string", "search", "text", "aho", "corasick"]
+keywords = ["string", "search", "text", "aho", "corasick", "multi", "pattern"]
 license = "Unlicense/MIT"
-exclude = ["/benches/sherlock.txt", "/ci/*", "/.travis.yml", "/Makefile", "/ctags.rust", "/session.vim"]
+categories = ["text-processing"]
+autotests = false
+exclude = ["/aho-corasick-debug", "/bench", "/ci/*", "/.travis.yml"]
 
 [badges]
 travis-ci = { repository = "BurntSushi/aho-corasick" }
+appveyor = { repository = "BurntSushi/regex-automata" }
+
+[workspace]
+members = ["bench", "aho-corasick-debug"]
 
 [lib]
 name = "aho_corasick"
 
-[[bin]]
-name = "aho-corasick-dot"
-path = "src/main.rs"
-test = false
-doc = false
-bench = false
+[features]
+default = ["std"]
+std = ["memchr/use_std"]
 
 [dependencies]
-memchr = "2"
+memchr = { version = "2.2.0", default-features = false }
 
-[dev-dependencies]
-csv = "1"
-docopt = "1"
-memmap = "0.6"
-quickcheck = { version = "0.7", default-features = false }
-rand = "0.5"
-serde = "1"
-serde_derive = "1"
-
-[[bench]]
-name = "bench"
-path = "benches/bench.rs"
-test = false
-bench = true
-
-[profile.test]
+[profile.release]
 debug = true
 
 [profile.bench]
-debug = true
-
-[profile.release]
 debug = true

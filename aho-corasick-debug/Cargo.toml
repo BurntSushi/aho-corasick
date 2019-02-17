@@ -1,0 +1,22 @@
+[package]
+publish = false
+name = "aho-corasick-debug"
+version = "0.0.1"
+authors = ["Andrew Gallant <jamslam@gmail.com>"]
+description = "A simple command line tool for playing with Aho-Corasick."
+license = "Unlicense/MIT"
+categories = ["text-processing"]
+autotests = false
+edition = "2018"
+
+[[bin]]
+name = "aho-corasick-debug"
+path = "main.rs"
+
+[dependencies]
+aho-corasick = { version = "*", path = ".." }
+memmap = "0.7.0"
+
+[dependencies.clap]
+version = "2.32.0"
+default-features = false

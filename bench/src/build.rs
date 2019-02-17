@@ -1,7 +1,7 @@
-use aho_corasick::AcAutomaton;
+use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
 use criterion::{Criterion, black_box};
 
-use input::words_5000;
+use input::{words_5000, words_15000};
 use {define, define_long};
 
 /// Benchmarks that measure the performance of constructing an Aho-Corasick
@@ -20,6 +20,7 @@ pub fn all(c: &mut Criterion) {
         "ſHE", "ſHe", "ſhE", "ſhe",
     ]);
     define_build(c, true, "5000words", words_5000());
+    define_build(c, true, "15000words", words_15000());
 }
 
 fn define_build<B: AsRef<[u8]>>(
@@ -37,11 +38,11 @@ fn define_build<B: AsRef<[u8]>>(
     let name = format!("nfa/{}", bench_name);
     if long {
         define_long(c, "build", &name, &[], move |b| {
-            b.iter(|| black_box(AcAutomaton::new(&pats)))
+            b.iter(|| black_box(AhoCorasick::new(&pats)))
         });
     } else {
         define(c, "build", &name, &[], move |b| {
-            b.iter(|| black_box(AcAutomaton::new(&pats)))
+            b.iter(|| black_box(AhoCorasick::new(&pats)))
         });
     }
 
@@ -49,11 +50,15 @@ fn define_build<B: AsRef<[u8]>>(
     let name = format!("dfa/{}", bench_name);
     if long {
         define_long(c, "build", &name, &[], move |b| {
-            b.iter(|| black_box(AcAutomaton::new(&pats).into_full()))
+            b.iter(|| {
+                black_box(AhoCorasickBuilder::new().dfa(true).build(&pats))
+            })
         });
     } else {
         define(c, "build", &name, &[], move |b| {
-            b.iter(|| black_box(AcAutomaton::new(&pats).into_full()))
+            b.iter(|| {
+                black_box(AhoCorasickBuilder::new().dfa(true).build(&pats))
+            })
         });
     }
 }
