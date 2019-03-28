@@ -1,5 +1,5 @@
 use ahocorasick::MatchKind;
-use prefilter::Prefilter;
+use prefilter::{Prefilter, PrefilterState};
 use state_id::{StateID, dead_id, fail_id};
 use Match;
 
@@ -135,14 +135,19 @@ pub trait Automaton {
     #[inline(always)]
     fn standard_find_at(
         &self,
+        prestate: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
         state_id: &mut Self::ID,
     ) -> Option<Match> {
         if let Some(pre) = self.prefilter() {
-            self.standard_find_at_imp(haystack, at, state_id, Some(pre))
+            self.standard_find_at_imp(
+                prestate, Some(pre), haystack, at, state_id,
+            )
         } else {
-            self.standard_find_at_imp(haystack, at, state_id, None)
+            self.standard_find_at_imp(
+                prestate, None, haystack, at, state_id,
+            )
         }
     }
 
@@ -152,10 +157,11 @@ pub trait Automaton {
     #[inline(always)]
     fn standard_find_at_imp(
         &self,
+        prestate: &mut PrefilterState,
+        prefilter: Option<&Prefilter>,
         haystack: &[u8],
         at: usize,
         state_id: &mut Self::ID,
-        prefilter: Option<&Prefilter>,
     ) -> Option<Match> {
         // This is necessary for guaranteeing a safe API, since we use the
         // state ID below in a function that exhibits UB if called with an
@@ -171,11 +177,14 @@ pub trait Automaton {
             let mut ptr = haystack[at..].as_ptr();
             while ptr < end {
                 if let Some(pre) = prefilter {
-                    if *state_id == self.start_state() {
+                    if prestate.is_effective()
+                        && *state_id == self.start_state()
+                    {
                         let at = ptr as usize - start as usize;
                         match pre.next_candidate(haystack, at) {
                             None => return None,
                             Some(i) => {
+                                prestate.update(i - at);
                                 ptr = start.offset(i as isize);
                             }
                         }
@@ -219,14 +228,19 @@ pub trait Automaton {
     #[inline(never)]
     fn leftmost_find_at(
         &self,
+        prestate: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
         state_id: &mut Self::ID,
     ) -> Option<Match> {
         if let Some(pre) = self.prefilter() {
-            self.leftmost_find_at_imp(haystack, at, state_id, Some(pre))
+            self.leftmost_find_at_imp(
+                prestate, Some(pre), haystack, at, state_id,
+            )
         } else {
-            self.leftmost_find_at_imp(haystack, at, state_id, None)
+            self.leftmost_find_at_imp(
+                prestate, None, haystack, at, state_id,
+            )
         }
     }
 
@@ -236,10 +250,11 @@ pub trait Automaton {
     #[inline(always)]
     fn leftmost_find_at_imp(
         &self,
+        prestate: &mut PrefilterState,
+        prefilter: Option<&Prefilter>,
         haystack: &[u8],
         at: usize,
         state_id: &mut Self::ID,
-        prefilter: Option<&Prefilter>,
     ) -> Option<Match> {
         debug_assert!(self.match_kind().is_leftmost());
         // This is necessary for guaranteeing a safe API, since we use the
@@ -258,11 +273,14 @@ pub trait Automaton {
             let mut last_match = self.get_match(*state_id, 0, at);
             while ptr < end {
                 if let Some(pre) = prefilter {
-                    if *state_id == self.start_state() {
+                    if prestate.is_effective()
+                        && *state_id == self.start_state()
+                    {
                         let at = ptr as usize - start as usize;
                         match pre.next_candidate(haystack, at) {
                             None => return None,
                             Some(i) => {
+                                prestate.update(i - at);
                                 ptr = start.offset(i as isize);
                             }
                         }
@@ -309,6 +327,7 @@ pub trait Automaton {
     #[inline(always)]
     fn overlapping_find_at(
         &self,
+        prestate: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
         state_id: &mut Self::ID,
@@ -329,7 +348,7 @@ pub trait Automaton {
         }
 
         *match_index = 0;
-        match self.standard_find_at(haystack, at, state_id) {
+        match self.standard_find_at(prestate, haystack, at, state_id) {
             None => None,
             Some(m) => {
                 *match_index = 1;
@@ -345,6 +364,7 @@ pub trait Automaton {
     #[inline(always)]
     fn earliest_find_at(
         &self,
+        prestate: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
         state_id: &mut Self::ID,
@@ -354,7 +374,7 @@ pub trait Automaton {
                 return Some(m);
             }
         }
-        self.standard_find_at(haystack, at, state_id)
+        self.standard_find_at(prestate, haystack, at, state_id)
     }
 
     /// A convenience function for finding the next match according to the
@@ -363,16 +383,17 @@ pub trait Automaton {
     #[inline(always)]
     fn find_at(
         &self,
+        prestate: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
         state_id: &mut Self::ID,
     ) -> Option<Match> {
         match *self.match_kind() {
             MatchKind::Standard => {
-                self.earliest_find_at(haystack, at, state_id)
+                self.earliest_find_at(prestate, haystack, at, state_id)
             }
             MatchKind::LeftmostFirst | MatchKind::LeftmostLongest => {
-                self.leftmost_find_at(haystack, at, state_id)
+                self.leftmost_find_at(prestate, haystack, at, state_id)
             }
             MatchKind::__Nonexhaustive => unreachable!(),
         }

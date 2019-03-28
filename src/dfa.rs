@@ -5,7 +5,7 @@ use automaton::Automaton;
 use classes::ByteClasses;
 use error::Result;
 use nfa::{NFA, PatternID, PatternLength};
-use prefilter::{Prefilter, PrefilterObj};
+use prefilter::{Prefilter, PrefilterObj, PrefilterState};
 use state_id::{StateID, dead_id, fail_id, premultiply_overflow_error};
 use Match;
 
@@ -50,6 +50,7 @@ impl<S: StateID> DFA<S> {
     #[inline(always)]
     pub fn overlapping_find_at(
         &self,
+        prestate: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
         state_id: &mut S,
@@ -58,22 +59,22 @@ impl<S: StateID> DFA<S> {
         match *self {
             DFA::Standard(ref dfa) => {
                 dfa.overlapping_find_at(
-                    haystack, at, state_id, match_index,
+                    prestate, haystack, at, state_id, match_index,
                 )
             }
             DFA::ByteClass(ref dfa) => {
                 dfa.overlapping_find_at(
-                    haystack, at, state_id, match_index,
+                    prestate, haystack, at, state_id, match_index,
                 )
             }
             DFA::Premultiplied(ref dfa) => {
                 dfa.overlapping_find_at(
-                    haystack, at, state_id, match_index,
+                    prestate, haystack, at, state_id, match_index,
                 )
             }
             DFA::PremultipliedByteClass(ref dfa) => {
                 dfa.overlapping_find_at(
-                    haystack, at, state_id, match_index,
+                    prestate, haystack, at, state_id, match_index,
                 )
             }
         }
@@ -82,22 +83,23 @@ impl<S: StateID> DFA<S> {
     #[inline(always)]
     pub fn earliest_find_at(
         &self,
+        prestate: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
         state_id: &mut S,
     ) -> Option<Match> {
         match *self {
             DFA::Standard(ref dfa) => {
-                dfa.earliest_find_at(haystack, at, state_id)
+                dfa.earliest_find_at(prestate, haystack, at, state_id)
             }
             DFA::ByteClass(ref dfa) => {
-                dfa.earliest_find_at(haystack, at, state_id)
+                dfa.earliest_find_at(prestate, haystack, at, state_id)
             }
             DFA::Premultiplied(ref dfa) => {
-                dfa.earliest_find_at(haystack, at, state_id)
+                dfa.earliest_find_at(prestate, haystack, at, state_id)
             }
             DFA::PremultipliedByteClass(ref dfa) => {
-                dfa.earliest_find_at(haystack, at, state_id)
+                dfa.earliest_find_at(prestate, haystack, at, state_id)
             }
         }
     }
@@ -105,22 +107,23 @@ impl<S: StateID> DFA<S> {
     #[inline(always)]
     pub fn find_at(
         &self,
+        prestate: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
         state_id: &mut S,
     ) -> Option<Match> {
         match *self {
             DFA::Standard(ref dfa) => {
-                dfa.find_at(haystack, at, state_id)
+                dfa.find_at(prestate, haystack, at, state_id)
             }
             DFA::ByteClass(ref dfa) => {
-                dfa.find_at(haystack, at, state_id)
+                dfa.find_at(prestate, haystack, at, state_id)
             }
             DFA::Premultiplied(ref dfa) => {
-                dfa.find_at(haystack, at, state_id)
+                dfa.find_at(prestate, haystack, at, state_id)
             }
             DFA::PremultipliedByteClass(ref dfa) => {
-                dfa.find_at(haystack, at, state_id)
+                dfa.find_at(prestate, haystack, at, state_id)
             }
         }
     }

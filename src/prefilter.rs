@@ -41,6 +41,77 @@ impl PrefilterObj {
     }
 }
 
+/// PrefilterState tracks state associated with the effectiveness of a
+/// prefilter. It is used to track how many bytes, on average, are skipped by
+/// the prefilter. If this average dips below a certain threshold over time,
+/// then the state renders the prefilter inert and stops using it.
+///
+/// A prefilter state should be created for each search. (Where creating an
+/// iterator via, e.g., `find_iter`, is treated as a single search.)
+#[derive(Clone, Debug)]
+pub struct PrefilterState {
+    /// The number of skips that has been executed.
+    skips: usize,
+    /// The total number of bytes that have been skipped.
+    skipped: usize,
+    /// The maximum length of a match. This is used to help determine how many
+    /// bytes on average should be skipped in order for a prefilter to be
+    /// effective.
+    max_match_len: usize,
+    /// Once this heuristic has been deemed ineffective, it will be inert
+    /// throughout the rest of its lifetime. This serves as a cheap way to
+    /// check inertness.
+    inert: bool,
+}
+
+impl PrefilterState {
+    /// The minimum number of skip attempts to try before considering whether
+    /// a prefilter is effective or not.
+    const MIN_SKIPS: usize = 40;
+
+    /// The minimum amount of bytes that skipping must average, expressed as
+    /// a factor of the multiple of the length of a possible match.
+    ///
+    /// That is, after MIN_SKIPS have occurred, if the average number of bytes
+    /// skipped ever falls below MIN_AVG_FACTOR, then this searcher is rendered
+    /// inert.
+    const MIN_AVG_FACTOR: usize = 2;
+
+    /// Create a fresh prefilter state.
+    pub fn new(max_match_len: usize) -> PrefilterState {
+        PrefilterState { skips: 0, skipped: 0, max_match_len, inert: false }
+    }
+
+    /// Update this state with the number of bytes skipped on the last
+    /// invocation of the prefilter.
+    #[inline]
+    pub fn update(&mut self, skipped: usize) {
+        self.skips += 1;
+        self.skipped += skipped;
+    }
+
+    /// Return true if and only if this state indicates that a prefilter is
+    /// still effective.
+    #[inline]
+    pub fn is_effective(&mut self) -> bool {
+        if self.inert {
+            return false;
+        }
+        if self.skips < PrefilterState::MIN_SKIPS {
+            return true;
+        }
+
+        let min_avg = PrefilterState::MIN_AVG_FACTOR * self.max_match_len;
+        if self.skipped >= min_avg * self.skips {
+            return true;
+        }
+
+        // We're inert.
+        self.inert = true;
+        false
+    }
+}
+
 /// A builder for construction a starting byte prefilter.
 ///
 /// A starting byte prefilter is a simplistic prefilter that looks for possible

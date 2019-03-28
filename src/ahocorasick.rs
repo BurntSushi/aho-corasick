@@ -5,6 +5,7 @@ use buffer::Buffer;
 use dfa::{self, DFA};
 use error::Result;
 use nfa::{self, NFA};
+use prefilter::PrefilterState;
 use state_id::StateID;
 use Match;
 
@@ -209,8 +210,11 @@ impl<S: StateID> AhoCorasick<S> {
     /// assert_eq!((1, 2), (mat.start(), mat.end()));
     /// ```
     pub fn earliest_find<B: AsRef<[u8]>>(&self, haystack: B) -> Option<Match> {
+        let mut prestate = PrefilterState::new(self.max_pattern_len());
         let mut start = self.imp.start_state();
-        self.imp.earliest_find_at(haystack.as_ref(), 0, &mut start)
+        self.imp.earliest_find_at(
+            &mut prestate, haystack.as_ref(), 0, &mut start,
+        )
     }
 
     /// Returns the location of the first match according to the match
@@ -275,8 +279,9 @@ impl<S: StateID> AhoCorasick<S> {
     /// assert_eq!("abcd", &haystack[mat.start()..mat.end()]);
     /// ```
     pub fn find<B: AsRef<[u8]>>(&self, haystack: B) -> Option<Match> {
+        let mut prestate = PrefilterState::new(self.max_pattern_len());
         let mut start = self.imp.start_state();
-        self.imp.find_at(haystack.as_ref(), 0, &mut start)
+        self.imp.find_at(&mut prestate, haystack.as_ref(), 0, &mut start)
     }
 
     /// Returns an iterator of non-overlapping matches, using the match
@@ -1029,6 +1034,7 @@ impl<S: StateID> Imp<S> {
     #[inline(always)]
     fn overlapping_find_at(
         &self,
+        prestate: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
         state_id: &mut S,
@@ -1037,12 +1043,12 @@ impl<S: StateID> Imp<S> {
         match *self {
             Imp::NFA(ref nfa) => {
                 nfa.overlapping_find_at(
-                    haystack, at, state_id, match_index,
+                    prestate, haystack, at, state_id, match_index,
                 )
             }
             Imp::DFA(ref dfa) => {
                 dfa.overlapping_find_at(
-                    haystack, at, state_id, match_index,
+                    prestate, haystack, at, state_id, match_index,
                 )
             }
         }
@@ -1051,16 +1057,17 @@ impl<S: StateID> Imp<S> {
     #[inline(always)]
     fn earliest_find_at(
         &self,
+        prestate: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
         state_id: &mut S,
     ) -> Option<Match> {
         match *self {
             Imp::NFA(ref nfa) => {
-                nfa.earliest_find_at(haystack, at, state_id)
+                nfa.earliest_find_at(prestate, haystack, at, state_id)
             }
             Imp::DFA(ref dfa) => {
-                dfa.earliest_find_at(haystack, at, state_id)
+                dfa.earliest_find_at(prestate, haystack, at, state_id)
             }
         }
     }
@@ -1068,16 +1075,17 @@ impl<S: StateID> Imp<S> {
     #[inline(always)]
     fn find_at(
         &self,
+        prestate: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
         state_id: &mut S,
     ) -> Option<Match> {
         match *self {
             Imp::NFA(ref nfa) => {
-                nfa.find_at(haystack, at, state_id)
+                nfa.find_at(prestate, haystack, at, state_id)
             }
             Imp::DFA(ref dfa) => {
-                dfa.find_at(haystack, at, state_id)
+                dfa.find_at(prestate, haystack, at, state_id)
             }
         }
     }
@@ -1102,6 +1110,7 @@ impl<S: StateID> Imp<S> {
 #[derive(Debug)]
 pub struct FindIter<'a, 'b, S: 'a + StateID> {
     fsm: &'a Imp<S>,
+    prestate: PrefilterState,
     haystack: &'b [u8],
     pos: usize,
     start: S,
@@ -1109,8 +1118,9 @@ pub struct FindIter<'a, 'b, S: 'a + StateID> {
 
 impl<'a, 'b, S: StateID> FindIter<'a, 'b, S> {
     fn new(ac: &'a AhoCorasick<S>, haystack: &'b [u8]) -> FindIter<'a, 'b, S> {
+        let prestate = PrefilterState::new(ac.max_pattern_len());
         let start = ac.imp.start_state();
-        FindIter { fsm: &ac.imp, haystack, pos: 0, start }
+        FindIter { fsm: &ac.imp, prestate, haystack, pos: 0, start }
     }
 }
 
@@ -1122,18 +1132,21 @@ impl<'a, 'b, S: StateID> Iterator for FindIter<'a, 'b, S> {
             return None;
         }
         let mut start = self.start;
-        let m = match self.fsm.find_at(self.haystack, self.pos, &mut start) {
+        let result = self.fsm.find_at(
+            &mut self.prestate, self.haystack, self.pos, &mut start,
+        );
+        let mat = match result {
             None => return None,
-            Some(m) => m,
+            Some(mat) => mat,
         };
-        if m.end() == self.pos {
+        if mat.end() == self.pos {
             // If the automaton can match the empty string and if we found an
             // empty match, then we need to forcefully move the position.
             self.pos += 1;
         } else {
-            self.pos = m.end();
+            self.pos = mat.end();
         }
-        Some(m)
+        Some(mat)
     }
 }
 
@@ -1155,6 +1168,7 @@ impl<'a, 'b, S: StateID> Iterator for FindIter<'a, 'b, S> {
 #[derive(Debug)]
 pub struct FindOverlappingIter<'a, 'b, S: 'a + StateID> {
     fsm: &'a Imp<S>,
+    prestate: PrefilterState,
     haystack: &'b [u8],
     pos: usize,
     last_match_end: usize,
@@ -1171,9 +1185,11 @@ impl<'a, 'b, S: StateID> FindOverlappingIter<'a, 'b, S> {
             ac.supports_overlapping(),
             "automaton does not support overlapping searches"
         );
+        let prestate = PrefilterState::new(ac.max_pattern_len());
         FindOverlappingIter {
             fsm: &ac.imp,
-            haystack: haystack,
+            prestate,
+            haystack,
             pos: 0,
             last_match_end: 0,
             state_id: ac.imp.start_state(),
@@ -1187,6 +1203,7 @@ impl<'a, 'b, S: StateID> Iterator for FindOverlappingIter<'a, 'b, S> {
 
     fn next(&mut self) -> Option<Match> {
         let result = self.fsm.overlapping_find_at(
+            &mut self.prestate,
             self.haystack,
             self.pos,
             &mut self.state_id,
@@ -1260,6 +1277,9 @@ impl<'a, R: io::Read, S: StateID> Iterator for StreamFindIter<'a, R, S> {
 struct StreamChunkIter<'a, R, S: 'a + StateID> {
     /// The AC automaton.
     fsm: &'a Imp<S>,
+    /// State associated with this automaton's prefilter. It is a heuristic
+    /// for stopping the prefilter if it's deemed ineffective.
+    prestate: PrefilterState,
     /// The source of bytes we read from.
     rdr: R,
     /// A fixed size buffer. This is what we actually search. There are some
@@ -1303,10 +1323,12 @@ impl<'a, R: io::Read, S: StateID> StreamChunkIter<'a, R, S> {
             "stream searching is only supported for Standard match semantics"
         );
 
+        let prestate = PrefilterState::new(ac.max_pattern_len());
         let buf = Buffer::new(ac.imp.max_pattern_len());
         let state_id = ac.imp.start_state();
         StreamChunkIter {
             fsm: &ac.imp,
+            prestate,
             rdr,
             buf,
             state_id,
@@ -1374,7 +1396,10 @@ impl<'a, R: io::Read, S: StateID> StreamChunkIter<'a, R, S> {
                 }
             }
             let result = self.fsm.earliest_find_at(
-                self.buf.buffer(), self.search_pos, &mut self.state_id,
+                &mut self.prestate,
+                self.buf.buffer(),
+                self.search_pos,
+                &mut self.state_id,
             );
             match result {
                 None => {
