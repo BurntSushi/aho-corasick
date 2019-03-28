@@ -4,7 +4,7 @@ A library for finding occurrences of many patterns at once. This library
 provides multiple pattern search principally through an implementation of the
 [Aho-Corasick algorithm](https://en.wikipedia.org/wiki/Aho%E2%80%93Corasick_algorithm),
 which builds a fast finite state machine for executing searches in linear time.
-Features include case insensitive matching, overlapping matches, search &
+Features include case insensitive matching, overlapping matches and search &
 replace in streams.
 
 [![Linux build status](https://api.travis-ci.org/BurntSushi/aho-corasick.svg)](https://travis-ci.org/BurntSushi/aho-corasick)
@@ -35,7 +35,7 @@ extern crate aho_corasick;
 ```
 
 
-# Example: basic searching
+### Example: basic searching
 
 This example shows how to search for occurrences of multiple patterns
 simultaneously. Each match includes the pattern that matched along with the
@@ -60,7 +60,7 @@ assert_eq!(matches, vec![
 ```
 
 
-# Example: case insensitivity
+### Example: case insensitivity
 
 This is like the previous example, but matches `Snapple` case insensitively
 using `AhoCorasickBuilder`:
@@ -86,7 +86,7 @@ assert_eq!(matches, vec![
 ```
 
 
-# Example: replacing matches in a stream
+### Example: replacing matches in a stream
 
 This example shows how to execute a search and replace on a stream without
 loading the entire stream into memory first.
@@ -110,7 +110,7 @@ assert_eq!(b"The slow grey sloth.".to_vec(), wtr);
 ```
 
 
-# Example: finding the leftmost first match
+### Example: finding the leftmost first match
 
 In the textbook description of Aho-Corasick, its formulation is typically
 structured such that it reports all possible matches, even when they overlap
@@ -170,7 +170,7 @@ supported version of Rust. In general, it will follow the `regex` crate's
 policy, since `regex` is an important dependent.
 
 
-# Future work
+### Future work
 
 Here are some plans for the future:
 
