@@ -174,6 +174,8 @@ policy, since `regex` is an important dependent.
 
 Here are some plans for the future:
 
+* Assuming the current API is sufficient, I'd like to commit to it and release
+  a `1.0` version of this crate some time in the next 6-12 months.
 * Despite the crate's name, it seems prudent to consolidate all
   multi-pattern search optimizations into this crate so that they get the
   widest possible use. A good place to start will be to move the regex
