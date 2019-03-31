@@ -2024,28 +2024,4 @@ mod tests {
         assert_send::<AhoCorasickBuilder>();
         assert_sync::<AhoCorasickBuilder>();
     }
-
-    #[test]
-    fn watwat() {
-        let haystack = &b"foo barfofoobar foo"[..];
-        let mut out = vec![];
-        let ac = AhoCorasick::new(&["foo"]);
-        ac.stream_replace_all(haystack, &mut out, &["wutwut"]).unwrap();
-        eprintln!("{}", ::std::str::from_utf8(&out).unwrap());
-
-        // let mut it = StreamChunkIter::new(&ac, haystack);
-        // while let Some(Ok(chunk)) = it.next() {
-            // match chunk {
-                // StreamChunk::NonMatch { bytes, start } => {
-                    // let end = start + bytes.len();
-                    // let s = ::std::str::from_utf8(bytes).unwrap();
-                    // eprintln!("NonMatch({}, {}): {}", start, end, s);
-                // }
-                // StreamChunk::Match { bytes, mat } => {
-                    // let s = ::std::str::from_utf8(bytes).unwrap();
-                    // eprintln!("Match({}, {}): {}", mat.start(), mat.end(), s);
-                // }
-            // }
-        // }
-    }
 }
