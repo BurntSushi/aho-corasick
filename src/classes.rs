@@ -34,14 +34,9 @@ impl ByteClasses {
     /// Get the equivalence class for the given byte.
     #[inline]
     pub fn get(&self, byte: u8) -> u8 {
-        self.0[byte as usize]
-    }
-
-    /// Get the equivalence class for the given byte while forcefully
-    /// eliding bounds checks.
-    #[inline]
-    pub unsafe fn get_unchecked(&self, byte: u8) -> u8 {
-        *self.0.get_unchecked(byte as usize)
+        // SAFETY: This is safe because all dense transitions have
+        // exactly 256 elements, so all u8 values are valid indices.
+        unsafe { *self.0.get_unchecked(byte as usize) }
     }
 
     /// Return the total number of elements in the alphabet represented by
