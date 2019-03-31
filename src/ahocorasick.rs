@@ -2016,12 +2016,17 @@ mod tests {
 
     #[test]
     fn oibits() {
+        use std::panic::UnwindSafe;
+
         fn assert_send<T: Send>() {}
         fn assert_sync<T: Sync>() {}
+        fn assert_unwind_safe<T: UnwindSafe>() {}
 
         assert_send::<AhoCorasick>();
         assert_sync::<AhoCorasick>();
+        assert_unwind_safe::<AhoCorasick>();
         assert_send::<AhoCorasickBuilder>();
         assert_sync::<AhoCorasickBuilder>();
+        assert_unwind_safe::<AhoCorasickBuilder>();
     }
 }
