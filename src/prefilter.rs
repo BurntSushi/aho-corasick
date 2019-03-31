@@ -1,12 +1,12 @@
 use std::fmt;
-use std::panic::UnwindSafe;
+use std::panic::{RefUnwindSafe, UnwindSafe};
 
 use memchr::{memchr, memchr2, memchr3};
 
 /// A prefilter describes the behavior of fast literal scanners for quickly
 /// skipping past bytes in the haystack that we know cannot possibly
 /// participate in a match.
-pub trait Prefilter: Send + Sync + UnwindSafe + fmt::Debug {
+pub trait Prefilter: Send + Sync + RefUnwindSafe + UnwindSafe + fmt::Debug {
     /// Returns the next possible match candidate. This may yield false
     /// positives, so callers must "confirm" a match starting at the position
     /// returned. This, however, must never produce false negatives. That is,
