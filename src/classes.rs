@@ -34,7 +34,8 @@ impl ByteClasses {
     /// Get the equivalence class for the given byte.
     #[inline]
     pub fn get(&self, byte: u8) -> u8 {
-        // SAFETY: `byte` is always in the range of the 256-len array
+        // SAFETY: This is safe because all dense transitions have
+        // exactly 256 elements, so all u8 values are valid indices.
         unsafe { *self.0.get_unchecked(byte as usize) }
     }
 
