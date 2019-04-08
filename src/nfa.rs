@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 use std::cmp;
 use std::fmt;
 use std::mem::size_of;
+use std::ops::{Index, IndexMut};
 
 use ahocorasick::MatchKind;
 use automaton::Automaton;
@@ -185,7 +186,7 @@ impl<S: StateID> NFA<S> {
     }
 
     fn add_dense_state(&mut self, depth: usize) -> Result<S> {
-        let trans = Transitions::Dense(vec![fail_id(); 256]);
+        let trans = Transitions::Dense(Dense::new());
         let id = usize_to_state_id(self.states.len())?;
         self.states.push(State {
             trans,
@@ -322,6 +323,42 @@ impl<S: StateID> State<S> {
     }
 }
 
+#[derive(Clone, Debug)]
+struct Dense<S>(Vec<S>);
+
+impl<S> Dense<S>
+    where S: StateID,
+{
+    fn new() -> Self {
+        Dense(vec![fail_id(); 256])
+    }
+
+    #[inline(always)]
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+}
+
+impl<S> Index<u8> for Dense<S> {
+    type Output = S;
+
+    #[inline(always)]
+    fn index(&self, i: u8) -> &S {
+        // SAFETY: This is safe because all dense transitions have
+        // exactly 256 elements, so all u8 values are valid indices.
+        unsafe { self.0.get_unchecked(i as usize) }
+    }
+}
+
+impl<S> IndexMut<u8> for Dense<S> {
+    #[inline(always)]
+    fn index_mut(&mut self, i: u8) -> &mut S {
+        // SAFETY: This is safe because all dense transitions have
+        // exactly 256 elements, so all u8 values are valid indices.
+        unsafe { self.0.get_unchecked_mut(i as usize) }
+    }
+}
+
 /// A representation of transitions in an NFA.
 ///
 /// Transitions have either a sparse representation, which is slower for
@@ -336,7 +373,7 @@ impl<S: StateID> State<S> {
 #[derive(Clone, Debug)]
 enum Transitions<S> {
     Sparse(Vec<(u8, S)>),
-    Dense(Vec<S>),
+    Dense(Dense<S>),
 }
 
 impl<S: StateID> Transitions<S> {
@@ -362,9 +399,7 @@ impl<S: StateID> Transitions<S> {
                 fail_id()
             }
             Transitions::Dense(ref dense) => {
-                // SAFETY: This is safe because all dense transitions have
-                // exactly 256 elements, so all u8 values are valid indices.
-                unsafe { *dense.get_unchecked(input as usize) }
+                dense[input]
             }
         }
     }
@@ -378,7 +413,7 @@ impl<S: StateID> Transitions<S> {
                 }
             }
             Transitions::Dense(ref mut dense) => {
-                dense[input as usize] = next;
+                dense[input] = next;
             }
         }
     }
@@ -394,7 +429,7 @@ impl<S: StateID> Transitions<S> {
             }
             Transitions::Dense(ref dense) => {
                 for b in AllBytesIter::new() {
-                    let id = dense[b as usize];
+                    let id = dense[b];
                     if id != fail_id() {
                         f(b, id);
                     }
@@ -413,7 +448,7 @@ impl<S: StateID> Transitions<S> {
                 }
                 Transitions::Dense(ref dense) => {
                     for b in AllBytesIter::new() {
-                        f(b, dense[b as usize]);
+                        f(b, dense[b]);
                     }
                 }
             }
@@ -433,7 +468,7 @@ impl<S: StateID> Transitions<S> {
                 }
                 Transitions::Dense(ref dense) => {
                     for b in classes.representatives() {
-                        f(b, dense[b as usize]);
+                        f(b, dense[b]);
                     }
                 }
             }
@@ -485,7 +520,7 @@ impl<'a, S: StateID> Iterator for IterTransitionsMut<'a, S> {
                     debug_assert!(self.cur < 256);
 
                     let b = self.cur as u8;
-                    let id = dense[self.cur];
+                    let id = dense[b];
                     self.cur += 1;
                     if id != fail_id() {
                         return Some((b, id));
