@@ -326,9 +326,7 @@ impl<S: StateID> State<S> {
 #[derive(Clone, Debug)]
 struct Dense<S>(Vec<S>);
 
-impl<S> Dense<S>
-    where S: StateID,
-{
+impl<S: StateID> Dense<S> {
     fn new() -> Self {
         Dense(vec![fail_id(); 256])
     }
