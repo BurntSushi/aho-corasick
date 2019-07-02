@@ -1,6 +1,6 @@
 [package]
 name = "aho-corasick"
-version = "0.7.3"  #:version
+version = "0.7.4"  #:version
 authors = ["Andrew Gallant <jamslam@gmail.com>"]
 description = "Fast multiple substring searching."
 homepage = "https://github.com/BurntSushi/aho-corasick"
