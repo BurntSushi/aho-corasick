@@ -184,6 +184,9 @@ const LEFTMOST: &'static [SearchTest] = &[
     t!(leftmost000, &["ab", "ab"], "abcd", &[(0, 0, 2)]),
     t!(leftmost010, &["a", ""], "a", &[(0, 0, 1), (1, 1, 1)]),
     t!(leftmost020, &["", ""], "a", &[(0, 0, 0), (0, 1, 1)]),
+    t!(leftmost030, &["a", "ab"], "aa", &[(0, 0, 1), (0, 1, 2)]),
+    t!(leftmost031, &["ab", "a"], "aa", &[(1, 0, 1), (1, 1, 2)]),
+    t!(leftmost032, &["ab", "a"], "xayabbbz", &[(1, 1, 2), (0, 3, 5)]),
 
     t!(leftmost300, &["abcd", "bce", "b"], "abce", &[(1, 1, 4)]),
     t!(leftmost310, &["abcd", "ce", "bc"], "abce", &[(2, 1, 3)]),
@@ -228,6 +231,7 @@ const LEFTMOST_FIRST: &'static [SearchTest] = &[
     ]),
     t!(leftfirst020, &["abcd", "ab"], "abcd", &[(0, 0, 4)]),
     t!(leftfirst030, &["ab", "ab"], "abcd", &[(0, 0, 2)]),
+    t!(leftfirst040, &["a", "ab"], "xayabbbz", &[(0, 1, 2), (0, 3, 4)]),
 
     t!(leftlong100, &["abcdefg", "bcde", "bcdef"], "abcdef", &[(1, 1, 5)]),
     t!(leftlong110, &["abcdefg", "bcdef", "bcde"], "abcdef", &[(1, 1, 6)]),
@@ -281,6 +285,7 @@ const LEFTMOST_LONGEST: &'static [SearchTest] = &[
     t!(leftlong330, &["abcd", "b", "ce"], "abce", &[
        (1, 1, 2), (2, 2, 4),
     ]),
+    t!(leftlong340, &["a", "ab"], "xayabbbz", &[(0, 1, 2), (1, 3, 5)]),
 ];
 
 /// Tests for non-overlapping match semantics.

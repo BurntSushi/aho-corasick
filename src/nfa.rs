@@ -924,9 +924,21 @@ impl<'a, S: StateID> Compiler<'a, S> {
         let mut queue: VecDeque<QueuedState<S>> = VecDeque::new();
         let start = QueuedState::start(&self.nfa);
         for b in AllBytesIter::new() {
-            let next = self.nfa.start().next_state(b);
-            if next != start.id {
-                queue.push_back(start.next_queued_state(&self.nfa, next));
+            let next_id = self.nfa.start().next_state(b);
+            if next_id != start.id {
+                let next = start.next_queued_state(&self.nfa, next_id);
+                queue.push_back(next);
+                // If a state immediately following the start state is a match
+                // state, then we never want to follow its failure transition
+                // since the failure transition necessarily leads back to the
+                // start state, which we never want to do for leftmost matching
+                // after a match has been found.
+                //
+                // N.B. This is a special case of the more general handling
+                // found below.
+                if self.nfa.state(next_id).is_match() {
+                    self.nfa.state_mut(next_id).fail = dead_id();
+                }
             }
         }
         while let Some(item) = queue.pop_front() {
@@ -986,6 +998,13 @@ impl<'a, S: StateID> Compiler<'a, S> {
                         it.nfa().state_mut(next.id).fail = dead_id();
                         continue;
                     }
+                    assert_ne!(
+                        start.id,
+                        it.nfa().state(next.id).fail,
+                        "states that are match states or follow match \
+                         states should never have a failure transition \
+                         back to the start state in leftmost searching",
+                    );
                 }
                 it.nfa().state_mut(next.id).fail = fail;
                 it.nfa().copy_matches(fail, next.id);
@@ -1215,7 +1234,8 @@ mod tests {
         let nfa: NFA<usize> = Builder::new()
             .dense_depth(0)
             // .match_kind(MatchKind::LeftmostShortest)
-            .match_kind(MatchKind::LeftmostLongest)
+            // .match_kind(MatchKind::LeftmostLongest)
+            .match_kind(MatchKind::LeftmostFirst)
             // .build(&["abcd", "ce", "b"])
             // .build(&["ab", "bc"])
             // .build(&["b", "bcd", "ce"])
@@ -1223,7 +1243,7 @@ mod tests {
             // .build(&["abc", "bd", "ab"])
             // .build(&["abcdefghi", "hz", "abcdefgh"])
             // .build(&["abcd", "bce", "b"])
-            .build(&["a", "ababcde"])
+            .build(&["abcdefg", "bcde", "bcdef"])
             .unwrap();
         println!("{:?}", nfa);
     }
