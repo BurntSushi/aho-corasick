@@ -1,5 +1,5 @@
 use ahocorasick::MatchKind;
-use prefilter::{Prefilter, PrefilterState};
+use prefilter::{self, Prefilter, PrefilterState};
 use state_id::{dead_id, fail_id, StateID};
 use Match;
 
@@ -183,10 +183,9 @@ pub trait Automaton {
                         && *state_id == self.start_state()
                     {
                         let at = ptr as usize - start as usize;
-                        match pre.next_candidate(haystack, at) {
+                        match prefilter::next(prestate, pre, haystack, at) {
                             None => return None,
                             Some(i) => {
-                                prestate.update(i - at);
                                 ptr = start.offset(i as isize);
                             }
                         }
@@ -281,10 +280,9 @@ pub trait Automaton {
                         && *state_id == self.start_state()
                     {
                         let at = ptr as usize - start as usize;
-                        match pre.next_candidate(haystack, at) {
+                        match prefilter::next(prestate, pre, haystack, at) {
                             None => return None,
                             Some(i) => {
-                                prestate.update(i - at);
                                 ptr = start.offset(i as isize);
                             }
                         }

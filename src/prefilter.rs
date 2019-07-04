@@ -10,7 +10,7 @@ pub trait Prefilter:
     Send + Sync + RefUnwindSafe + UnwindSafe + fmt::Debug
 {
     /// Returns the next possible match candidate. This may yield false
-    /// positives, so callers must "confirm" a match starting at the position
+    /// positives, so callers must confirm a match starting at the position
     /// returned. This, however, must never produce false negatives. That is,
     /// this must, at minimum, return the starting position of the next match
     /// in the given haystack after or at the given position.
@@ -19,6 +19,17 @@ pub trait Prefilter:
     /// A method for cloning a prefilter, to work-around the fact that Clone
     /// is not object-safe.
     fn clone_prefilter(&self) -> Box<Prefilter>;
+}
+
+impl<'a, P: Prefilter + ?Sized> Prefilter for &'a P {
+    #[inline]
+    fn next_candidate(&self, haystack: &[u8], at: usize) -> Option<usize> {
+        (**self).next_candidate(haystack, at)
+    }
+
+    fn clone_prefilter(&self) -> Box<Prefilter> {
+        (**self).clone_prefilter()
+    }
 }
 
 /// A convenience object for representing any type that implements Prefilter
@@ -72,12 +83,12 @@ impl PrefilterState {
     /// a prefilter is effective or not.
     const MIN_SKIPS: usize = 40;
 
-    /// The minimum amount of bytes that skipping must average, expressed as
-    /// a factor of the multiple of the length of a possible match.
+    /// The minimum amount of bytes that skipping must average, expressed as a
+    /// factor of the multiple of the length of a possible match.
     ///
     /// That is, after MIN_SKIPS have occurred, if the average number of bytes
-    /// skipped ever falls below MIN_AVG_FACTOR, then this searcher is rendered
-    /// inert.
+    /// skipped ever falls below MIN_AVG_FACTOR * max-match-length, then the
+    /// prefilter outed to be rendered inert.
     const MIN_AVG_FACTOR: usize = 2;
 
     /// Create a fresh prefilter state.
@@ -88,7 +99,7 @@ impl PrefilterState {
     /// Update this state with the number of bytes skipped on the last
     /// invocation of the prefilter.
     #[inline]
-    pub fn update(&mut self, skipped: usize) {
+    fn update(&mut self, skipped: usize) {
         self.skips += 1;
         self.skipped += skipped;
     }
@@ -115,7 +126,53 @@ impl PrefilterState {
     }
 }
 
-/// A builder for construction a starting byte prefilter.
+/// A builder for constructing the best possible prefilter. When constructed,
+/// this builder will heuristically select the best prefilter it can build,
+/// if any, and discard the rest.
+#[derive(Debug)]
+pub struct Builder {
+    count: usize,
+    ascii_case_insensitive: bool,
+    start_bytes: StartBytesBuilder,
+}
+
+impl Builder {
+    /// Create a new builder for constructing the best possible prefilter.
+    pub fn new() -> Builder {
+        Builder {
+            count: 0,
+            ascii_case_insensitive: false,
+            start_bytes: StartBytesBuilder::new(),
+        }
+    }
+
+    /// Enable ASCII case insensitivity. When set, byte strings added to this
+    /// builder will be interpreted without respect to ASCII case.
+    pub fn ascii_case_insensitive(mut self, yes: bool) -> Builder {
+        self.ascii_case_insensitive = yes;
+        self.start_bytes = self.start_bytes.ascii_case_insensitive(yes);
+        self
+    }
+
+    /// Return a prefilter suitable for quickly finding potential matches.
+    ///
+    /// All patterns added to an Aho-Corasick automaton should be added to this
+    /// builder before attempting to construct the prefilter.
+    pub fn build(&self) -> Option<PrefilterObj> {
+        if self.count == 0 {
+            return None;
+        }
+        self.start_bytes.build()
+    }
+
+    /// Add a literal string to this prefilter builder.
+    pub fn add(&mut self, bytes: &[u8]) {
+        self.count += 1;
+        self.start_bytes.add(bytes);
+    }
+}
+
+/// A builder for constructing a starting byte prefilter.
 ///
 /// A starting byte prefilter is a simplistic prefilter that looks for possible
 /// matches by reporting all positions corresponding to a particular byte. This
@@ -128,14 +185,25 @@ impl PrefilterState {
 /// be better not to use this prefilter even when there are 3 or fewer distinct
 /// starting bytes.
 #[derive(Clone, Debug)]
-pub struct StartBytesBuilder {
+struct StartBytesBuilder {
+    ascii_case_insensitive: bool,
     byteset: Vec<bool>,
 }
 
 impl StartBytesBuilder {
     /// Create a new builder for constructing a start byte prefilter.
-    pub fn new() -> StartBytesBuilder {
-        StartBytesBuilder { byteset: vec![false; 256] }
+    fn new() -> StartBytesBuilder {
+        StartBytesBuilder {
+            ascii_case_insensitive: false,
+            byteset: vec![false; 256],
+        }
+    }
+
+    /// Enable ASCII case insensitivity. When set, byte strings added to this
+    /// builder will be interpreted without respect to ASCII case.
+    fn ascii_case_insensitive(mut self, yes: bool) -> StartBytesBuilder {
+        self.ascii_case_insensitive = yes;
+        self
     }
 
     /// Build the starting bytes prefilter.
@@ -143,7 +211,7 @@ impl StartBytesBuilder {
     /// If there are more than 3 distinct starting bytes, or if heuristics
     /// otherwise determine that this prefilter should not be used, then `None`
     /// is returned.
-    pub fn build(&self) -> Option<PrefilterObj> {
+    fn build(&self) -> Option<PrefilterObj> {
         let (mut bytes, mut len) = ([0; 3], 0);
         for b in 0..256 {
             if !self.byteset[b] {
@@ -181,18 +249,23 @@ impl StartBytesBuilder {
         }
     }
 
-    /// Add a starting byte to this builder.
+    /// Add a byte string to this builder.
     ///
-    /// In general, all possible starting bytes for an automaton should be
-    /// added to this builder before attempting to construct the prefilter.
-    pub fn add(&mut self, byte: u8) {
-        self.byteset[byte as usize] = true;
+    /// All patterns added to an Aho-Corasick automaton should be added to this
+    /// builder before attempting to construct the prefilter.
+    fn add(&mut self, bytes: &[u8]) {
+        if let Some(&byte) = bytes.get(0) {
+            self.byteset[byte as usize] = true;
+            if self.ascii_case_insensitive {
+                self.byteset[opposite_ascii_case(byte) as usize] = true;
+            }
+        }
     }
 }
 
 /// A prefilter for scanning for a single starting byte.
 #[derive(Clone, Debug)]
-pub struct StartBytesOne {
+struct StartBytesOne {
     byte1: u8,
 }
 
@@ -208,7 +281,7 @@ impl Prefilter for StartBytesOne {
 
 /// A prefilter for scanning for two starting bytes.
 #[derive(Clone, Debug)]
-pub struct StartBytesTwo {
+struct StartBytesTwo {
     byte1: u8,
     byte2: u8,
 }
@@ -225,7 +298,7 @@ impl Prefilter for StartBytesTwo {
 
 /// A prefilter for scanning for three starting bytes.
 #[derive(Clone, Debug)]
-pub struct StartBytesThree {
+struct StartBytesThree {
     byte1: u8,
     byte2: u8,
     byte3: u8,
@@ -239,5 +312,42 @@ impl Prefilter for StartBytesThree {
 
     fn clone_prefilter(&self) -> Box<Prefilter> {
         Box::new(self.clone())
+    }
+}
+
+/// Return the next candidate reported by the given prefilter while
+/// simultaneously updating the given prestate.
+///
+/// The caller is responsible for checking the prestate before deciding whether
+/// to initiate a search.
+#[inline]
+pub fn next<P: Prefilter>(
+    prestate: &mut PrefilterState,
+    prefilter: P,
+    haystack: &[u8],
+    at: usize,
+) -> Option<usize> {
+    match prefilter.next_candidate(haystack, at) {
+        None => {
+            prestate.update(haystack.len() - at);
+            None
+        }
+        Some(i) => {
+            prestate.update(i - at);
+            Some(i)
+        }
+    }
+}
+
+/// If the given byte is an ASCII letter, then return it in the opposite case.
+/// e.g., Given `b'A'`, this returns `b'a'`, and given `b'a'`, this returns
+/// `b'A'`. If a non-ASCII letter is given, then the given byte is returned.
+pub fn opposite_ascii_case(b: u8) -> u8 {
+    if b'A' <= b && b <= b'Z' {
+        b.to_ascii_lowercase()
+    } else if b'a' <= b && b <= b'z' {
+        b.to_ascii_uppercase()
+    } else {
+        b
     }
 }

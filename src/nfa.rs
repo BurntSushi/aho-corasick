@@ -7,7 +7,7 @@ use ahocorasick::MatchKind;
 use automaton::Automaton;
 use classes::{ByteClassBuilder, ByteClasses};
 use error::Result;
-use prefilter::{self, Prefilter, PrefilterObj};
+use prefilter::{self, opposite_ascii_case, Prefilter, PrefilterObj};
 use state_id::{dead_id, fail_id, usize_to_state_id, StateID};
 use Match;
 
@@ -556,6 +556,7 @@ impl Builder {
 #[derive(Debug)]
 struct Compiler<'a, S: StateID> {
     builder: &'a Builder,
+    prefilter: prefilter::Builder,
     nfa: NFA<S>,
     byte_classes: ByteClassBuilder,
 }
@@ -564,6 +565,8 @@ impl<'a, S: StateID> Compiler<'a, S> {
     fn new(builder: &'a Builder) -> Result<Compiler<'a, S>> {
         Ok(Compiler {
             builder: builder,
+            prefilter: prefilter::Builder::new()
+                .ascii_case_insensitive(builder.ascii_case_insensitive),
             nfa: NFA {
                 match_kind: builder.match_kind,
                 start_id: usize_to_state_id(2)?,
@@ -596,7 +599,7 @@ impl<'a, S: StateID> Compiler<'a, S> {
         }
         self.close_start_state_loop();
         self.nfa.byte_classes = self.byte_classes.build();
-        self.build_prefilters();
+        self.nfa.prefilter = self.prefilter.build();
         self.calculate_size();
         Ok(self.nfa)
     }
@@ -654,13 +657,8 @@ impl<'a, S: StateID> Compiler<'a, S> {
                     let next = self.add_state(depth + 1)?;
                     self.nfa.state_mut(prev).set_next_state(b, next);
                     if self.builder.ascii_case_insensitive {
-                        if b'A' <= b && b <= b'Z' {
-                            let b = b.to_ascii_lowercase();
-                            self.nfa.state_mut(prev).set_next_state(b, next);
-                        } else if b'a' <= b && b <= b'z' {
-                            let b = b.to_ascii_uppercase();
-                            self.nfa.state_mut(prev).set_next_state(b, next);
-                        }
+                        let b = opposite_ascii_case(b);
+                        self.nfa.state_mut(prev).set_next_state(b, next);
                     }
                     prev = next;
                 }
@@ -668,6 +666,10 @@ impl<'a, S: StateID> Compiler<'a, S> {
             // Once the pattern has been added, log the match in the final
             // state that it reached.
             self.nfa.state_mut(prev).add_match(pati, pat.len());
+            // ... and hand it to the prefilter builder, if applicable.
+            if self.builder.prefilter {
+                self.prefilter.add(pat);
+            }
         }
         Ok(())
     }
@@ -1007,19 +1009,18 @@ impl<'a, S: StateID> Compiler<'a, S> {
         }
     }
 
-    /// Construct prefilters from the automaton, if applicable.
-    fn build_prefilters(&mut self) {
-        if !self.builder.prefilter {
-            return;
+    /// Returns a set that tracked queued states.
+    ///
+    /// This is only necessary when ASCII case insensitivity is enabled, since
+    /// it is the only way to visit the same state twice. Otherwise, this
+    /// returns an inert set that nevers adds anything and always reports
+    /// `false` for every member test.
+    fn queued_set(&self) -> QueuedSet<S> {
+        if self.builder.ascii_case_insensitive {
+            QueuedSet::active()
+        } else {
+            QueuedSet::inert()
         }
-
-        let mut builder = prefilter::StartBytesBuilder::new();
-        for b in AllBytesIter::new() {
-            if self.nfa.start().next_state(b) != self.nfa.start_id {
-                builder.add(b);
-            }
-        }
-        self.nfa.prefilter = builder.build();
     }
 
     /// Set the failure transitions on the start state to loop back to the
