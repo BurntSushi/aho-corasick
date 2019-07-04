@@ -58,7 +58,7 @@ struct Args {
 
 impl Args {
     fn parse() -> Result<Args> {
-        use clap::{App, Arg, crate_authors, crate_version};
+        use clap::{crate_authors, crate_version, App, Arg};
 
         let parsed = App::new("Search using aho-corasick")
             .author(crate_authors!())
@@ -66,18 +66,26 @@ impl Args {
             .max_term_width(100)
             .arg(Arg::with_name("dictionary").required(true))
             .arg(Arg::with_name("haystack").required(true))
-            .arg(Arg::with_name("kind")
-                 .long("kind")
-                 .possible_values(&[
-                    "standard", "leftmost-first", "leftmost-longest",
-                 ])
-                 .default_value("standard"))
-            .arg(Arg::with_name("ascii-case-insensitive")
-                 .long("ascii-case-insensitive")
-                 .short("i"))
-            .arg(Arg::with_name("dense-depth")
-                 .long("dense-depth")
-                 .default_value("2"))
+            .arg(
+                Arg::with_name("kind")
+                    .long("kind")
+                    .possible_values(&[
+                        "standard",
+                        "leftmost-first",
+                        "leftmost-longest",
+                    ])
+                    .default_value("standard"),
+            )
+            .arg(
+                Arg::with_name("ascii-case-insensitive")
+                    .long("ascii-case-insensitive")
+                    .short("i"),
+            )
+            .arg(
+                Arg::with_name("dense-depth")
+                    .long("dense-depth")
+                    .default_value("2"),
+            )
             .arg(Arg::with_name("dfa").long("dfa").short("d"))
             .arg(Arg::with_name("prefilter").long("prefilter").short("f"))
             .arg(Arg::with_name("classes").long("classes").short("c"))
@@ -85,12 +93,9 @@ impl Args {
             .arg(Arg::with_name("no-search").long("no-search"))
             .get_matches();
 
-        let dictionary = PathBuf::from(
-            parsed.value_of_os("dictionary").unwrap()
-        );
-        let haystack = PathBuf::from(
-            parsed.value_of_os("haystack").unwrap()
-        );
+        let dictionary =
+            PathBuf::from(parsed.value_of_os("dictionary").unwrap());
+        let haystack = PathBuf::from(parsed.value_of_os("haystack").unwrap());
         let match_kind = match parsed.value_of("kind").unwrap() {
             "standard" => MatchKind::Standard,
             "leftmost-first" => MatchKind::LeftmostFirst,
@@ -100,7 +105,10 @@ impl Args {
         let dense_depth = parsed.value_of("dense-depth").unwrap().parse()?;
 
         Ok(Args {
-            dictionary, haystack, match_kind, dense_depth,
+            dictionary,
+            haystack,
+            match_kind,
+            dense_depth,
             ascii_casei: parsed.is_present("ascii-case-insensitive"),
             dfa: parsed.is_present("dfa"),
             prefilter: parsed.is_present("prefilter"),

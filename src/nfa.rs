@@ -1,14 +1,14 @@
-use std::collections::VecDeque;
 use std::cmp;
+use std::collections::VecDeque;
 use std::fmt;
 use std::mem::size_of;
 
 use ahocorasick::MatchKind;
 use automaton::Automaton;
-use classes::{ByteClasses, ByteClassBuilder};
+use classes::{ByteClassBuilder, ByteClasses};
 use error::Result;
 use prefilter::{self, Prefilter, PrefilterObj};
-use state_id::{StateID, dead_id, fail_id, usize_to_state_id};
+use state_id::{dead_id, fail_id, usize_to_state_id, StateID};
 use Match;
 
 /// The identifier for a pattern, which is simply the position of the pattern
@@ -173,9 +173,8 @@ impl<S: StateID> NFA<S> {
     }
 
     fn copy_matches(&mut self, src: S, dst: S) {
-        let (src, dst) = get_two_mut(
-            &mut self.states, src.to_usize(), dst.to_usize(),
-        );
+        let (src, dst) =
+            get_two_mut(&mut self.states, src.to_usize(), dst.to_usize());
         dst.matches.extend_from_slice(&src.matches);
     }
 
@@ -242,9 +241,11 @@ impl<S: StateID> Automaton for NFA<S> {
             None => return None,
             Some(state) => state,
         };
-        state.matches
-            .get(match_index)
-            .map(|&(id, len)| Match { pattern: id, len, end })
+        state.matches.get(match_index).map(|&(id, len)| Match {
+            pattern: id,
+            len,
+            end,
+        })
     }
 
     fn match_count(&self, id: S) -> usize {
@@ -291,7 +292,7 @@ pub struct State<S> {
 impl<S: StateID> State<S> {
     fn heap_bytes(&self) -> usize {
         self.trans.heap_bytes()
-        + (self.matches.len() * size_of::<(PatternID, PatternLength)>())
+            + (self.matches.len() * size_of::<(PatternID, PatternLength)>())
     }
 
     fn add_match(&mut self, i: PatternID, len: PatternLength) {
@@ -345,9 +346,7 @@ impl<S: StateID> Transitions<S> {
             Transitions::Sparse(ref sparse) => {
                 sparse.len() * size_of::<(u8, S)>()
             }
-            Transitions::Dense(ref dense) => {
-                dense.len() * size_of::<S>()
-            }
+            Transitions::Dense(ref dense) => dense.len() * size_of::<S>(),
         }
     }
 
@@ -522,12 +521,10 @@ impl Builder {
         Builder::default()
     }
 
-    pub fn build<I, P, S: StateID>(
-        &self,
-        patterns: I,
-    ) -> Result<NFA<S>>
-    where I: IntoIterator<Item=P>,
-          P: AsRef<[u8]>
+    pub fn build<I, P, S: StateID>(&self, patterns: I) -> Result<NFA<S>>
+    where
+        I: IntoIterator<Item = P>,
+        P: AsRef<[u8]>,
     {
         Compiler::new(self)?.compile(patterns)
     }
@@ -581,12 +578,10 @@ impl<'a, S: StateID> Compiler<'a, S> {
         })
     }
 
-    fn compile<I, P>(
-        mut self,
-        patterns: I,
-    ) -> Result<NFA<S>>
-    where I: IntoIterator<Item=P>,
-          P: AsRef<[u8]>
+    fn compile<I, P>(mut self, patterns: I) -> Result<NFA<S>>
+    where
+        I: IntoIterator<Item = P>,
+        P: AsRef<[u8]>,
     {
         self.add_state(0)?; // the fail state, which is never entered
         self.add_state(0)?; // the dead state, only used for leftmost
@@ -610,19 +605,15 @@ impl<'a, S: StateID> Compiler<'a, S> {
     /// automaton. Effectively, it creates the basic structure of the
     /// automaton, where every pattern given has a path from the start state to
     /// the end of the pattern.
-    fn build_trie<I, P>(
-        &mut self,
-        patterns: I,
-    ) -> Result<()>
-    where I: IntoIterator<Item=P>,
-          P: AsRef<[u8]>
+    fn build_trie<I, P>(&mut self, patterns: I) -> Result<()>
+    where
+        I: IntoIterator<Item = P>,
+        P: AsRef<[u8]>,
     {
-    'PATTERNS:
-        for (pati, pat) in patterns.into_iter().enumerate() {
+        'PATTERNS: for (pati, pat) in patterns.into_iter().enumerate() {
             let pat = pat.as_ref();
-            self.nfa.max_pattern_len = cmp::max(
-                self.nfa.max_pattern_len, pat.len(),
-            );
+            self.nfa.max_pattern_len =
+                cmp::max(self.nfa.max_pattern_len, pat.len());
             self.nfa.pattern_count += 1;
 
             let mut prev = self.nfa.start_id;
@@ -873,11 +864,7 @@ impl<'a, S: StateID> Compiler<'a, S> {
             /// state.
             fn start(nfa: &NFA<S>) -> QueuedState<S> {
                 let match_at_depth =
-                    if nfa.start().is_match() {
-                        Some(0)
-                    } else {
-                        None
-                    };
+                    if nfa.start().is_match() { Some(0) } else { None };
                 QueuedState { id: nfa.start_id, match_at_depth }
             }
 
@@ -909,8 +896,7 @@ impl<'a, S: StateID> Compiler<'a, S> {
                     None if nfa.state(next).is_match() => {}
                     None => return None,
                 }
-                let depth =
-                    nfa.state(next).depth
+                let depth = nfa.state(next).depth
                     - nfa.state(next).get_longest_match_len().unwrap()
                     + 1;
                 Some(depth)
@@ -1173,7 +1159,8 @@ impl<S: StateID> fmt::Debug for NFA<S> {
             });
             writeln!(f, "{:04}: {}", id, trans.join(", "))?;
 
-            let matches: Vec<String> = s.matches
+            let matches: Vec<String> = s
+                .matches
                 .iter()
                 .map(|&(pattern_id, _)| pattern_id.to_string())
                 .collect();

@@ -1,6 +1,6 @@
 use ahocorasick::MatchKind;
 use prefilter::{Prefilter, PrefilterState};
-use state_id::{StateID, dead_id, fail_id};
+use state_id::{dead_id, fail_id, StateID};
 use Match;
 
 // NOTE: This trait was essentially copied from regex-automata, with some
@@ -142,12 +142,14 @@ pub trait Automaton {
     ) -> Option<Match> {
         if let Some(pre) = self.prefilter() {
             self.standard_find_at_imp(
-                prestate, Some(pre), haystack, at, state_id,
+                prestate,
+                Some(pre),
+                haystack,
+                at,
+                state_id,
             )
         } else {
-            self.standard_find_at_imp(
-                prestate, None, haystack, at, state_id,
-            )
+            self.standard_find_at_imp(prestate, None, haystack, at, state_id)
         }
     }
 
@@ -235,12 +237,14 @@ pub trait Automaton {
     ) -> Option<Match> {
         if let Some(pre) = self.prefilter() {
             self.leftmost_find_at_imp(
-                prestate, Some(pre), haystack, at, state_id,
+                prestate,
+                Some(pre),
+                haystack,
+                at,
+                state_id,
             )
         } else {
-            self.leftmost_find_at_imp(
-                prestate, None, haystack, at, state_id,
-            )
+            self.leftmost_find_at_imp(prestate, None, haystack, at, state_id)
         }
     }
 
@@ -337,11 +341,7 @@ pub trait Automaton {
         if *match_index < match_count {
             // This is guaranteed to return a match since
             // match_index < match_count.
-            let result = self.get_match(
-                *state_id,
-                *match_index,
-                at,
-            );
+            let result = self.get_match(*state_id, *match_index, at);
             debug_assert!(result.is_some(), "must be a match");
             *match_index += 1;
             return result;

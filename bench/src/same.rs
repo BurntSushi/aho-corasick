@@ -34,6 +34,11 @@ fn define_same<B: AsRef<[u8]>>(
 ) {
     let corpus = "z".repeat(10_000);
     define_aho_corasick(
-        c, "same", bench_name, corpus.as_bytes(), count, patterns,
+        c,
+        "same",
+        bench_name,
+        corpus.as_bytes(),
+        count,
+        patterns,
     );
 }

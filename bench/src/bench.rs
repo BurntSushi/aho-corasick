@@ -30,10 +30,8 @@ fn define_aho_corasick<B: AsRef<[u8]>>(
     count: usize,
     patterns: Vec<B>,
 ) {
-    let patterns: Vec<Vec<u8>> = patterns
-        .into_iter()
-        .map(|b| b.as_ref().to_vec())
-        .collect();
+    let patterns: Vec<Vec<u8>> =
+        patterns.into_iter().map(|b| b.as_ref().to_vec()).collect();
 
     let haystack = corpus.to_vec();
     let name = format!("nfa/{}", bench_name);
@@ -44,9 +42,7 @@ fn define_aho_corasick<B: AsRef<[u8]>>(
 
     let haystack = corpus.to_vec();
     let name = format!("dfa/{}", bench_name);
-    let aut = AhoCorasickBuilder::new()
-        .dfa(true)
-        .build(patterns.clone());
+    let aut = AhoCorasickBuilder::new().dfa(true).build(patterns.clone());
     define(c, group_name, &name, corpus, move |b| {
         b.iter(|| assert_eq!(count, aut.find_iter(&haystack).count()));
     });
@@ -63,13 +59,12 @@ fn define_aho_corasick_dfa<B, F>(
     count: usize,
     patterns: Vec<B>,
     find_count: F,
-) where B: AsRef<[u8]>,
-        F: 'static + Clone + Fn(&AhoCorasick, &[u8]) -> usize
+) where
+    B: AsRef<[u8]>,
+    F: 'static + Clone + Fn(&AhoCorasick, &[u8]) -> usize,
 {
-    let patterns: Vec<Vec<u8>> = patterns
-        .into_iter()
-        .map(|b| b.as_ref().to_vec())
-        .collect();
+    let patterns: Vec<Vec<u8>> =
+        patterns.into_iter().map(|b| b.as_ref().to_vec()).collect();
 
     let counter = find_count.clone();
     let haystack = corpus.to_vec();
@@ -134,7 +129,6 @@ fn define(
     corpus: &[u8],
     bench: impl FnMut(&mut Bencher) + 'static,
 ) {
-
     let tput = Throughput::Bytes(corpus.len() as u32);
     let benchmark = Benchmark::new(bench_name, bench)
         .throughput(tput)
@@ -152,7 +146,6 @@ fn define_long(
     corpus: &[u8],
     bench: impl FnMut(&mut Bencher) + 'static,
 ) {
-
     let tput = Throughput::Bytes(corpus.len() as u32);
     let benchmark = Benchmark::new(bench_name, bench)
         .throughput(tput)
