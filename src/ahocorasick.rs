@@ -115,11 +115,10 @@ impl AhoCorasick {
     /// ]);
     /// assert_eq!(Some(1), ac.find("xxx bar xxx").map(|m| m.pattern()));
     /// ```
-    pub fn new<I, P>(
-        patterns: I,
-    ) -> AhoCorasick
-    where I: IntoIterator<Item=P>,
-          P: AsRef<[u8]>
+    pub fn new<I, P>(patterns: I) -> AhoCorasick
+    where
+        I: IntoIterator<Item = P>,
+        P: AsRef<[u8]>,
     {
         AhoCorasickBuilder::new().build(patterns)
     }
@@ -151,10 +150,9 @@ impl AhoCorasick {
     /// ]);
     /// assert_eq!(Some(1), ac.find("xxx bar xxx").map(|m| m.pattern()));
     /// ```
-    pub fn new_auto_configured<B>(
-        patterns: &[B],
-    ) -> AhoCorasick
-    where B: AsRef<[u8]>
+    pub fn new_auto_configured<B>(patterns: &[B]) -> AhoCorasick
+    where
+        B: AsRef<[u8]>,
     {
         AhoCorasickBuilder::new().auto_configure(patterns).build(patterns)
     }
@@ -213,7 +211,10 @@ impl<S: StateID> AhoCorasick<S> {
         let mut prestate = PrefilterState::new(self.max_pattern_len());
         let mut start = self.imp.start_state();
         self.imp.earliest_find_at(
-            &mut prestate, haystack.as_ref(), 0, &mut start,
+            &mut prestate,
+            haystack.as_ref(),
+            0,
+            &mut start,
         )
     }
 
@@ -425,15 +426,13 @@ impl<S: StateID> AhoCorasick<S> {
     /// let result = ac.replace_all(haystack, &["x", "y", "z"]);
     /// assert_eq!("x the z to the xage", result);
     /// ```
-    pub fn replace_all<B>(
-        &self,
-        haystack: &str,
-        replace_with: &[B],
-    ) -> String
-    where B: AsRef<str>
+    pub fn replace_all<B>(&self, haystack: &str, replace_with: &[B]) -> String
+    where
+        B: AsRef<str>,
     {
         assert_eq!(
-            replace_with.len(), self.pattern_count(),
+            replace_with.len(),
+            self.pattern_count(),
             "replace_all requires a replacement for every pattern \
              in the automaton"
         );
@@ -479,10 +478,12 @@ impl<S: StateID> AhoCorasick<S> {
         haystack: &[u8],
         replace_with: &[B],
     ) -> Vec<u8>
-    where B: AsRef<[u8]>
+    where
+        B: AsRef<[u8]>,
     {
         assert_eq!(
-            replace_with.len(), self.pattern_count(),
+            replace_with.len(),
+            self.pattern_count(),
             "replace_all_bytes requires a replacement for every pattern \
              in the automaton"
         );
@@ -528,7 +529,8 @@ impl<S: StateID> AhoCorasick<S> {
         haystack: &str,
         dst: &mut String,
         mut replace_with: F,
-    ) where F: FnMut(&Match, &str, &mut String) -> bool
+    ) where
+        F: FnMut(&Match, &str, &mut String) -> bool,
     {
         let mut last_match = 0;
         for mat in self.find_iter(haystack) {
@@ -573,7 +575,8 @@ impl<S: StateID> AhoCorasick<S> {
         haystack: &[u8],
         dst: &mut Vec<u8>,
         mut replace_with: F,
-    ) where F: FnMut(&Match, &[u8], &mut Vec<u8>) -> bool
+    ) where
+        F: FnMut(&Match, &[u8], &mut Vec<u8>) -> bool,
     {
         let mut last_match = 0;
         for mat in self.find_iter(haystack) {
@@ -710,12 +713,14 @@ impl<S: StateID> AhoCorasick<S> {
         wtr: W,
         replace_with: &[B],
     ) -> io::Result<()>
-    where R: io::Read,
-          W: io::Write,
-          B: AsRef<[u8]>
+    where
+        R: io::Read,
+        W: io::Write,
+        B: AsRef<[u8]>,
     {
         assert_eq!(
-            replace_with.len(), self.pattern_count(),
+            replace_with.len(),
+            self.pattern_count(),
             "stream_replace_all requires a replacement for every pattern \
              in the automaton"
         );
@@ -795,9 +800,10 @@ impl<S: StateID> AhoCorasick<S> {
         mut wtr: W,
         mut replace_with: F,
     ) -> io::Result<()>
-    where R: io::Read,
-          W: io::Write,
-          F: FnMut(&Match, &[u8], &mut W) -> io::Result<()>
+    where
+        R: io::Read,
+        W: io::Write,
+        F: FnMut(&Match, &[u8], &mut W) -> io::Result<()>,
     {
         let mut it = StreamChunkIter::new(self, rdr);
         while let Some(result) = it.next() {
@@ -1041,16 +1047,20 @@ impl<S: StateID> Imp<S> {
         match_index: &mut usize,
     ) -> Option<Match> {
         match *self {
-            Imp::NFA(ref nfa) => {
-                nfa.overlapping_find_at(
-                    prestate, haystack, at, state_id, match_index,
-                )
-            }
-            Imp::DFA(ref dfa) => {
-                dfa.overlapping_find_at(
-                    prestate, haystack, at, state_id, match_index,
-                )
-            }
+            Imp::NFA(ref nfa) => nfa.overlapping_find_at(
+                prestate,
+                haystack,
+                at,
+                state_id,
+                match_index,
+            ),
+            Imp::DFA(ref dfa) => dfa.overlapping_find_at(
+                prestate,
+                haystack,
+                at,
+                state_id,
+                match_index,
+            ),
         }
     }
 
@@ -1081,12 +1091,8 @@ impl<S: StateID> Imp<S> {
         state_id: &mut S,
     ) -> Option<Match> {
         match *self {
-            Imp::NFA(ref nfa) => {
-                nfa.find_at(prestate, haystack, at, state_id)
-            }
-            Imp::DFA(ref dfa) => {
-                dfa.find_at(prestate, haystack, at, state_id)
-            }
+            Imp::NFA(ref nfa) => nfa.find_at(prestate, haystack, at, state_id),
+            Imp::DFA(ref dfa) => dfa.find_at(prestate, haystack, at, state_id),
         }
     }
 }
@@ -1133,7 +1139,10 @@ impl<'a, 'b, S: StateID> Iterator for FindIter<'a, 'b, S> {
         }
         let mut start = self.start;
         let result = self.fsm.find_at(
-            &mut self.prestate, self.haystack, self.pos, &mut start,
+            &mut self.prestate,
+            self.haystack,
+            self.pos,
+            &mut start,
         );
         let mat = match result {
             None => return None,
@@ -1243,9 +1252,7 @@ pub struct StreamFindIter<'a, R, S: 'a + StateID> {
 
 impl<'a, R: io::Read, S: StateID> StreamFindIter<'a, R, S> {
     fn new(ac: &'a AhoCorasick<S>, rdr: R) -> StreamFindIter<'a, R, S> {
-        StreamFindIter {
-            it: StreamChunkIter::new(ac, rdr),
-        }
+        StreamFindIter { it: StreamChunkIter::new(ac, rdr) }
     }
 }
 
@@ -1492,12 +1499,10 @@ impl AhoCorasickBuilder {
     ///     .build(patterns);
     /// assert_eq!(Some(1), ac.find("xxx bar xxx").map(|m| m.pattern()));
     /// ```
-    pub fn build<I, P>(
-        &self,
-        patterns: I,
-    ) -> AhoCorasick
-    where I: IntoIterator<Item=P>,
-          P: AsRef<[u8]>
+    pub fn build<I, P>(&self, patterns: I) -> AhoCorasick
+    where
+        I: IntoIterator<Item = P>,
+        P: AsRef<[u8]>,
     {
         // The builder only returns an error if the chosen state ID
         // representation is too small to fit all of the given patterns. In
@@ -1560,19 +1565,19 @@ impl AhoCorasickBuilder {
         &self,
         patterns: I,
     ) -> Result<AhoCorasick<S>>
-    where S: StateID,
-          I: IntoIterator<Item=P>,
-          P: AsRef<[u8]>
+    where
+        S: StateID,
+        I: IntoIterator<Item = P>,
+        P: AsRef<[u8]>,
     {
         let nfa = self.nfa_builder.build(patterns)?;
         let match_kind = nfa.match_kind().clone();
-        let imp =
-            if self.dfa {
-                let dfa = self.dfa_builder.build(&nfa)?;
-                Imp::DFA(dfa)
-            } else {
-                Imp::NFA(nfa)
-            };
+        let imp = if self.dfa {
+            let dfa = self.dfa_builder.build(&nfa)?;
+            Imp::DFA(dfa)
+        } else {
+            Imp::NFA(nfa)
+        };
         Ok(AhoCorasick { imp, match_kind })
     }
 
@@ -2002,7 +2007,7 @@ impl MatchKind {
 
     pub(crate) fn is_leftmost(&self) -> bool {
         *self == MatchKind::LeftmostFirst
-        || *self == MatchKind::LeftmostLongest
+            || *self == MatchKind::LeftmostLongest
     }
 
     pub(crate) fn is_leftmost_first(&self) -> bool {

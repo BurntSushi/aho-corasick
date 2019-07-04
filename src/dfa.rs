@@ -4,9 +4,9 @@ use ahocorasick::MatchKind;
 use automaton::Automaton;
 use classes::ByteClasses;
 use error::Result;
-use nfa::{NFA, PatternID, PatternLength};
+use nfa::{PatternID, PatternLength, NFA};
 use prefilter::{Prefilter, PrefilterObj, PrefilterState};
-use state_id::{StateID, dead_id, fail_id, premultiply_overflow_error};
+use state_id::{dead_id, fail_id, premultiply_overflow_error, StateID};
 use Match;
 
 #[derive(Clone, Debug)]
@@ -57,26 +57,34 @@ impl<S: StateID> DFA<S> {
         match_index: &mut usize,
     ) -> Option<Match> {
         match *self {
-            DFA::Standard(ref dfa) => {
-                dfa.overlapping_find_at(
-                    prestate, haystack, at, state_id, match_index,
-                )
-            }
-            DFA::ByteClass(ref dfa) => {
-                dfa.overlapping_find_at(
-                    prestate, haystack, at, state_id, match_index,
-                )
-            }
-            DFA::Premultiplied(ref dfa) => {
-                dfa.overlapping_find_at(
-                    prestate, haystack, at, state_id, match_index,
-                )
-            }
-            DFA::PremultipliedByteClass(ref dfa) => {
-                dfa.overlapping_find_at(
-                    prestate, haystack, at, state_id, match_index,
-                )
-            }
+            DFA::Standard(ref dfa) => dfa.overlapping_find_at(
+                prestate,
+                haystack,
+                at,
+                state_id,
+                match_index,
+            ),
+            DFA::ByteClass(ref dfa) => dfa.overlapping_find_at(
+                prestate,
+                haystack,
+                at,
+                state_id,
+                match_index,
+            ),
+            DFA::Premultiplied(ref dfa) => dfa.overlapping_find_at(
+                prestate,
+                haystack,
+                at,
+                state_id,
+                match_index,
+            ),
+            DFA::PremultipliedByteClass(ref dfa) => dfa.overlapping_find_at(
+                prestate,
+                haystack,
+                at,
+                state_id,
+                match_index,
+            ),
         }
     }
 
@@ -562,10 +570,9 @@ impl<S: StateID> Repr<S> {
 
     /// Computes the total amount of heap used by this NFA in bytes.
     fn calculate_size(&mut self) {
-        let mut size =
-            (self.trans.len() * size_of::<S>())
-            + (self.matches.len() *
-               size_of::<Vec<(PatternID, PatternLength)>>());
+        let mut size = (self.trans.len() * size_of::<S>())
+            + (self.matches.len()
+                * size_of::<Vec<(PatternID, PatternLength)>>());
         for state_matches in &self.matches {
             size +=
                 state_matches.len() * size_of::<(PatternID, PatternLength)>();
@@ -584,10 +591,7 @@ pub struct Builder {
 impl Builder {
     /// Create a new builder for a DFA.
     pub fn new() -> Builder {
-        Builder {
-            premultiply: true,
-            byte_classes: true,
-        }
+        Builder { premultiply: true, byte_classes: true }
     }
 
     /// Build a DFA from the given NFA.
@@ -596,12 +600,11 @@ impl Builder {
     /// representation size. This can only happen when state ids are
     /// premultiplied (which is enabled by default).
     pub fn build<S: StateID>(&self, nfa: &NFA<S>) -> Result<DFA<S>> {
-        let byte_classes =
-            if self.byte_classes {
-                nfa.byte_classes().clone()
-            } else {
-                ByteClasses::singletons()
-            };
+        let byte_classes = if self.byte_classes {
+            nfa.byte_classes().clone()
+        } else {
+            ByteClasses::singletons()
+        };
         let alphabet_len = byte_classes.alphabet_len();
         let trans = vec![fail_id(); alphabet_len * nfa.state_len()];
         let matches = vec![vec![]; nfa.state_len()];

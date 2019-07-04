@@ -196,8 +196,8 @@ extern crate doc_comment;
 doctest!("../README.md");
 
 pub use ahocorasick::{
-    AhoCorasick, AhoCorasickBuilder, MatchKind,
-    FindIter, FindOverlappingIter, StreamFindIter,
+    AhoCorasick, AhoCorasickBuilder, FindIter, FindOverlappingIter, MatchKind,
+    StreamFindIter,
 };
 pub use error::{Error, ErrorKind};
 pub use state_id::StateID;
@@ -205,11 +205,11 @@ pub use state_id::StateID;
 mod ahocorasick;
 mod automaton;
 mod buffer;
+mod classes;
 mod dfa;
 mod error;
-mod classes;
-mod prefilter;
 mod nfa;
+mod prefilter;
 mod state_id;
 #[cfg(test)]
 mod tests;
@@ -287,10 +287,6 @@ impl Match {
 
     #[inline]
     fn increment(&self, by: usize) -> Match {
-        Match {
-            pattern: self.pattern,
-            len: self.len,
-            end: self.end + by,
-        }
+        Match { pattern: self.pattern, len: self.len, end: self.end + by }
     }
 }

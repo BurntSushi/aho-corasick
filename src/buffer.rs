@@ -3,7 +3,7 @@ use std::io;
 use std::ptr;
 
 /// The default buffer capacity that we use for the stream buffer.
-const DEFAULT_BUFFER_CAPACITY: usize = 8 * (1<<10); // 8 KB
+const DEFAULT_BUFFER_CAPACITY: usize = 8 * (1 << 10); // 8 KB
 
 /// A fairly simple roll buffer for supporting stream searches.
 ///
@@ -52,11 +52,7 @@ impl Buffer {
         // TODO: It would be good to find a way to test the streaming
         // implementation with the minimal buffer size.
         let capacity = cmp::max(min * 8, DEFAULT_BUFFER_CAPACITY);
-        Buffer {
-            buf: vec![0; capacity],
-            min,
-            end: 0,
-        }
+        Buffer { buf: vec![0; capacity], min, end: 0 }
     }
 
     /// Return the contents of this buffer.
@@ -110,7 +106,8 @@ impl Buffer {
     /// This should only be called when the entire contents of this buffer have
     /// been searched.
     pub fn roll(&mut self) {
-        let roll_start = self.end
+        let roll_start = self
+            .end
             .checked_sub(self.min)
             .expect("buffer capacity should be bigger than minimum amount");
         let roll_len = self.min;

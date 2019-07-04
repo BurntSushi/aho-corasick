@@ -33,7 +33,7 @@ pub enum ErrorKind {
         max: usize,
         /// The maximum ID required by premultiplication.
         requested_max: usize,
-    }
+    },
 }
 
 impl Error {
@@ -70,15 +70,13 @@ impl error::Error for Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.kind {
-            ErrorKind::StateIDOverflow { max } => {
-                write!(
-                    f,
-                    "building the automaton failed because it required \
-                     building more states that can be identified, where the \
-                     maximum ID for the chosen representation is {}",
-                    max,
-                )
-            }
+            ErrorKind::StateIDOverflow { max } => write!(
+                f,
+                "building the automaton failed because it required \
+                 building more states that can be identified, where the \
+                 maximum ID for the chosen representation is {}",
+                max,
+            ),
             ErrorKind::PremultiplyOverflow { max, requested_max } => {
                 if max == requested_max {
                     write!(

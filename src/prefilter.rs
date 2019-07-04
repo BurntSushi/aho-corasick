@@ -6,7 +6,9 @@ use memchr::{memchr, memchr2, memchr3};
 /// A prefilter describes the behavior of fast literal scanners for quickly
 /// skipping past bytes in the haystack that we know cannot possibly
 /// participate in a match.
-pub trait Prefilter: Send + Sync + RefUnwindSafe + UnwindSafe + fmt::Debug {
+pub trait Prefilter:
+    Send + Sync + RefUnwindSafe + UnwindSafe + fmt::Debug
+{
     /// Returns the next possible match candidate. This may yield false
     /// positives, so callers must "confirm" a match starting at the position
     /// returned. This, however, must never produce false negatives. That is,
@@ -165,24 +167,16 @@ impl StartBytesBuilder {
         }
         match len {
             0 => None,
-            1 => {
-                Some(PrefilterObj::new(StartBytesOne {
-                    byte1: bytes[0],
-                }))
-            }
-            2 => {
-                Some(PrefilterObj::new(StartBytesTwo {
-                    byte1: bytes[0],
-                    byte2: bytes[1],
-                }))
-            }
-            3 => {
-                Some(PrefilterObj::new(StartBytesThree {
-                    byte1: bytes[0],
-                    byte2: bytes[1],
-                    byte3: bytes[2],
-                }))
-            }
+            1 => Some(PrefilterObj::new(StartBytesOne { byte1: bytes[0] })),
+            2 => Some(PrefilterObj::new(StartBytesTwo {
+                byte1: bytes[0],
+                byte2: bytes[1],
+            })),
+            3 => Some(PrefilterObj::new(StartBytesThree {
+                byte1: bytes[0],
+                byte2: bytes[1],
+                byte3: bytes[2],
+            })),
             _ => unreachable!(),
         }
     }
@@ -204,8 +198,7 @@ pub struct StartBytesOne {
 
 impl Prefilter for StartBytesOne {
     fn next_candidate(&self, haystack: &[u8], at: usize) -> Option<usize> {
-        memchr(self.byte1, &haystack[at..])
-            .map(|i| at + i)
+        memchr(self.byte1, &haystack[at..]).map(|i| at + i)
     }
 
     fn clone_prefilter(&self) -> Box<Prefilter> {
@@ -222,8 +215,7 @@ pub struct StartBytesTwo {
 
 impl Prefilter for StartBytesTwo {
     fn next_candidate(&self, haystack: &[u8], at: usize) -> Option<usize> {
-        memchr2(self.byte1, self.byte2, &haystack[at..])
-            .map(|i| at + i)
+        memchr2(self.byte1, self.byte2, &haystack[at..]).map(|i| at + i)
     }
 
     fn clone_prefilter(&self) -> Box<Prefilter> {
