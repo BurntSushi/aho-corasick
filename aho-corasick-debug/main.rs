@@ -1,5 +1,3 @@
-#![allow(warnings)]
-
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
@@ -10,7 +8,7 @@ use std::time::Instant;
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use memmap::Mmap;
 
-type Result<T> = result::Result<T, Box<Error>>;
+type Result<T> = result::Result<T, Box<dyn Error>>;
 
 // Change this to tweak the size of state IDs used in the automaton.
 type Size = u32;
@@ -38,7 +36,6 @@ fn try_main() -> Result<()> {
 
     let count_time = Instant::now().duration_since(start);
     eprintln!("count time: {:?}", count_time);
-    return Ok(());
     Ok(())
 }
 
