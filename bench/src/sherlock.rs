@@ -27,6 +27,12 @@ pub fn all(c: &mut Criterion) {
         0,
         vec!["SherlockZ", "HolmesZ", "WatsonZ", "IreneZ", "MoriartyZ"],
     );
+    define_sherlock(
+        c,
+        "name/alt7",
+        0,
+        vec!["Шерлок Холмс", "Джон Уотсон"],
+    );
 
     define_sherlock(
         c,

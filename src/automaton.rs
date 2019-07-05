@@ -179,10 +179,10 @@ pub trait Automaton {
             let mut ptr = haystack[at..].as_ptr();
             while ptr < end {
                 if let Some(pre) = prefilter {
-                    if prestate.is_effective()
+                    let at = ptr as usize - start as usize;
+                    if prestate.is_effective(at)
                         && *state_id == self.start_state()
                     {
-                        let at = ptr as usize - start as usize;
                         match prefilter::next(prestate, pre, haystack, at) {
                             None => return None,
                             Some(i) => {
@@ -276,10 +276,10 @@ pub trait Automaton {
             let mut last_match = self.get_match(*state_id, 0, at);
             while ptr < end {
                 if let Some(pre) = prefilter {
-                    if prestate.is_effective()
+                    let at = ptr as usize - start as usize;
+                    if prestate.is_effective(at)
                         && *state_id == self.start_state()
                     {
-                        let at = ptr as usize - start as usize;
                         match prefilter::next(prestate, pre, haystack, at) {
                             None => return None,
                             Some(i) => {
