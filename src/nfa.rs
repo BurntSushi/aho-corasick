@@ -59,6 +59,8 @@ pub struct NFA<S> {
     heap_bytes: usize,
     /// A prefilter for quickly skipping to candidate matches, if pertinent.
     prefilter: Option<PrefilterObj>,
+    /// Whether this automaton anchors all matches to the start of input.
+    anchored: bool,
     /// A set of equivalence classes in terms of bytes. We compute this while
     /// building the NFA, but don't use it in the NFA's states. Instead, we
     /// use this for building the DFA. We store it on the NFA since it's easy
@@ -188,7 +190,8 @@ impl<S: StateID> NFA<S> {
         let id = usize_to_state_id(self.states.len())?;
         self.states.push(State {
             trans,
-            fail: self.start_id,
+            // Anchored automatons do not have any failure transitions.
+            fail: if self.anchored { dead_id() } else { self.start_id },
             depth: depth,
             matches: vec![],
         });
@@ -200,7 +203,8 @@ impl<S: StateID> NFA<S> {
         let id = usize_to_state_id(self.states.len())?;
         self.states.push(State {
             trans,
-            fail: self.start_id,
+            // Anchored automatons do not have any failure transitions.
+            fail: if self.anchored { dead_id() } else { self.start_id },
             depth: depth,
             matches: vec![],
         });
@@ -213,6 +217,10 @@ impl<S: StateID> Automaton for NFA<S> {
 
     fn match_kind(&self) -> &MatchKind {
         &self.match_kind
+    }
+
+    fn anchored(&self) -> bool {
+        self.anchored
     }
 
     fn prefilter(&self) -> Option<&Prefilter> {
@@ -502,6 +510,7 @@ pub struct Builder {
     dense_depth: usize,
     match_kind: MatchKind,
     prefilter: bool,
+    anchored: bool,
     ascii_case_insensitive: bool,
 }
 
@@ -511,6 +520,7 @@ impl Default for Builder {
             dense_depth: 2,
             match_kind: MatchKind::default(),
             prefilter: true,
+            anchored: false,
             ascii_case_insensitive: false,
         }
     }
@@ -544,6 +554,11 @@ impl Builder {
         self
     }
 
+    pub fn anchored(&mut self, yes: bool) -> &mut Builder {
+        self.anchored = yes;
+        self
+    }
+
     pub fn ascii_case_insensitive(&mut self, yes: bool) -> &mut Builder {
         self.ascii_case_insensitive = yes;
         self
@@ -574,6 +589,7 @@ impl<'a, S: StateID> Compiler<'a, S> {
                 pattern_count: 0,
                 heap_bytes: 0,
                 prefilter: None,
+                anchored: builder.anchored,
                 byte_classes: ByteClasses::singletons(),
                 states: vec![],
             },
@@ -592,14 +608,18 @@ impl<'a, S: StateID> Compiler<'a, S> {
         self.build_trie(patterns)?;
         self.add_start_state_loop();
         self.add_dead_state_loop();
-        if self.match_kind().is_leftmost() {
-            self.fill_failure_transitions_leftmost();
-        } else {
-            self.fill_failure_transitions_standard();
+        if !self.builder.anchored {
+            if self.match_kind().is_leftmost() {
+                self.fill_failure_transitions_leftmost();
+            } else {
+                self.fill_failure_transitions_standard();
+            }
         }
         self.close_start_state_loop();
         self.nfa.byte_classes = self.byte_classes.build();
-        self.nfa.prefilter = self.prefilter.build();
+        if !self.builder.anchored {
+            self.nfa.prefilter = self.prefilter.build();
+        }
         self.calculate_size();
         Ok(self.nfa)
     }
@@ -1061,7 +1081,9 @@ impl<'a, S: StateID> Compiler<'a, S> {
     ///
     /// The loop is only closed when two conditions are met: the start state
     /// is a match state and the match kind is leftmost-first or
-    /// leftmost-longest.
+    /// leftmost-longest. (Alternatively, if this is an anchored automaton,
+    /// then the start state is always closed, regardless of aforementioned
+    /// conditions.)
     ///
     /// The reason for this is that under leftmost semantics, a start state
     /// that is also a match implies that we should never restart the search
@@ -1069,7 +1091,9 @@ impl<'a, S: StateID> Compiler<'a, S> {
     /// none exist, we transition to the dead state, which signals that
     /// searching should stop.
     fn close_start_state_loop(&mut self) {
-        if self.match_kind().is_leftmost() && self.nfa.start().is_match() {
+        if self.builder.anchored
+            || (self.match_kind().is_leftmost() && self.nfa.start().is_match())
+        {
             let start_id = self.nfa.start_id;
             let start = self.nfa.start_mut();
             for b in AllBytesIter::new() {
