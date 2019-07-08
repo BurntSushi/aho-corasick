@@ -32,6 +32,9 @@ pub trait Automaton {
     /// The type of matching that should be done.
     fn match_kind(&self) -> &MatchKind;
 
+    /// Returns true if and only if this automaton uses anchored searches.
+    fn anchored(&self) -> bool;
+
     /// An optional prefilter for quickly skipping to the next candidate match.
     /// A prefilter must report at least every match, although it may report
     /// positions that do not correspond to a match. That is, it must not allow
@@ -201,15 +204,21 @@ pub trait Automaton {
                 ptr = ptr.offset(1);
                 // This routine always quits immediately after seeing a
                 // match, and since dead states can only come after seeing
-                // a match, seeing a dead state here is impossible.
+                // a match, seeing a dead state here is impossible. (Unless
+                // we have an anchored automaton, in which case, dead states
+                // are used to stop a search.)
                 debug_assert!(
-                    *state_id != dead_id(),
+                    *state_id != dead_id() || self.anchored(),
                     "standard find should never see a dead state"
                 );
 
-                let end = ptr as usize - start as usize;
-                if let Some(m) = self.get_match(*state_id, 0, end) {
-                    return Some(m);
+                if self.is_match_or_dead_state(*state_id) {
+                    return if *state_id == dead_id() {
+                        None
+                    } else {
+                        let end = ptr as usize - start as usize;
+                        self.get_match(*state_id, 0, end)
+                    };
                 }
             }
             None
@@ -268,6 +277,9 @@ pub trait Automaton {
             "{} is not a valid state ID",
             state_id.to_usize()
         );
+        if self.anchored() && at > 0 && *state_id == self.start_state() {
+            return None;
+        }
         unsafe {
             let start = haystack.as_ptr();
             let end = haystack[haystack.len()..].as_ptr();
@@ -306,8 +318,11 @@ pub trait Automaton {
                         // has already been found). For Aho-Corasick, it is
                         // built so that we can match at any position, so the
                         // possibility of a match always exists.
+                        //
+                        // (Unless we have an anchored automaton, in which
+                        // case, dead states are used to stop a search.)
                         debug_assert!(
-                            last_match.is_some(),
+                            last_match.is_some() || self.anchored(),
                             "failure state should only be seen after match"
                         );
                         return last_match;
@@ -335,6 +350,10 @@ pub trait Automaton {
         state_id: &mut Self::ID,
         match_index: &mut usize,
     ) -> Option<Match> {
+        if self.anchored() && at > 0 && *state_id == self.start_state() {
+            return None;
+        }
+
         let match_count = self.match_count(*state_id);
         if *match_index < match_count {
             // This is guaranteed to return a match since
@@ -368,6 +387,9 @@ pub trait Automaton {
         state_id: &mut Self::ID,
     ) -> Option<Match> {
         if *state_id == self.start_state() {
+            if self.anchored() && at > 0 {
+                return None;
+            }
             if let Some(m) = self.get_match(*state_id, 0, at) {
                 return Some(m);
             }

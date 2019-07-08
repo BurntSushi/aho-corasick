@@ -1708,6 +1708,47 @@ impl AhoCorasickBuilder {
         self
     }
 
+    /// Enable anchored mode, which requires all matches to start at the
+    /// first position in a haystack.
+    ///
+    /// This option is disabled by default.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use aho_corasick::AhoCorasickBuilder;
+    ///
+    /// let patterns = &["foo", "bar"];
+    /// let haystack = "foobar";
+    ///
+    /// let ac = AhoCorasickBuilder::new()
+    ///     .anchored(true)
+    ///     .build(patterns);
+    /// assert_eq!(1, ac.find_iter(haystack).count());
+    /// ```
+    ///
+    /// When searching for overlapping matches, all matches that start at
+    /// the beginning of a haystack will be reported:
+    ///
+    /// ```
+    /// use aho_corasick::AhoCorasickBuilder;
+    ///
+    /// let patterns = &["foo", "foofoo"];
+    /// let haystack = "foofoo";
+    ///
+    /// let ac = AhoCorasickBuilder::new()
+    ///     .anchored(true)
+    ///     .build(patterns);
+    /// assert_eq!(2, ac.find_overlapping_iter(haystack).count());
+    /// // A non-anchored search would return 3 matches.
+    /// ```
+    pub fn anchored(&mut self, yes: bool) -> &mut AhoCorasickBuilder {
+        self.nfa_builder.anchored(yes);
+        self
+    }
+
     /// Enable ASCII-aware case insensitive matching.
     ///
     /// When this option is enabled, searching will be performed without

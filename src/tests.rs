@@ -46,17 +46,41 @@ type TestCollection = &'static [&'static [SearchTest]];
 const AC_STANDARD_NON_OVERLAPPING: TestCollection =
     &[BASICS, NON_OVERLAPPING, STANDARD, REGRESSION];
 
+/// Tests for Aho-Corasick's anchored standard non-overlapping match semantics.
+const AC_STANDARD_ANCHORED_NON_OVERLAPPING: TestCollection =
+    &[ANCHORED_BASICS, ANCHORED_NON_OVERLAPPING, STANDARD_ANCHORED];
+
 /// Tests for Aho-Corasick's standard overlapping match semantics.
 const AC_STANDARD_OVERLAPPING: TestCollection =
     &[BASICS, OVERLAPPING, REGRESSION];
+
+/// Tests for Aho-Corasick's anchored standard overlapping match semantics.
+const AC_STANDARD_ANCHORED_OVERLAPPING: TestCollection =
+    &[ANCHORED_BASICS, ANCHORED_OVERLAPPING];
 
 /// Tests for Aho-Corasick's leftmost-first match semantics.
 const AC_LEFTMOST_FIRST: TestCollection =
     &[BASICS, NON_OVERLAPPING, LEFTMOST, LEFTMOST_FIRST, REGRESSION];
 
+/// Tests for Aho-Corasick's anchored leftmost-first match semantics.
+const AC_LEFTMOST_FIRST_ANCHORED: TestCollection = &[
+    ANCHORED_BASICS,
+    ANCHORED_NON_OVERLAPPING,
+    ANCHORED_LEFTMOST,
+    ANCHORED_LEFTMOST_FIRST,
+];
+
 /// Tests for Aho-Corasick's leftmost-longest match semantics.
 const AC_LEFTMOST_LONGEST: TestCollection =
     &[BASICS, NON_OVERLAPPING, LEFTMOST, LEFTMOST_LONGEST, REGRESSION];
+
+/// Tests for Aho-Corasick's anchored leftmost-longest match semantics.
+const AC_LEFTMOST_LONGEST_ANCHORED: TestCollection = &[
+    ANCHORED_BASICS,
+    ANCHORED_NON_OVERLAPPING,
+    ANCHORED_LEFTMOST,
+    ANCHORED_LEFTMOST_LONGEST,
+];
 
 // Now define the individual tests that make up the collections above.
 
@@ -65,7 +89,8 @@ const AC_LEFTMOST_LONGEST: TestCollection =
 /// leftmost-{shortest, first, longest} x {overlapping, non-overlapping}
 /// should produce the same answer.
 const BASICS: &'static [SearchTest] = &[
-    t!(basic000, &["a"], "", &[]),
+    t!(basic000, &[], "", &[]),
+    t!(basic001, &["a"], "", &[]),
     t!(basic010, &["a"], "a", &[(0, 0, 1)]),
     t!(basic020, &["a"], "aa", &[(0, 0, 1), (0, 1, 2)]),
     t!(basic030, &["a"], "aaa", &[(0, 0, 1), (0, 1, 2), (0, 2, 3)]),
@@ -97,7 +122,7 @@ const BASICS: &'static [SearchTest] = &[
         "abba",
         &[(1, 0, 1), (0, 1, 2), (0, 2, 3), (1, 3, 4),]
     ),
-    t!(nover360, &["abc", "bc"], "xbc", &[(1, 1, 3),]),
+    t!(basic360, &["abc", "bc"], "xbc", &[(1, 1, 3),]),
     t!(basic400, &["foo", "bar"], "", &[]),
     t!(basic410, &["foo", "bar"], "foobar", &[(0, 0, 3), (1, 3, 6),]),
     t!(basic420, &["foo", "bar"], "barfoo", &[(1, 0, 3), (0, 3, 6),]),
@@ -118,6 +143,23 @@ const BASICS: &'static [SearchTest] = &[
         "yabcdezghi",
         &[(2, 1, 10),]
     ),
+];
+
+/// A collection of *anchored* tests for the Aho-Corasick algorithm that should
+/// always be true regardless of match semantics. That is, all combinations of
+/// leftmost-{shortest, first, longest} x {overlapping, non-overlapping} should
+/// produce the same answer.
+const ANCHORED_BASICS: &'static [SearchTest] = &[
+    t!(abasic000, &[], "", &[]),
+    t!(abasic010, &[""], "", &[(0, 0, 0)]),
+    t!(abasic020, &[""], "a", &[(0, 0, 0)]),
+    t!(abasic030, &[""], "abc", &[(0, 0, 0)]),
+    t!(abasic100, &["a"], "a", &[(0, 0, 1)]),
+    t!(abasic110, &["a"], "aa", &[(0, 0, 1)]),
+    t!(abasic120, &["a", "b"], "ab", &[(0, 0, 1)]),
+    t!(abasic130, &["a", "b"], "ba", &[(1, 0, 1)]),
+    t!(abasic140, &["foo", "foofoo"], "foo", &[(0, 0, 3)]),
+    t!(abasic150, &["foofoo", "foo"], "foo", &[(1, 0, 3)]),
 ];
 
 /// Tests for non-overlapping standard match semantics.
@@ -143,6 +185,21 @@ const STANDARD: &'static [SearchTest] = &[
     t!(standard430, &["", "a", ""], "a", &[(0, 0, 0), (0, 1, 1),]),
     t!(standard440, &["a", "", ""], "a", &[(1, 0, 0), (1, 1, 1),]),
     t!(standard450, &["", "", "a"], "a", &[(0, 0, 0), (0, 1, 1),]),
+];
+
+/// Like STANDARD, but for anchored searches.
+const STANDARD_ANCHORED: &'static [SearchTest] = &[
+    t!(astandard000, &["ab", "abcd"], "abcd", &[(0, 0, 2)]),
+    t!(astandard010, &["abcd", "ab"], "abcd", &[(1, 0, 2)]),
+    t!(astandard020, &["abcd", "ab", "abc"], "abcd", &[(1, 0, 2)]),
+    t!(astandard030, &["abcd", "abc", "ab"], "abcd", &[(2, 0, 2)]),
+    t!(astandard040, &["a", ""], "a", &[(1, 0, 0)]),
+    t!(astandard050, &["abcd", "bcd", "cd", "b"], "abcd", &[(0, 0, 4)]),
+    t!(astandard410, &["", "a"], "a", &[(0, 0, 0)]),
+    t!(astandard420, &["", "a"], "aa", &[(0, 0, 0)]),
+    t!(astandard430, &["", "a", ""], "a", &[(0, 0, 0)]),
+    t!(astandard440, &["a", "", ""], "a", &[(1, 0, 0)]),
+    t!(astandard450, &["", "", "a"], "a", &[(0, 0, 0)]),
 ];
 
 /// Tests for non-overlapping leftmost match semantics. These should pass for
@@ -200,6 +257,58 @@ const LEFTMOST: &'static [SearchTest] = &[
     ),
 ];
 
+/// Like LEFTMOST, but for anchored searches.
+const ANCHORED_LEFTMOST: &'static [SearchTest] = &[
+    t!(aleftmost000, &["ab", "ab"], "abcd", &[(0, 0, 2)]),
+    t!(aleftmost010, &["a", ""], "a", &[(0, 0, 1)]),
+    t!(aleftmost020, &["", ""], "a", &[(0, 0, 0)]),
+    t!(aleftmost030, &["a", "ab"], "aa", &[(0, 0, 1)]),
+    t!(aleftmost031, &["ab", "a"], "aa", &[(1, 0, 1)]),
+    t!(aleftmost032, &["ab", "a"], "xayabbbz", &[]),
+    t!(aleftmost300, &["abcd", "bce", "b"], "abce", &[]),
+    t!(aleftmost310, &["abcd", "ce", "bc"], "abce", &[]),
+    t!(aleftmost320, &["abcd", "bce", "ce", "b"], "abce", &[]),
+    t!(aleftmost330, &["abcd", "bce", "cz", "bc"], "abcz", &[]),
+    t!(aleftmost340, &["bce", "cz", "bc"], "bcz", &[(2, 0, 2)]),
+    t!(aleftmost350, &["abc", "bd", "ab"], "abd", &[(2, 0, 2)]),
+    t!(
+        aleftmost360,
+        &["abcdefghi", "hz", "abcdefgh"],
+        "abcdefghz",
+        &[(2, 0, 8),]
+    ),
+    t!(
+        aleftmost370,
+        &["abcdefghi", "cde", "hz", "abcdefgh"],
+        "abcdefghz",
+        &[(3, 0, 8),]
+    ),
+    t!(
+        aleftmost380,
+        &["abcdefghi", "hz", "abcdefgh", "a"],
+        "abcdefghz",
+        &[(2, 0, 8),]
+    ),
+    t!(
+        aleftmost390,
+        &["b", "abcdefghi", "hz", "abcdefgh"],
+        "abcdefghz",
+        &[(3, 0, 8),]
+    ),
+    t!(
+        aleftmost400,
+        &["h", "abcdefghi", "hz", "abcdefgh"],
+        "abcdefghz",
+        &[(3, 0, 8),]
+    ),
+    t!(
+        aleftmost410,
+        &["z", "abcdefghi", "hz", "abcdefgh"],
+        "abcdefghz",
+        &[(3, 0, 8)]
+    ),
+];
+
 /// Tests for non-overlapping leftmost-first match semantics. These tests
 /// should generally be specific to leftmost-first, which means they should
 /// generally fail under leftmost-longest semantics.
@@ -212,8 +321,8 @@ const LEFTMOST_FIRST: &'static [SearchTest] = &[
     t!(leftfirst020, &["abcd", "ab"], "abcd", &[(0, 0, 4)]),
     t!(leftfirst030, &["ab", "ab"], "abcd", &[(0, 0, 2)]),
     t!(leftfirst040, &["a", "ab"], "xayabbbz", &[(0, 1, 2), (0, 3, 4)]),
-    t!(leftlong100, &["abcdefg", "bcde", "bcdef"], "abcdef", &[(1, 1, 5)]),
-    t!(leftlong110, &["abcdefg", "bcdef", "bcde"], "abcdef", &[(1, 1, 6)]),
+    t!(leftfirst100, &["abcdefg", "bcde", "bcdef"], "abcdef", &[(1, 1, 5)]),
+    t!(leftfirst110, &["abcdefg", "bcdef", "bcde"], "abcdef", &[(1, 1, 6)]),
     t!(leftfirst300, &["abcd", "b", "bce"], "abce", &[(1, 1, 2)]),
     t!(
         leftfirst310,
@@ -228,6 +337,29 @@ const LEFTMOST_FIRST: &'static [SearchTest] = &[
         &[(0, 0, 1), (2, 7, 9),]
     ),
     t!(leftfirst330, &["a", "abab"], "abab", &[(0, 0, 1), (0, 2, 3)]),
+];
+
+/// Like LEFTMOST_FIRST, but for anchored searches.
+const ANCHORED_LEFTMOST_FIRST: &'static [SearchTest] = &[
+    t!(aleftfirst000, &["ab", "abcd"], "abcd", &[(0, 0, 2)]),
+    t!(aleftfirst010, &["", "a"], "a", &[(0, 0, 0)]),
+    t!(aleftfirst011, &["", "a", ""], "a", &[(0, 0, 0)]),
+    t!(aleftfirst012, &["a", "", ""], "a", &[(0, 0, 1)]),
+    t!(aleftfirst013, &["", "", "a"], "a", &[(0, 0, 0)]),
+    t!(aleftfirst020, &["abcd", "ab"], "abcd", &[(0, 0, 4)]),
+    t!(aleftfirst030, &["ab", "ab"], "abcd", &[(0, 0, 2)]),
+    t!(aleftfirst040, &["a", "ab"], "xayabbbz", &[]),
+    t!(aleftfirst100, &["abcdefg", "bcde", "bcdef"], "abcdef", &[]),
+    t!(aleftfirst110, &["abcdefg", "bcdef", "bcde"], "abcdef", &[]),
+    t!(aleftfirst300, &["abcd", "b", "bce"], "abce", &[]),
+    t!(aleftfirst310, &["abcd", "b", "bce", "ce"], "abce", &[]),
+    t!(
+        aleftfirst320,
+        &["a", "abcdefghi", "hz", "abcdefgh"],
+        "abcdefghz",
+        &[(0, 0, 1)]
+    ),
+    t!(aleftfirst330, &["a", "abab"], "abab", &[(0, 0, 1)]),
 ];
 
 /// Tests for non-overlapping leftmost-longest match semantics. These tests
@@ -259,6 +391,33 @@ const LEFTMOST_LONGEST: &'static [SearchTest] = &[
     t!(leftlong340, &["a", "ab"], "xayabbbz", &[(0, 1, 2), (1, 3, 5)]),
 ];
 
+/// Like LEFTMOST_LONGEST, but for anchored searches.
+const ANCHORED_LEFTMOST_LONGEST: &'static [SearchTest] = &[
+    t!(aleftlong000, &["ab", "abcd"], "abcd", &[(1, 0, 4)]),
+    t!(aleftlong010, &["abcd", "bcd", "cd", "b"], "abcd", &[(0, 0, 4),]),
+    t!(aleftlong020, &["", "a"], "a", &[(1, 0, 1)]),
+    t!(aleftlong021, &["", "a", ""], "a", &[(1, 0, 1)]),
+    t!(aleftlong022, &["a", "", ""], "a", &[(0, 0, 1)]),
+    t!(aleftlong023, &["", "", "a"], "a", &[(2, 0, 1)]),
+    t!(aleftlong030, &["", "a"], "aa", &[(1, 0, 1)]),
+    t!(aleftlong040, &["a", "ab"], "a", &[(0, 0, 1)]),
+    t!(aleftlong050, &["a", "ab"], "ab", &[(1, 0, 2)]),
+    t!(aleftlong060, &["ab", "a"], "a", &[(1, 0, 1)]),
+    t!(aleftlong070, &["ab", "a"], "ab", &[(0, 0, 2)]),
+    t!(aleftlong100, &["abcdefg", "bcde", "bcdef"], "abcdef", &[]),
+    t!(aleftlong110, &["abcdefg", "bcdef", "bcde"], "abcdef", &[]),
+    t!(aleftlong300, &["abcd", "b", "bce"], "abce", &[]),
+    t!(
+        aleftlong310,
+        &["a", "abcdefghi", "hz", "abcdefgh"],
+        "abcdefghz",
+        &[(3, 0, 8),]
+    ),
+    t!(aleftlong320, &["a", "abab"], "abab", &[(1, 0, 4)]),
+    t!(aleftlong330, &["abcd", "b", "ce"], "abce", &[]),
+    t!(aleftlong340, &["a", "ab"], "xayabbbz", &[]),
+];
+
 /// Tests for non-overlapping match semantics.
 ///
 /// Generally these tests shouldn't pass when using overlapping semantics.
@@ -276,6 +435,17 @@ const NON_OVERLAPPING: &'static [SearchTest] = &[
     t!(nover200, &["foo", "foo"], "foobarfoo", &[(0, 0, 3), (0, 6, 9),]),
     t!(nover300, &["", ""], "", &[(0, 0, 0),]),
     t!(nover310, &["", ""], "a", &[(0, 0, 0), (0, 1, 1),]),
+];
+
+/// Like NON_OVERLAPPING, but for anchored searches.
+const ANCHORED_NON_OVERLAPPING: &'static [SearchTest] = &[
+    t!(anover010, &["abcd", "bcd", "cd"], "abcd", &[(0, 0, 4),]),
+    t!(anover020, &["bcd", "cd", "abcd"], "abcd", &[(2, 0, 4),]),
+    t!(anover030, &["abc", "bc"], "zazabcz", &[]),
+    t!(anover100, &["ab", "ba"], "abababa", &[(0, 0, 2)]),
+    t!(anover200, &["foo", "foo"], "foobarfoo", &[(0, 0, 3)]),
+    t!(anover300, &["", ""], "", &[(0, 0, 0),]),
+    t!(anover310, &["", ""], "a", &[(0, 0, 0)]),
 ];
 
 /// Tests for overlapping match semantics.
@@ -352,6 +522,31 @@ const OVERLAPPING: &'static [SearchTest] = &[
         "a",
         &[(0, 0, 0), (1, 0, 0), (2, 0, 1), (0, 1, 1), (1, 1, 1),]
     ),
+    t!(
+        over360,
+        &["foo", "foofoo"],
+        "foofoo",
+        &[(0, 0, 3), (1, 0, 6), (0, 3, 6)]
+    ),
+];
+
+/// Like OVERLAPPING, but for anchored searches.
+const ANCHORED_OVERLAPPING: &'static [SearchTest] = &[
+    t!(aover000, &["abcd", "bcd", "cd", "b"], "abcd", &[(0, 0, 4)]),
+    t!(aover010, &["bcd", "cd", "b", "abcd"], "abcd", &[(3, 0, 4)]),
+    t!(aover020, &["abcd", "bcd", "cd"], "abcd", &[(0, 0, 4)]),
+    t!(aover030, &["bcd", "abcd", "cd"], "abcd", &[(1, 0, 4)]),
+    t!(aover040, &["bcd", "cd", "abcd"], "abcd", &[(2, 0, 4)]),
+    t!(aover050, &["abc", "bc"], "zazabcz", &[]),
+    t!(aover100, &["ab", "ba"], "abababa", &[(0, 0, 2)]),
+    t!(aover200, &["foo", "foo"], "foobarfoo", &[(0, 0, 3), (1, 0, 3)]),
+    t!(aover300, &["", ""], "", &[(0, 0, 0), (1, 0, 0),]),
+    t!(aover310, &["", ""], "a", &[(0, 0, 0), (1, 0, 0)]),
+    t!(aover320, &["", "a"], "a", &[(0, 0, 0), (1, 0, 1)]),
+    t!(aover330, &["", "a", ""], "a", &[(0, 0, 0), (2, 0, 0), (1, 0, 1)]),
+    t!(aover340, &["a", "", ""], "a", &[(1, 0, 0), (2, 0, 0), (0, 0, 1)]),
+    t!(aover350, &["", "", "a"], "a", &[(0, 0, 0), (1, 0, 0), (2, 0, 1)]),
+    t!(aover360, &["foo", "foofoo"], "foofoo", &[(0, 0, 3), (1, 0, 6)]),
 ];
 
 /// Regression tests that are applied to all Aho-Corasick combinations.
@@ -641,6 +836,74 @@ testconfig!(
     Standard,
     |b: &mut AhoCorasickBuilder| {
         b.dfa(true);
+    }
+);
+
+// Same thing for anchored searches. Write them out manually.
+testconfig!(
+    search_standard_anchored_nfa_default,
+    AC_STANDARD_ANCHORED_NON_OVERLAPPING,
+    Standard,
+    |b: &mut AhoCorasickBuilder| {
+        b.anchored(true);
+    }
+);
+testconfig!(
+    search_standard_anchored_dfa_default,
+    AC_STANDARD_ANCHORED_NON_OVERLAPPING,
+    Standard,
+    |b: &mut AhoCorasickBuilder| {
+        b.anchored(true).dfa(true);
+    }
+);
+testconfig!(
+    overlapping,
+    search_standard_anchored_overlapping_nfa_default,
+    AC_STANDARD_ANCHORED_OVERLAPPING,
+    Standard,
+    |b: &mut AhoCorasickBuilder| {
+        b.anchored(true);
+    }
+);
+testconfig!(
+    overlapping,
+    search_standard_anchored_overlapping_dfa_default,
+    AC_STANDARD_ANCHORED_OVERLAPPING,
+    Standard,
+    |b: &mut AhoCorasickBuilder| {
+        b.anchored(true).dfa(true);
+    }
+);
+testconfig!(
+    search_leftmost_first_anchored_nfa_default,
+    AC_LEFTMOST_FIRST_ANCHORED,
+    LeftmostFirst,
+    |b: &mut AhoCorasickBuilder| {
+        b.anchored(true);
+    }
+);
+testconfig!(
+    search_leftmost_first_anchored_dfa_default,
+    AC_LEFTMOST_FIRST_ANCHORED,
+    LeftmostFirst,
+    |b: &mut AhoCorasickBuilder| {
+        b.anchored(true).dfa(true);
+    }
+);
+testconfig!(
+    search_leftmost_longest_anchored_nfa_default,
+    AC_LEFTMOST_LONGEST_ANCHORED,
+    LeftmostLongest,
+    |b: &mut AhoCorasickBuilder| {
+        b.anchored(true);
+    }
+);
+testconfig!(
+    search_leftmost_longest_anchored_dfa_default,
+    AC_LEFTMOST_LONGEST_ANCHORED,
+    LeftmostLongest,
+    |b: &mut AhoCorasickBuilder| {
+        b.anchored(true).dfa(true);
     }
 );
 

@@ -31,6 +31,10 @@ impl<S: StateID> DFA<S> {
         &self.repr().match_kind
     }
 
+    pub fn anchored(&self) -> bool {
+        self.repr().anchored
+    }
+
     pub fn heap_bytes(&self) -> usize {
         self.repr().heap_bytes
     }
@@ -153,6 +157,10 @@ impl<S: StateID> Automaton for Standard<S> {
         &self.repr().match_kind
     }
 
+    fn anchored(&self) -> bool {
+        self.repr().anchored
+    }
+
     fn prefilter(&self) -> Option<&Prefilter> {
         self.repr().prefilter.as_ref().map(|p| p.as_ref())
     }
@@ -206,6 +214,10 @@ impl<S: StateID> Automaton for ByteClass<S> {
 
     fn match_kind(&self) -> &MatchKind {
         &self.repr().match_kind
+    }
+
+    fn anchored(&self) -> bool {
+        self.repr().anchored
     }
 
     fn prefilter(&self) -> Option<&Prefilter> {
@@ -263,6 +275,10 @@ impl<S: StateID> Automaton for Premultiplied<S> {
 
     fn match_kind(&self) -> &MatchKind {
         &self.repr().match_kind
+    }
+
+    fn anchored(&self) -> bool {
+        self.repr().anchored
     }
 
     fn prefilter(&self) -> Option<&Prefilter> {
@@ -328,6 +344,10 @@ impl<S: StateID> Automaton for PremultipliedByteClass<S> {
         &self.repr().match_kind
     }
 
+    fn anchored(&self) -> bool {
+        self.repr().anchored
+    }
+
     fn prefilter(&self) -> Option<&Prefilter> {
         self.repr().prefilter.as_ref().map(|p| p.as_ref())
     }
@@ -379,6 +399,7 @@ impl<S: StateID> Automaton for PremultipliedByteClass<S> {
 #[derive(Clone, Debug)]
 pub struct Repr<S> {
     match_kind: MatchKind,
+    anchored: bool,
     premultiplied: bool,
     start_id: S,
     /// The length, in bytes, of the longest pattern in this automaton. This
@@ -610,6 +631,7 @@ impl Builder {
         let matches = vec![vec![]; nfa.state_len()];
         let mut repr = Repr {
             match_kind: nfa.match_kind().clone(),
+            anchored: nfa.anchored(),
             premultiplied: false,
             start_id: nfa.start_state(),
             max_pattern_len: nfa.max_pattern_len(),
