@@ -10,11 +10,13 @@ keywords = ["string", "search", "text", "aho", "multi"]
 license = "Unlicense/MIT"
 categories = ["text-processing"]
 autotests = false
-exclude = ["/aho-corasick-debug", "/bench", "/ci/*", "/.travis.yml"]
+exclude = [
+  "/aho-corasick-debug", "/bench", "/ci/*", "/.travis.yml", "/appveyor.yml",
+]
 
 [badges]
 travis-ci = { repository = "BurntSushi/aho-corasick" }
-appveyor = { repository = "BurntSushi/regex-automata" }
+appveyor = { repository = "BurntSushi/aho-corasick" }
 
 [workspace]
 members = ["bench", "aho-corasick-debug"]
