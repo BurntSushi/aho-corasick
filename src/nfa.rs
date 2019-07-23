@@ -580,7 +580,7 @@ impl<'a, S: StateID> Compiler<'a, S> {
     fn new(builder: &'a Builder) -> Result<Compiler<'a, S>> {
         Ok(Compiler {
             builder: builder,
-            prefilter: prefilter::Builder::new()
+            prefilter: prefilter::Builder::new(builder.match_kind)
                 .ascii_case_insensitive(builder.ascii_case_insensitive),
             nfa: NFA {
                 match_kind: builder.match_kind,

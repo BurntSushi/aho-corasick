@@ -1,14 +1,32 @@
 use ahocorasick::MatchKind;
-use prefilter::{self, Prefilter, PrefilterState};
+use prefilter::{self, Candidate, Prefilter, PrefilterState};
 use state_id::{dead_id, fail_id, StateID};
 use Match;
 
-// NOTE: This trait was essentially copied from regex-automata, with some
-// wording changed since we use this trait for NFAs in addition to DFAs in this
-// crate. Additionally, we do not export this trait. It's only used internally
-// to reduce code duplication. The regex-automata crate needs to expose it
-// because its Regex type is generic over implementations of this trait. In
-// this crate, we can encapsulate everything behind the AhoCorasick type.
+// NOTE: This trait essentially started as a copy of the same trait from from
+// regex-automata, with some wording changed since we use this trait for
+// NFAs in addition to DFAs in this crate. Additionally, we do not export
+// this trait. It's only used internally to reduce code duplication. The
+// regex-automata crate needs to expose it because its Regex type is generic
+// over implementations of this trait. In this crate, we encapsulate everything
+// behind the AhoCorasick type.
+//
+// This trait is a bit of a mess, but it's not quite clear how to fix it.
+// Basically, there are several competing concerns:
+//
+// * We need performance, so everything effectively needs to get monomorphized.
+// * There are several variations on searching Aho-Corasick automatons:
+//   overlapping, standard and leftmost. Overlapping and standard are somewhat
+//   combined together below, but there is no real way to combine standard with
+//   leftmost. Namely, leftmost requires continuing a search even after a match
+//   is found, in order to correctly disambiguate a match.
+// * On top of that, *sometimes* callers want to know which state the automaton
+//   is in after searching. This is principally useful for overlapping and
+//   stream searches. However, when callers don't care about this, we really
+//   do not want to be forced to compute it, since it sometimes requires extra
+//   work. Thus, there are effectively two copies of leftmost searching: one
+//   for tracking the state ID and one that doesn't. We should ideally do the
+//   same for standard searching, but my sanity stopped me.
 
 /// A trait describing the interface of an Aho-Corasick finite state machine.
 ///
@@ -186,7 +204,9 @@ pub trait Automaton {
                     if prestate.is_effective(at)
                         && *state_id == self.start_state()
                     {
-                        match prefilter::next(prestate, pre, haystack, at) {
+                        let c = prefilter::next(prestate, pre, haystack, at)
+                            .into_option();
+                        match c {
                             None => return None,
                             Some(i) => {
                                 ptr = start.offset(i as isize);
@@ -292,7 +312,9 @@ pub trait Automaton {
                     if prestate.is_effective(at)
                         && *state_id == self.start_state()
                     {
-                        match prefilter::next(prestate, pre, haystack, at) {
+                        let c = prefilter::next(prestate, pre, haystack, at)
+                            .into_option();
+                        match c {
                             None => return None,
                             Some(i) => {
                                 ptr = start.offset(i as isize);
@@ -329,6 +351,130 @@ pub trait Automaton {
                     }
                     let end = ptr as usize - start as usize;
                     last_match = self.get_match(*state_id, 0, end);
+                }
+            }
+            last_match
+        }
+    }
+
+    /// This is like leftmost_find_at, but does not need to track a caller
+    /// provided state id. In other words, the only output of this routine is a
+    /// match, if one exists.
+    ///
+    /// It is regrettable that we need to effectively copy a chunk of
+    /// implementation twice, but when we don't need to track the state ID, we
+    /// can allow the prefilter to report matches immediately without having
+    /// to re-confirm them with the automaton. The re-confirmation step is
+    /// necessary in leftmost_find_at because tracing through the automaton is
+    /// the only way to correctly set the state ID. (Perhaps an alternative
+    /// would be to keep a map from pattern ID to matching state ID, but that
+    /// complicates the code and still doesn't permit us to defer to the
+    /// prefilter entirely when possible.)
+    ///
+    /// I did try a few things to avoid the code duplication here, but nothing
+    /// optimized as well as this approach. (In microbenchmarks, there was
+    /// about a 25% difference.)
+    #[inline(never)]
+    fn leftmost_find_at_no_state(
+        &self,
+        prestate: &mut PrefilterState,
+        haystack: &[u8],
+        at: usize,
+    ) -> Option<Match> {
+        if let Some(pre) = self.prefilter() {
+            self.leftmost_find_at_no_state_imp(
+                prestate,
+                Some(pre),
+                haystack,
+                at,
+            )
+        } else {
+            self.leftmost_find_at_no_state_imp(prestate, None, haystack, at)
+        }
+    }
+
+    // It's important for this to always be inlined. Namely, it's only caller
+    // is leftmost_find_at_no_state, and the inlining should remove the case
+    // analysis for prefilter scanning when there is no prefilter available.
+    #[inline(always)]
+    fn leftmost_find_at_no_state_imp(
+        &self,
+        prestate: &mut PrefilterState,
+        prefilter: Option<&Prefilter>,
+        haystack: &[u8],
+        at: usize,
+    ) -> Option<Match> {
+        debug_assert!(self.match_kind().is_leftmost());
+        if self.anchored() && at > 0 {
+            return None;
+        }
+        // If our prefilter handles confirmation of matches 100% of the
+        // time, and since we don't need to track state IDs, we can avoid
+        // Aho-Corasick completely.
+        if let Some(pre) = prefilter {
+            // We should never have a prefilter during an anchored search.
+            debug_assert!(!self.anchored());
+            if !pre.reports_false_positives() {
+                return match pre.next_candidate(prestate, haystack, at) {
+                    Candidate::None => None,
+                    Candidate::Match(m) => Some(m),
+                    Candidate::PossibleStartOfMatch(_) => unreachable!(),
+                };
+            }
+        }
+        let mut state_id = self.start_state();
+        unsafe {
+            let start = haystack.as_ptr();
+            let end = haystack[haystack.len()..].as_ptr();
+            let mut ptr = haystack[at..].as_ptr();
+
+            let mut last_match = self.get_match(state_id, 0, at);
+            while ptr < end {
+                if let Some(pre) = prefilter {
+                    let at = ptr as usize - start as usize;
+                    if prestate.is_effective(at)
+                        && state_id == self.start_state()
+                    {
+                        match prefilter::next(prestate, pre, haystack, at) {
+                            Candidate::None => return None,
+                            // Since we aren't tracking a state ID, we can
+                            // quit early once we know we have a match.
+                            Candidate::Match(m) => return Some(m),
+                            Candidate::PossibleStartOfMatch(i) => {
+                                ptr = start.offset(i as isize);
+                            }
+                        }
+                    }
+                }
+                // SAFETY: next_state is safe for all possible u8 values,
+                // so the only thing we're concerned about is the validity
+                // of `state_id`. `state_id` either comes from the caller
+                // (in which case, we assert above that it is valid), or it
+                // comes from the return value of next_state, which is also
+                // guaranteed to be valid.
+                state_id = self.next_state_unchecked_no_fail(state_id, *ptr);
+                ptr = ptr.offset(1);
+                if self.is_match_or_dead_state(state_id) {
+                    if state_id == dead_id() {
+                        // The only way to enter into a dead state is if a
+                        // match has been found, so we assert as much. This
+                        // is different from normal automata, where you might
+                        // enter a dead state if you know a subsequent match
+                        // will never be found (regardless of whether a match
+                        // has already been found). For Aho-Corasick, it is
+                        // built so that we can match at any position, so the
+                        // possibility of a match always exists.
+                        //
+                        // (Unless we have an anchored automaton, in which
+                        // case, dead states are used to stop a search.)
+                        debug_assert!(
+                            last_match.is_some() || self.anchored(),
+                            "failure state should only be seen after match"
+                        );
+                        return last_match;
+                    }
+                    let end = ptr as usize - start as usize;
+                    last_match = self.get_match(state_id, 0, end);
                 }
             }
             last_match
@@ -414,6 +560,28 @@ pub trait Automaton {
             }
             MatchKind::LeftmostFirst | MatchKind::LeftmostLongest => {
                 self.leftmost_find_at(prestate, haystack, at, state_id)
+            }
+            MatchKind::__Nonexhaustive => unreachable!(),
+        }
+    }
+
+    /// Like find_at, but does not track state identifiers. This permits some
+    /// optimizations when a prefilter that confirms its own matches is
+    /// present.
+    #[inline(always)]
+    fn find_at_no_state(
+        &self,
+        prestate: &mut PrefilterState,
+        haystack: &[u8],
+        at: usize,
+    ) -> Option<Match> {
+        match *self.match_kind() {
+            MatchKind::Standard => {
+                let mut state = self.start_state();
+                self.earliest_find_at(prestate, haystack, at, &mut state)
+            }
+            MatchKind::LeftmostFirst | MatchKind::LeftmostLongest => {
+                self.leftmost_find_at_no_state(prestate, haystack, at)
             }
             MatchKind::__Nonexhaustive => unreachable!(),
         }

@@ -11,7 +11,7 @@ license = "Unlicense/MIT"
 categories = ["text-processing"]
 autotests = false
 exclude = [
-  "/aho-corasick-debug", "/bench", "/ci/*", "/.travis.yml", "/appveyor.yml",
+  "/aho-corasick-debug", "/ci/*", "/.travis.yml", "/appveyor.yml",
 ]
 
 [badges]
@@ -19,7 +19,14 @@ travis-ci = { repository = "BurntSushi/aho-corasick" }
 appveyor = { repository = "BurntSushi/aho-corasick" }
 
 [workspace]
-members = ["bench", "aho-corasick-debug"]
+members = ["bench"]
+# We'd ideally not do this, but since the debug tool uses Rust 2018, older
+# versions of Rust (such as 1.28) fail to parse the manifest because it treats
+# `edition = "2018"` as an unstable feature.
+#
+# When we move our MSRV to Rust 2018, then we should be able to add this back
+# to the workspace.
+exclude = ["aho-corasick-debug"]
 
 [lib]
 name = "aho_corasick"

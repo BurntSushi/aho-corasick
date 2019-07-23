@@ -4,7 +4,7 @@ extern crate criterion;
 
 use std::time::Duration;
 
-use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
+use aho_corasick::{packed, AhoCorasick, AhoCorasickBuilder, MatchKind};
 use criterion::{Bencher, Benchmark, Criterion, Throughput};
 
 mod build;
@@ -35,17 +35,49 @@ fn define_aho_corasick<B: AsRef<[u8]>>(
 
     let haystack = corpus.to_vec();
     let name = format!("nfa/{}", bench_name);
-    let aut = AhoCorasick::new(patterns.clone());
+    // let aut = AhoCorasick::new(patterns.clone());
+    let aut = AhoCorasickBuilder::new()
+        .match_kind(MatchKind::LeftmostFirst)
+        .dfa(false)
+        .build(patterns.clone());
     define(c, group_name, &name, corpus, move |b| {
         b.iter(|| assert_eq!(count, aut.find_iter(&haystack).count()));
     });
 
     let haystack = corpus.to_vec();
     let name = format!("dfa/{}", bench_name);
-    let aut = AhoCorasickBuilder::new().dfa(true).build(patterns.clone());
+    // let aut = AhoCorasickBuilder::new().dfa(true).build(patterns.clone());
+    let aut = AhoCorasickBuilder::new()
+        .match_kind(MatchKind::LeftmostFirst)
+        .dfa(true)
+        .build(patterns.clone());
     define(c, group_name, &name, corpus, move |b| {
         b.iter(|| assert_eq!(count, aut.find_iter(&haystack).count()));
     });
+
+    let name = format!("packed/teddy/{}", bench_name);
+    let haystack = corpus.to_vec();
+    let mut builder = packed::Config::new().force_teddy(true).builder();
+    builder.extend(patterns.clone());
+    if let Some(searcher) = builder.build() {
+        define(c, group_name, &name, corpus, move |b| {
+            b.iter(|| {
+                assert_eq!(count, searcher.find_iter(&haystack).count())
+            });
+        });
+    }
+
+    let name = format!("packed/rabinkarp/{}", bench_name);
+    let haystack = corpus.to_vec();
+    let mut builder = packed::Config::new().force_rabin_karp(true).builder();
+    builder.extend(patterns.clone());
+    if let Some(searcher) = builder.build() {
+        define(c, group_name, &name, corpus, move |b| {
+            b.iter(|| {
+                assert_eq!(count, searcher.find_iter(&haystack).count())
+            });
+        });
+    }
 }
 
 /// Define a benchmark that tests the different combinations of Aho-Corasick
@@ -132,8 +164,9 @@ fn define(
     let tput = Throughput::Bytes(corpus.len() as u32);
     let benchmark = Benchmark::new(bench_name, bench)
         .throughput(tput)
+        .sample_size(30)
         .warm_up_time(Duration::from_millis(500))
-        .measurement_time(Duration::from_secs(3));
+        .measurement_time(Duration::from_secs(2));
     c.bench(group_name, benchmark);
 }
 
