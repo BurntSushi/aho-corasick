@@ -1,9 +1,10 @@
 aho-corasick
 ============
-A library for finding occurrences of many patterns at once. This library
-provides multiple pattern search principally through an implementation of the
+A library for finding occurrences of many patterns at once with SIMD
+acceleration in some cases. This library provides multiple pattern
+search principally through an implementation of the
 [Aho-Corasick algorithm](https://en.wikipedia.org/wiki/Aho%E2%80%93Corasick_algorithm),
-which builds a fast finite state machine for executing searches in linear time.
+which builds a finite state machine for executing searches in linear time.
 Features include case insensitive matching, overlapping matches and search &
 replace in streams.
 
@@ -176,13 +177,6 @@ Here are some plans for the future:
 
 * Assuming the current API is sufficient, I'd like to commit to it and release
   a `1.0` version of this crate some time in the next 6-12 months.
-* Despite the crate's name, it seems prudent to consolidate all
-  multi-pattern search optimizations into this crate so that they get the
-  widest possible use. A good place to start will be to move the regex
-  crate's Teddy algorithm into this one. (This is more than just a move. It
-  will require fleshing out the somewhat simplistic `Prefilter` design that
-  exists internally currently.) In the future, it would be good to loot
-  Hyperscan for some of its pertinent algorithms, such as FDR.
 * Support stream searching with leftmost match semantics. Currently, only
   standard match semantics are supported. Getting this right seems possible,
   but is tricky since the match state needs to be propagated through multiple

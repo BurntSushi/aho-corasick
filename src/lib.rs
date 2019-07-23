@@ -33,6 +33,10 @@ This section gives a brief overview of the primary types in this crate:
   that matched and the start and end byte offsets corresponding to the position
   in the haystack at which it matched.
 
+Additionally, the [`packed`](packed/index.html) sub-module contains a lower
+level API for using fast vectorized routines for finding a small number of
+patterns in a haystack.
+
 # Example: basic searching
 
 This example shows how to search for occurrences of multiple patterns
@@ -211,6 +215,7 @@ mod classes;
 mod dfa;
 mod error;
 mod nfa;
+pub mod packed;
 mod prefilter;
 mod state_id;
 #[cfg(test)]
@@ -290,5 +295,10 @@ impl Match {
     #[inline]
     fn increment(&self, by: usize) -> Match {
         Match { pattern: self.pattern, len: self.len, end: self.end + by }
+    }
+
+    #[inline]
+    fn from_span(id: usize, start: usize, end: usize) -> Match {
+        Match { pattern: id, len: end - start, end: end }
     }
 }

@@ -5,6 +5,7 @@ use buffer::Buffer;
 use dfa::{self, DFA};
 use error::Result;
 use nfa::{self, NFA};
+use packed;
 use prefilter::PrefilterState;
 use state_id::StateID;
 use Match;
@@ -281,8 +282,7 @@ impl<S: StateID> AhoCorasick<S> {
     /// ```
     pub fn find<B: AsRef<[u8]>>(&self, haystack: B) -> Option<Match> {
         let mut prestate = PrefilterState::new(self.max_pattern_len());
-        let mut start = self.imp.start_state();
-        self.imp.find_at(&mut prestate, haystack.as_ref(), 0, &mut start)
+        self.imp.find_at_no_state(&mut prestate, haystack.as_ref(), 0)
     }
 
     /// Returns an iterator of non-overlapping matches, using the match
@@ -1095,6 +1095,19 @@ impl<S: StateID> Imp<S> {
             Imp::DFA(ref dfa) => dfa.find_at(prestate, haystack, at, state_id),
         }
     }
+
+    #[inline(always)]
+    fn find_at_no_state(
+        &self,
+        prestate: &mut PrefilterState,
+        haystack: &[u8],
+        at: usize,
+    ) -> Option<Match> {
+        match *self {
+            Imp::NFA(ref nfa) => nfa.find_at_no_state(prestate, haystack, at),
+            Imp::DFA(ref dfa) => dfa.find_at_no_state(prestate, haystack, at),
+        }
+    }
 }
 
 /// An iterator of non-overlapping matches in a particular haystack.
@@ -1119,14 +1132,12 @@ pub struct FindIter<'a, 'b, S: 'a + StateID> {
     prestate: PrefilterState,
     haystack: &'b [u8],
     pos: usize,
-    start: S,
 }
 
 impl<'a, 'b, S: StateID> FindIter<'a, 'b, S> {
     fn new(ac: &'a AhoCorasick<S>, haystack: &'b [u8]) -> FindIter<'a, 'b, S> {
         let prestate = PrefilterState::new(ac.max_pattern_len());
-        let start = ac.imp.start_state();
-        FindIter { fsm: &ac.imp, prestate, haystack, pos: 0, start }
+        FindIter { fsm: &ac.imp, prestate, haystack, pos: 0 }
     }
 }
 
@@ -1137,12 +1148,10 @@ impl<'a, 'b, S: StateID> Iterator for FindIter<'a, 'b, S> {
         if self.pos > self.haystack.len() {
             return None;
         }
-        let mut start = self.start;
-        let result = self.fsm.find_at(
+        let result = self.fsm.find_at_no_state(
             &mut self.prestate,
             self.haystack,
             self.pos,
-            &mut start,
         );
         let mat = match result {
             None => return None,
@@ -2053,6 +2062,20 @@ impl MatchKind {
 
     pub(crate) fn is_leftmost_first(&self) -> bool {
         *self == MatchKind::LeftmostFirst
+    }
+
+    /// Convert this match kind into a packed match kind. If this match kind
+    /// corresponds to standard semantics, then this returns None, since
+    /// packed searching does not support standard semantics.
+    pub(crate) fn as_packed(&self) -> Option<packed::MatchKind> {
+        match *self {
+            MatchKind::Standard => None,
+            MatchKind::LeftmostFirst => Some(packed::MatchKind::LeftmostFirst),
+            MatchKind::LeftmostLongest => {
+                Some(packed::MatchKind::LeftmostLongest)
+            }
+            MatchKind::__Nonexhaustive => unreachable!(),
+        }
     }
 }
 

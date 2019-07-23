@@ -5,6 +5,45 @@ use std::u8;
 
 use memchr::{memchr, memchr2, memchr3};
 
+use ahocorasick::MatchKind;
+use packed;
+use Match;
+
+/// A candidate is the result of running a prefilter on a haystack at a
+/// particular position. The result is either no match, a confirmed match or
+/// a possible match.
+///
+/// When no match is returned, the prefilter is guaranteeing that no possible
+/// match can be found in the haystack, and the caller may trust this. That is,
+/// all correct prefilters must never report false negatives.
+///
+/// In some cases, a prefilter can confirm a match very quickly, in which case,
+/// the caller may use this to stop what it's doing and report the match. In
+/// this case, prefilter implementations must never report a false positive.
+/// In other cases, the prefilter can only report a potential match, in which
+/// case the callers must attempt to confirm the match. In this case, prefilter
+/// implementations are permitted to return false positives.
+#[derive(Clone, Debug)]
+pub enum Candidate {
+    None,
+    Match(Match),
+    PossibleStartOfMatch(usize),
+}
+
+impl Candidate {
+    /// Convert this candidate into an option. This is useful when callers
+    /// do not distinguish between true positives and false positives (i.e.,
+    /// the caller must always confirm the match in order to update some other
+    /// state).
+    pub fn into_option(self) -> Option<usize> {
+        match self {
+            Candidate::None => None,
+            Candidate::Match(ref m) => Some(m.start()),
+            Candidate::PossibleStartOfMatch(start) => Some(start),
+        }
+    }
+}
+
 /// A prefilter describes the behavior of fast literal scanners for quickly
 /// skipping past bytes in the haystack that we know cannot possibly
 /// participate in a match.
@@ -21,11 +60,22 @@ pub trait Prefilter:
         state: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
-    ) -> Option<usize>;
+    ) -> Candidate;
 
     /// A method for cloning a prefilter, to work-around the fact that Clone
     /// is not object-safe.
     fn clone_prefilter(&self) -> Box<Prefilter>;
+
+    /// Returns true if and only if this prefilter never returns false
+    /// positives. This is useful for completely avoiding the automaton
+    /// when the prefilter can quickly confirm its own matches.
+    ///
+    /// By default, this returns true, which is conservative; it is always
+    /// correct to return `true`. Returning `false` here and reporting a false
+    /// positive will result in incorrect searches.
+    fn reports_false_positives(&self) -> bool {
+        true
+    }
 }
 
 impl<'a, P: Prefilter + ?Sized> Prefilter for &'a P {
@@ -35,12 +85,16 @@ impl<'a, P: Prefilter + ?Sized> Prefilter for &'a P {
         state: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
-    ) -> Option<usize> {
+    ) -> Candidate {
         (**self).next_candidate(state, haystack, at)
     }
 
     fn clone_prefilter(&self) -> Box<Prefilter> {
         (**self).clone_prefilter()
+    }
+
+    fn reports_false_positives(&self) -> bool {
+        (**self).reports_false_positives()
     }
 }
 
@@ -191,16 +245,21 @@ pub struct Builder {
     ascii_case_insensitive: bool,
     start_bytes: StartBytesBuilder,
     rare_bytes: RareBytesBuilder,
+    packed: Option<packed::Builder>,
 }
 
 impl Builder {
     /// Create a new builder for constructing the best possible prefilter.
-    pub fn new() -> Builder {
+    pub fn new(kind: MatchKind) -> Builder {
+        let pbuilder = kind
+            .as_packed()
+            .map(|kind| packed::Config::new().match_kind(kind).builder());
         Builder {
             count: 0,
             ascii_case_insensitive: false,
             start_bytes: StartBytesBuilder::new(),
             rare_bytes: RareBytesBuilder::new(),
+            packed: pbuilder,
         }
     }
 
@@ -248,7 +307,11 @@ impl Builder {
             }
             (prestart @ Some(_), None) => prestart,
             (None, prerare @ Some(_)) => prerare,
-            (None, None) => None,
+            (None, None) => self
+                .packed
+                .as_ref()
+                .and_then(|b| b.build())
+                .map(|s| PrefilterObj::new(Packed(s))),
         }
     }
 
@@ -257,6 +320,33 @@ impl Builder {
         self.count += 1;
         self.start_bytes.add(bytes);
         self.rare_bytes.add(bytes);
+        if let Some(ref mut pbuilder) = self.packed {
+            pbuilder.add(bytes);
+        }
+    }
+}
+
+/// A type that wraps a packed searcher and implements the `Prefilter`
+/// interface.
+#[derive(Clone, Debug)]
+struct Packed(packed::Searcher);
+
+impl Prefilter for Packed {
+    fn next_candidate(
+        &self,
+        _state: &mut PrefilterState,
+        haystack: &[u8],
+        at: usize,
+    ) -> Candidate {
+        self.0.find_at(haystack, at).map_or(Candidate::None, Candidate::Match)
+    }
+
+    fn clone_prefilter(&self) -> Box<Prefilter> {
+        Box::new(self.clone())
+    }
+
+    fn reports_false_positives(&self) -> bool {
+        false
     }
 }
 
@@ -503,12 +593,14 @@ impl Prefilter for RareBytesOne {
         state: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
-    ) -> Option<usize> {
-        memchr(self.byte1, &haystack[at..]).map(|i| {
-            let pos = at + i;
-            state.last_scan_at = pos;
-            cmp::max(at, pos.saturating_sub(self.offset.max as usize))
-        })
+    ) -> Candidate {
+        memchr(self.byte1, &haystack[at..])
+            .map(|i| {
+                let pos = at + i;
+                state.last_scan_at = pos;
+                cmp::max(at, pos.saturating_sub(self.offset.max as usize))
+            })
+            .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
     }
 
     fn clone_prefilter(&self) -> Box<Prefilter> {
@@ -530,13 +622,15 @@ impl Prefilter for RareBytesTwo {
         state: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
-    ) -> Option<usize> {
-        memchr2(self.byte1, self.byte2, &haystack[at..]).map(|i| {
-            let pos = at + i;
-            state.update_at(pos);
-            let offset = self.offsets.set[haystack[pos] as usize].max;
-            cmp::max(at, pos.saturating_sub(offset as usize))
-        })
+    ) -> Candidate {
+        memchr2(self.byte1, self.byte2, &haystack[at..])
+            .map(|i| {
+                let pos = at + i;
+                state.update_at(pos);
+                let offset = self.offsets.set[haystack[pos] as usize].max;
+                cmp::max(at, pos.saturating_sub(offset as usize))
+            })
+            .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
     }
 
     fn clone_prefilter(&self) -> Box<Prefilter> {
@@ -559,13 +653,15 @@ impl Prefilter for RareBytesThree {
         state: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
-    ) -> Option<usize> {
-        memchr3(self.byte1, self.byte2, self.byte3, &haystack[at..]).map(|i| {
-            let pos = at + i;
-            state.update_at(pos);
-            let offset = self.offsets.set[haystack[pos] as usize].max;
-            cmp::max(at, pos.saturating_sub(offset as usize))
-        })
+    ) -> Candidate {
+        memchr3(self.byte1, self.byte2, self.byte3, &haystack[at..])
+            .map(|i| {
+                let pos = at + i;
+                state.update_at(pos);
+                let offset = self.offsets.set[haystack[pos] as usize].max;
+                cmp::max(at, pos.saturating_sub(offset as usize))
+            })
+            .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
     }
 
     fn clone_prefilter(&self) -> Box<Prefilter> {
@@ -696,8 +792,10 @@ impl Prefilter for StartBytesOne {
         _state: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
-    ) -> Option<usize> {
-        memchr(self.byte1, &haystack[at..]).map(|i| at + i)
+    ) -> Candidate {
+        memchr(self.byte1, &haystack[at..])
+            .map(|i| at + i)
+            .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
     }
 
     fn clone_prefilter(&self) -> Box<Prefilter> {
@@ -718,8 +816,10 @@ impl Prefilter for StartBytesTwo {
         _state: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
-    ) -> Option<usize> {
-        memchr2(self.byte1, self.byte2, &haystack[at..]).map(|i| at + i)
+    ) -> Candidate {
+        memchr2(self.byte1, self.byte2, &haystack[at..])
+            .map(|i| at + i)
+            .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
     }
 
     fn clone_prefilter(&self) -> Box<Prefilter> {
@@ -741,9 +841,10 @@ impl Prefilter for StartBytesThree {
         _state: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
-    ) -> Option<usize> {
+    ) -> Candidate {
         memchr3(self.byte1, self.byte2, self.byte3, &haystack[at..])
             .map(|i| at + i)
+            .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
     }
 
     fn clone_prefilter(&self) -> Box<Prefilter> {
@@ -762,17 +863,20 @@ pub fn next<P: Prefilter>(
     prefilter: P,
     haystack: &[u8],
     at: usize,
-) -> Option<usize> {
-    match prefilter.next_candidate(prestate, haystack, at) {
-        None => {
+) -> Candidate {
+    let cand = prefilter.next_candidate(prestate, haystack, at);
+    match cand {
+        Candidate::None => {
             prestate.update_skipped_bytes(haystack.len() - at);
-            None
         }
-        Some(i) => {
+        Candidate::Match(ref m) => {
+            prestate.update_skipped_bytes(m.start() - at);
+        }
+        Candidate::PossibleStartOfMatch(i) => {
             prestate.update_skipped_bytes(i - at);
-            Some(i)
         }
     }
+    cand
 }
 
 /// If the given byte is an ASCII letter, then return it in the opposite case.
@@ -801,7 +905,7 @@ mod tests {
 
     #[test]
     fn scratch() {
-        let mut b = Builder::new();
+        let mut b = Builder::new(MatchKind::LeftmostFirst);
         b.add(b"Sherlock");
         b.add(b"locjaw");
         // b.add(b"Sherlock");
@@ -811,6 +915,6 @@ mod tests {
         // b.add("Джон Уотсон".as_bytes());
 
         let s = b.build().unwrap();
-        dbg!(s);
+        println!("{:?}", s);
     }
 }
