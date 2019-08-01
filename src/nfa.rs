@@ -1,5 +1,5 @@
 use std::cmp;
-use std::collections::VecDeque;
+use std::collections::{BTreeSet, VecDeque};
 use std::fmt;
 use std::mem::size_of;
 
@@ -781,16 +781,23 @@ impl<'a, S: StateID> Compiler<'a, S> {
         // we only want to follow non-self transitions. If we followed self
         // transitions, then this would never terminate.
         let mut queue = VecDeque::new();
+        let mut seen = self.queued_set();
         for b in AllBytesIter::new() {
             let next = self.nfa.start().next_state(b);
             if next != self.nfa.start_id {
-                queue.push_back(next);
+                if !seen.contains(next) {
+                    queue.push_back(next);
+                    seen.insert(next);
+                }
             }
         }
         while let Some(id) = queue.pop_front() {
             let mut it = self.nfa.iter_transitions_mut(id);
             while let Some((b, next)) = it.next() {
-                queue.push_back(next);
+                if !seen.contains(next) {
+                    queue.push_back(next);
+                    seen.insert(next);
+                }
 
                 let mut fail = it.nfa().state(id).fail;
                 while it.nfa().state(fail).next_state(b) == fail_id() {
@@ -910,12 +917,16 @@ impl<'a, S: StateID> Compiler<'a, S> {
         // we only want to follow non-self transitions. If we followed self
         // transitions, then this would never terminate.
         let mut queue: VecDeque<QueuedState<S>> = VecDeque::new();
+        let mut seen = self.queued_set();
         let start = QueuedState::start(&self.nfa);
         for b in AllBytesIter::new() {
             let next_id = self.nfa.start().next_state(b);
             if next_id != start.id {
                 let next = start.next_queued_state(&self.nfa, next_id);
-                queue.push_back(next);
+                if !seen.contains(next.id) {
+                    queue.push_back(next);
+                    seen.insert(next.id);
+                }
                 // If a state immediately following the start state is a match
                 // state, then we never want to follow its failure transition
                 // since the failure transition necessarily leads back to the
@@ -937,7 +948,10 @@ impl<'a, S: StateID> Compiler<'a, S> {
 
                 // Queue up the next state.
                 let next = item.next_queued_state(it.nfa(), next_id);
-                queue.push_back(next);
+                if !seen.contains(next.id) {
+                    queue.push_back(next);
+                    seen.insert(next.id);
+                }
 
                 // Find the failure state for next. Same as standard.
                 let mut fail = it.nfa().state(item.id).fail;
@@ -1101,6 +1115,48 @@ impl<'a, S: StateID> Compiler<'a, S> {
     /// Returns the match kind configured on the underlying builder.
     fn match_kind(&self) -> MatchKind {
         self.builder.match_kind
+    }
+}
+
+/// A set of state identifiers used to avoid revisiting the same state multiple
+/// times when filling in failure transitions.
+///
+/// This set has an "inert" and an "active" mode. When inert, the set never
+/// stores anything and always returns `false` for every member test. This is
+/// useful to avoid the performance and memory overhead of maintaining this
+/// set when it is not needed.
+#[derive(Debug)]
+struct QueuedSet<S> {
+    set: Option<BTreeSet<S>>,
+}
+
+impl<S: StateID> QueuedSet<S> {
+    /// Return an inert set that returns `false` for every state ID membership
+    /// test.
+    fn inert() -> QueuedSet<S> {
+        QueuedSet { set: None }
+    }
+
+    /// Return an active set that tracks state ID membership.
+    fn active() -> QueuedSet<S> {
+        QueuedSet { set: Some(BTreeSet::new()) }
+    }
+
+    /// Inserts the given state ID into this set. (If the set is inert, then
+    /// this is a no-op.)
+    fn insert(&mut self, state_id: S) {
+        if let Some(ref mut set) = self.set {
+            set.insert(state_id);
+        }
+    }
+
+    /// Returns true if and only if the given state ID is in this set. If the
+    /// set is inert, this always returns false.
+    fn contains(&self, state_id: S) -> bool {
+        match self.set {
+            None => false,
+            Some(ref set) => set.contains(&state_id),
+        }
     }
 }
 
