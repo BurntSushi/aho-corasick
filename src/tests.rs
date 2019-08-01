@@ -721,6 +721,18 @@ fn state_id_too_small() {
     assert!(result.is_err());
 }
 
+// See: https://github.com/BurntSushi/aho-corasick/issues/44
+//
+// In short, this test ensures that enabling ASCII case insensitivity does not
+// visit an exponential number of states when filling in failure transitions.
+#[test]
+fn regression_ascii_case_insensitive_no_exponential() {
+    let ac = AhoCorasickBuilder::new()
+        .ascii_case_insensitive(true)
+        .build(&["Tsubaki House-Triple Shot Vol01校花三姐妹"]);
+    assert!(ac.find("").is_none());
+}
+
 fn run_search_tests<F: FnMut(&SearchTest) -> Vec<Match>>(
     which: TestCollection,
     mut f: F,
