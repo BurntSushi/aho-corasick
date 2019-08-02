@@ -172,11 +172,6 @@ to accelerate searches when possible. Currently, this library has fairly
 limited implementation that only applies when there are 3 or fewer unique
 starting bytes among all patterns in an automaton.
 
-In the future, it is intended for this prefilter to grow more sophisticated
-by pushing applicable optimizations from the
-[`regex`](http://docs.rs/regex)
-crate (and other places) down into this library.
-
 While a prefilter is generally good to have on by default since it works well
 in the common case, it can lead to less predictable or even sub-optimal
 performance in some cases. For that reason, prefilters can be disabled via
