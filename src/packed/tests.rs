@@ -397,7 +397,7 @@ macro_rules! testconfig {
 testconfig!(
     search_default_leftmost_first,
     PACKED_LEFTMOST_FIRST,
-    |c: &mut Config| {}
+    |_: &mut Config| {}
 );
 
 #[cfg(target_arch = "x86_64")]

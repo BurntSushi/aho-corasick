@@ -70,7 +70,7 @@ impl RabinKarp {
         assert!(hash_len >= 1);
 
         let mut hash_2pow = 1usize;
-        for i in 1..hash_len {
+        for _ in 1..hash_len {
             hash_2pow = hash_2pow.wrapping_shl(1);
         }
 

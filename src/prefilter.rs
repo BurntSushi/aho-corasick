@@ -64,7 +64,7 @@ pub trait Prefilter:
 
     /// A method for cloning a prefilter, to work-around the fact that Clone
     /// is not object-safe.
-    fn clone_prefilter(&self) -> Box<Prefilter>;
+    fn clone_prefilter(&self) -> Box<dyn Prefilter>;
 
     /// Returns true if and only if this prefilter never returns false
     /// positives. This is useful for completely avoiding the automaton
@@ -89,7 +89,7 @@ impl<'a, P: Prefilter + ?Sized> Prefilter for &'a P {
         (**self).next_candidate(state, haystack, at)
     }
 
-    fn clone_prefilter(&self) -> Box<Prefilter> {
+    fn clone_prefilter(&self) -> Box<dyn Prefilter> {
         (**self).clone_prefilter()
     }
 
@@ -101,7 +101,7 @@ impl<'a, P: Prefilter + ?Sized> Prefilter for &'a P {
 /// A convenience object for representing any type that implements Prefilter
 /// and is cloneable.
 #[derive(Debug)]
-pub struct PrefilterObj(Box<Prefilter>);
+pub struct PrefilterObj(Box<dyn Prefilter>);
 
 impl Clone for PrefilterObj {
     fn clone(&self) -> Self {
@@ -116,7 +116,7 @@ impl PrefilterObj {
     }
 
     /// Return the underlying prefilter trait object.
-    pub fn as_ref(&self) -> &Prefilter {
+    pub fn as_ref(&self) -> &dyn Prefilter {
         &*self.0
     }
 }
@@ -277,8 +277,6 @@ impl Builder {
     /// All patterns added to an Aho-Corasick automaton should be added to this
     /// builder before attempting to construct the prefilter.
     pub fn build(&self) -> Option<PrefilterObj> {
-        let prestart = self.start_bytes.build();
-        let prerare = self.rare_bytes.build();
         match (self.start_bytes.build(), self.rare_bytes.build()) {
             // If we could build both start and rare prefilters, then there are
             // a few cases in which we'd want to use the start-byte prefilter
@@ -341,7 +339,7 @@ impl Prefilter for Packed {
         self.0.find_at(haystack, at).map_or(Candidate::None, Candidate::Match)
     }
 
-    fn clone_prefilter(&self) -> Box<Prefilter> {
+    fn clone_prefilter(&self) -> Box<dyn Prefilter> {
         Box::new(self.clone())
     }
 
@@ -603,7 +601,7 @@ impl Prefilter for RareBytesOne {
             .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
     }
 
-    fn clone_prefilter(&self) -> Box<Prefilter> {
+    fn clone_prefilter(&self) -> Box<dyn Prefilter> {
         Box::new(self.clone())
     }
 }
@@ -633,7 +631,7 @@ impl Prefilter for RareBytesTwo {
             .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
     }
 
-    fn clone_prefilter(&self) -> Box<Prefilter> {
+    fn clone_prefilter(&self) -> Box<dyn Prefilter> {
         Box::new(self.clone())
     }
 }
@@ -664,7 +662,7 @@ impl Prefilter for RareBytesThree {
             .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
     }
 
-    fn clone_prefilter(&self) -> Box<Prefilter> {
+    fn clone_prefilter(&self) -> Box<dyn Prefilter> {
         Box::new(self.clone())
     }
 }
@@ -798,7 +796,7 @@ impl Prefilter for StartBytesOne {
             .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
     }
 
-    fn clone_prefilter(&self) -> Box<Prefilter> {
+    fn clone_prefilter(&self) -> Box<dyn Prefilter> {
         Box::new(self.clone())
     }
 }
@@ -822,7 +820,7 @@ impl Prefilter for StartBytesTwo {
             .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
     }
 
-    fn clone_prefilter(&self) -> Box<Prefilter> {
+    fn clone_prefilter(&self) -> Box<dyn Prefilter> {
         Box::new(self.clone())
     }
 }
@@ -847,7 +845,7 @@ impl Prefilter for StartBytesThree {
             .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
     }
 
-    fn clone_prefilter(&self) -> Box<Prefilter> {
+    fn clone_prefilter(&self) -> Box<dyn Prefilter> {
         Box::new(self.clone())
     }
 }

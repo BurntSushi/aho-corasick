@@ -184,8 +184,6 @@ performance in some cases. For that reason, prefilters can be disabled via
 */
 
 #![deny(missing_docs)]
-#![allow(bare_trait_objects)]
-#![allow(dead_code, unused_variables)]
 
 // We can never be truly no_std, but we could be alloc-only some day, so
 // require the std feature for now.

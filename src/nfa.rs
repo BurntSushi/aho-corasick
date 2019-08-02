@@ -223,7 +223,7 @@ impl<S: StateID> Automaton for NFA<S> {
         self.anchored
     }
 
-    fn prefilter(&self) -> Option<&Prefilter> {
+    fn prefilter(&self) -> Option<&dyn Prefilter> {
         self.prefilter.as_ref().map(|p| p.as_ref())
     }
 

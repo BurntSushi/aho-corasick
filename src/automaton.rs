@@ -61,7 +61,7 @@ pub trait Automaton {
     /// Currently, a prefilter only runs when the automaton is in the start
     /// state. That is, the position reported by a prefilter should always
     /// correspond to the start of a potential match.
-    fn prefilter(&self) -> Option<&Prefilter>;
+    fn prefilter(&self) -> Option<&dyn Prefilter>;
 
     /// Return the identifier of this automaton's start state.
     fn start_state(&self) -> Self::ID;
@@ -181,7 +181,7 @@ pub trait Automaton {
     fn standard_find_at_imp(
         &self,
         prestate: &mut PrefilterState,
-        prefilter: Option<&Prefilter>,
+        prefilter: Option<&dyn Prefilter>,
         haystack: &[u8],
         at: usize,
         state_id: &mut Self::ID,
@@ -283,7 +283,7 @@ pub trait Automaton {
     fn leftmost_find_at_imp(
         &self,
         prestate: &mut PrefilterState,
-        prefilter: Option<&Prefilter>,
+        prefilter: Option<&dyn Prefilter>,
         haystack: &[u8],
         at: usize,
         state_id: &mut Self::ID,
@@ -400,7 +400,7 @@ pub trait Automaton {
     fn leftmost_find_at_no_state_imp(
         &self,
         prestate: &mut PrefilterState,
-        prefilter: Option<&Prefilter>,
+        prefilter: Option<&dyn Prefilter>,
         haystack: &[u8],
         at: usize,
     ) -> Option<Match> {

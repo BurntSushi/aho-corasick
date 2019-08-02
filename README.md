@@ -164,7 +164,7 @@ expression alternation. See `MatchKind` in the docs for more details.
 
 ### Minimum Rust version policy
 
-This crate's minimum supported `rustc` version is `1.24.1`.
+This crate's minimum supported `rustc` version is `1.28.0`.
 
 In general, this crate will be conservative with respect to the minimum
 supported version of Rust. In general, it will follow the `regex` crate's
