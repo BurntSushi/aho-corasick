@@ -1083,20 +1083,6 @@ impl<S: StateID> Imp<S> {
     }
 
     #[inline(always)]
-    fn find_at(
-        &self,
-        prestate: &mut PrefilterState,
-        haystack: &[u8],
-        at: usize,
-        state_id: &mut S,
-    ) -> Option<Match> {
-        match *self {
-            Imp::NFA(ref nfa) => nfa.find_at(prestate, haystack, at, state_id),
-            Imp::DFA(ref dfa) => dfa.find_at(prestate, haystack, at, state_id),
-        }
-    }
-
-    #[inline(always)]
     fn find_at_no_state(
         &self,
         prestate: &mut PrefilterState,

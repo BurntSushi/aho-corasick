@@ -31,10 +31,6 @@ impl<S: StateID> DFA<S> {
         &self.repr().match_kind
     }
 
-    pub fn anchored(&self) -> bool {
-        self.repr().anchored
-    }
-
     pub fn heap_bytes(&self) -> usize {
         self.repr().heap_bytes
     }
@@ -117,30 +113,6 @@ impl<S: StateID> DFA<S> {
     }
 
     #[inline(always)]
-    pub fn find_at(
-        &self,
-        prestate: &mut PrefilterState,
-        haystack: &[u8],
-        at: usize,
-        state_id: &mut S,
-    ) -> Option<Match> {
-        match *self {
-            DFA::Standard(ref dfa) => {
-                dfa.find_at(prestate, haystack, at, state_id)
-            }
-            DFA::ByteClass(ref dfa) => {
-                dfa.find_at(prestate, haystack, at, state_id)
-            }
-            DFA::Premultiplied(ref dfa) => {
-                dfa.find_at(prestate, haystack, at, state_id)
-            }
-            DFA::PremultipliedByteClass(ref dfa) => {
-                dfa.find_at(prestate, haystack, at, state_id)
-            }
-        }
-    }
-
-    #[inline(always)]
     pub fn find_at_no_state(
         &self,
         prestate: &mut PrefilterState,
@@ -184,7 +156,7 @@ impl<S: StateID> Automaton for Standard<S> {
         self.repr().anchored
     }
 
-    fn prefilter(&self) -> Option<&Prefilter> {
+    fn prefilter(&self) -> Option<&dyn Prefilter> {
         self.repr().prefilter.as_ref().map(|p| p.as_ref())
     }
 
@@ -243,7 +215,7 @@ impl<S: StateID> Automaton for ByteClass<S> {
         self.repr().anchored
     }
 
-    fn prefilter(&self) -> Option<&Prefilter> {
+    fn prefilter(&self) -> Option<&dyn Prefilter> {
         self.repr().prefilter.as_ref().map(|p| p.as_ref())
     }
 
@@ -304,7 +276,7 @@ impl<S: StateID> Automaton for Premultiplied<S> {
         self.repr().anchored
     }
 
-    fn prefilter(&self) -> Option<&Prefilter> {
+    fn prefilter(&self) -> Option<&dyn Prefilter> {
         self.repr().prefilter.as_ref().map(|p| p.as_ref())
     }
 
@@ -371,7 +343,7 @@ impl<S: StateID> Automaton for PremultipliedByteClass<S> {
         self.repr().anchored
     }
 
-    fn prefilter(&self) -> Option<&Prefilter> {
+    fn prefilter(&self) -> Option<&dyn Prefilter> {
         self.repr().prefilter.as_ref().map(|p| p.as_ref())
     }
 
