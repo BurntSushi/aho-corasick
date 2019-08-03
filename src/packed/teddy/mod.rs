@@ -54,5 +54,9 @@ mod fallback {
         pub fn minimum_len(&self) -> usize {
             0
         }
+
+        pub fn heap_bytes(&self) -> usize {
+            0
+        }
     }
 }

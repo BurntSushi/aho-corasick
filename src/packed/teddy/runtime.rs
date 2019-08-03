@@ -185,6 +185,14 @@ impl Teddy {
         }
     }
 
+    /// Returns the approximate total amount of heap used by this searcher, in
+    /// units of bytes.
+    pub fn heap_bytes(&self) -> usize {
+        let num_patterns = self.max_pattern_id as usize + 1;
+        self.buckets.len() * mem::size_of::<Vec<PatternID>>()
+            + num_patterns * mem::size_of::<PatternID>()
+    }
+
     /// Runs the verification routine for Slim 128-bit Teddy.
     ///
     /// The candidate given should be a collection of 8-bit bitsets (one bitset

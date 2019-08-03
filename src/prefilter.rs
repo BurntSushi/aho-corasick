@@ -66,6 +66,10 @@ pub trait Prefilter:
     /// is not object-safe.
     fn clone_prefilter(&self) -> Box<dyn Prefilter>;
 
+    /// Returns the approximate total amount of heap used by this prefilter, in
+    /// units of bytes.
+    fn heap_bytes(&self) -> usize;
+
     /// Returns true if and only if this prefilter never returns false
     /// positives. This is useful for completely avoiding the automaton
     /// when the prefilter can quickly confirm its own matches.
@@ -91,6 +95,10 @@ impl<'a, P: Prefilter + ?Sized> Prefilter for &'a P {
 
     fn clone_prefilter(&self) -> Box<dyn Prefilter> {
         (**self).clone_prefilter()
+    }
+
+    fn heap_bytes(&self) -> usize {
+        (**self).heap_bytes()
     }
 
     fn reports_false_positives(&self) -> bool {
@@ -305,6 +313,7 @@ impl Builder {
             }
             (prestart @ Some(_), None) => prestart,
             (None, prerare @ Some(_)) => prerare,
+            (None, None) if self.ascii_case_insensitive => None,
             (None, None) => self
                 .packed
                 .as_ref()
@@ -341,6 +350,10 @@ impl Prefilter for Packed {
 
     fn clone_prefilter(&self) -> Box<dyn Prefilter> {
         Box::new(self.clone())
+    }
+
+    fn heap_bytes(&self) -> usize {
+        self.0.heap_bytes()
     }
 
     fn reports_false_positives(&self) -> bool {
@@ -604,6 +617,10 @@ impl Prefilter for RareBytesOne {
     fn clone_prefilter(&self) -> Box<dyn Prefilter> {
         Box::new(self.clone())
     }
+
+    fn heap_bytes(&self) -> usize {
+        0
+    }
 }
 
 /// A prefilter for scanning for two "rare" bytes.
@@ -633,6 +650,10 @@ impl Prefilter for RareBytesTwo {
 
     fn clone_prefilter(&self) -> Box<dyn Prefilter> {
         Box::new(self.clone())
+    }
+
+    fn heap_bytes(&self) -> usize {
+        0
     }
 }
 
@@ -664,6 +685,10 @@ impl Prefilter for RareBytesThree {
 
     fn clone_prefilter(&self) -> Box<dyn Prefilter> {
         Box::new(self.clone())
+    }
+
+    fn heap_bytes(&self) -> usize {
+        0
     }
 }
 
@@ -799,6 +824,10 @@ impl Prefilter for StartBytesOne {
     fn clone_prefilter(&self) -> Box<dyn Prefilter> {
         Box::new(self.clone())
     }
+
+    fn heap_bytes(&self) -> usize {
+        0
+    }
 }
 
 /// A prefilter for scanning for two starting bytes.
@@ -822,6 +851,10 @@ impl Prefilter for StartBytesTwo {
 
     fn clone_prefilter(&self) -> Box<dyn Prefilter> {
         Box::new(self.clone())
+    }
+
+    fn heap_bytes(&self) -> usize {
+        0
     }
 }
 
@@ -847,6 +880,10 @@ impl Prefilter for StartBytesThree {
 
     fn clone_prefilter(&self) -> Box<dyn Prefilter> {
         Box::new(self.clone())
+    }
+
+    fn heap_bytes(&self) -> usize {
+        0
     }
 }
 

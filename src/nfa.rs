@@ -97,7 +97,7 @@ impl<S: StateID> NFA<S> {
         &self.byte_classes
     }
 
-    /// Returns a start byte prefilter, if one exists.
+    /// Returns a prefilter, if one exists.
     pub fn prefilter_obj(&self) -> Option<&PrefilterObj> {
         self.prefilter.as_ref()
     }
@@ -106,6 +106,7 @@ impl<S: StateID> NFA<S> {
     /// table.
     pub fn heap_bytes(&self) -> usize {
         self.heap_bytes
+            + self.prefilter.as_ref().map_or(0, |p| p.as_ref().heap_bytes())
     }
 
     /// Return the length of the longest pattern in this automaton.

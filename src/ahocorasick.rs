@@ -943,8 +943,8 @@ impl<S: StateID> AhoCorasick<S> {
         self.match_kind.supports_stream()
     }
 
-    /// Returns the total amount of heap used by this automaton, in units of
-    /// bytes.
+    /// Returns the approximate total amount of heap used by this automaton, in
+    /// units of bytes.
     ///
     /// # Examples
     ///

@@ -574,6 +574,14 @@ impl Searcher {
         self.minimum_len
     }
 
+    /// Returns the approximate total amount of heap used by this searcher, in
+    /// units of bytes.
+    pub fn heap_bytes(&self) -> usize {
+        self.patterns.heap_bytes()
+            + self.rabinkarp.heap_bytes()
+            + self.search_kind.heap_bytes()
+    }
+
     /// Use a slow (non-packed) searcher.
     ///
     /// This is useful when a packed searcher could be constructed, but could
@@ -582,6 +590,15 @@ impl Searcher {
     /// be able to run.
     fn slow_at(&self, haystack: &[u8], at: usize) -> Option<Match> {
         self.rabinkarp.find_at(&self.patterns, haystack, at)
+    }
+}
+
+impl SearchKind {
+    fn heap_bytes(&self) -> usize {
+        match *self {
+            SearchKind::Teddy(ref ted) => ted.heap_bytes(),
+            SearchKind::RabinKarp => 0,
+        }
     }
 }
 

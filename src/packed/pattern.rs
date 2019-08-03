@@ -1,5 +1,6 @@
 use std::cmp;
 use std::fmt;
+use std::mem;
 use std::u16;
 use std::usize;
 
@@ -42,6 +43,9 @@ pub struct Patterns {
     /// The largest pattern identifier. This should always be equivalent to
     /// the number of patterns minus one in this collection.
     max_pattern_id: PatternID,
+    /// The total number of pattern bytes across the entire collection. This
+    /// is used for reporting total heap usage in constant time.
+    total_pattern_bytes: usize,
 }
 
 impl Patterns {
@@ -59,6 +63,7 @@ impl Patterns {
             order: vec![],
             minimum_len: usize::MAX,
             max_pattern_id: 0,
+            total_pattern_bytes: 0,
         }
     }
 
@@ -74,6 +79,7 @@ impl Patterns {
         self.order.push(id);
         self.by_id.push(bytes.to_vec());
         self.minimum_len = cmp::min(self.minimum_len, bytes.len());
+        self.total_pattern_bytes += bytes.len();
     }
 
     /// Set the match kind semantics for this collection of patterns.
@@ -107,6 +113,14 @@ impl Patterns {
     /// Returns true if and only if this collection of patterns is empty.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    /// Returns the approximate total amount of heap used by these patterns, in
+    /// units of bytes.
+    pub fn heap_bytes(&self) -> usize {
+        self.order.len() * mem::size_of::<PatternID>()
+            + self.by_id.len() * mem::size_of::<Vec<u8>>()
+            + self.total_pattern_bytes
     }
 
     /// Clears all heap memory associated with this collection of patterns and

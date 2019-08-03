@@ -593,6 +593,7 @@ impl<S: StateID> Repr<S> {
             size +=
                 state_matches.len() * size_of::<(PatternID, PatternLength)>();
         }
+        size += self.prefilter.as_ref().map_or(0, |p| p.as_ref().heap_bytes());
         self.heap_bytes = size;
     }
 }
