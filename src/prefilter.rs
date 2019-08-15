@@ -698,7 +698,7 @@ impl Prefilter for RareBytesThree {
 /// matches by reporting all positions corresponding to a particular byte. This
 /// generally only takes affect when there are at most 3 distinct possible
 /// starting bytes. e.g., the patterns `foo`, `bar`, and `baz` have two
-/// distinct starting bytes (`f` and `b`), and this prefiler returns all
+/// distinct starting bytes (`f` and `b`), and this prefilter returns all
 /// occurrences of either `f` or `b`.
 ///
 /// In some cases, a heuristic frequency analysis may determine that it would
