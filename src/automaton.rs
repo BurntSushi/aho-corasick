@@ -174,7 +174,7 @@ pub trait Automaton {
         }
     }
 
-    // It's important for this to always be inlined. Namely, it's only caller
+    // It's important for this to always be inlined. Namely, its only caller
     // is standard_find_at, and the inlining should remove the case analysis
     // for prefilter scanning when there is no prefilter available.
     #[inline(always)]
@@ -276,7 +276,7 @@ pub trait Automaton {
         }
     }
 
-    // It's important for this to always be inlined. Namely, it's only caller
+    // It's important for this to always be inlined. Namely, its only caller
     // is leftmost_find_at, and the inlining should remove the case analysis
     // for prefilter scanning when there is no prefilter available.
     #[inline(always)]
@@ -393,7 +393,7 @@ pub trait Automaton {
         }
     }
 
-    // It's important for this to always be inlined. Namely, it's only caller
+    // It's important for this to always be inlined. Namely, its only caller
     // is leftmost_find_at_no_state, and the inlining should remove the case
     // analysis for prefilter scanning when there is no prefilter available.
     #[inline(always)]
