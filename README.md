@@ -95,7 +95,6 @@ loading the entire stream into memory first.
 ```rust
 use aho_corasick::AhoCorasick;
 
-# fn example() -> Result<(), ::std::io::Error> {
 let patterns = &["fox", "brown", "quick"];
 let replace_with = &["sloth", "grey", "slow"];
 
@@ -107,7 +106,6 @@ let mut wtr = vec![];
 let ac = AhoCorasick::new(patterns);
 ac.stream_replace_all(rdr.as_bytes(), &mut wtr, replace_with)?;
 assert_eq!(b"The slow grey sloth.".to_vec(), wtr);
-# Ok(()) }; example().unwrap()
 ```
 
 
