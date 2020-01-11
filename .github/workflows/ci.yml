@@ -68,6 +68,7 @@ jobs:
       with:
         toolchain: ${{ matrix.rust }}
         profile: minimal
+        override: true
     - name: Use Cross
       if: matrix.target != ''
       run: |
