@@ -39,8 +39,8 @@ use Match;
 /// only when at least one match has been observed.
 ///
 /// Every automaton also has one or more match states, such that
-/// `Automaton::is_match_state_unchecked(id)` returns `true` if and only if
-/// `id` corresponds to a match state.
+/// `Automaton::is_match_state(id)` returns `true` if and only if `id`
+/// corresponds to a match state.
 pub trait Automaton {
     /// The representation used for state identifiers in this automaton.
     ///
@@ -123,20 +123,12 @@ pub trait Automaton {
     /// must ensure that the given identifier corresponds to a valid automaton
     /// state. Implementors must, in turn, ensure that this routine is safe for
     /// all valid state identifiers and for all possible `u8` values.
-    unsafe fn next_state_unchecked(
-        &self,
-        current: Self::ID,
-        input: u8,
-    ) -> Self::ID;
+    fn next_state(&self, current: Self::ID, input: u8) -> Self::ID;
 
-    /// Like next_state_unchecked, but debug_asserts that the underlying
+    /// Like next_state, but debug_asserts that the underlying
     /// implementation never returns a `fail_id()` for the next state.
-    unsafe fn next_state_unchecked_no_fail(
-        &self,
-        current: Self::ID,
-        input: u8,
-    ) -> Self::ID {
-        let next = self.next_state_unchecked(current, input);
+    fn next_state_no_fail(&self, current: Self::ID, input: u8) -> Self::ID {
+        let next = self.next_state(current, input);
         // We should never see a transition to the failure state.
         debug_assert!(
             next != fail_id(),
@@ -220,7 +212,7 @@ pub trait Automaton {
                 // (in which case, we assert above that it is valid), or it
                 // comes from the return value of next_state, which is also
                 // guaranteed to be valid.
-                *state_id = self.next_state_unchecked_no_fail(*state_id, *ptr);
+                *state_id = self.next_state_no_fail(*state_id, *ptr);
                 ptr = ptr.offset(1);
                 // This routine always quits immediately after seeing a
                 // match, and since dead states can only come after seeing
@@ -328,7 +320,7 @@ pub trait Automaton {
                 // (in which case, we assert above that it is valid), or it
                 // comes from the return value of next_state, which is also
                 // guaranteed to be valid.
-                *state_id = self.next_state_unchecked_no_fail(*state_id, *ptr);
+                *state_id = self.next_state_no_fail(*state_id, *ptr);
                 ptr = ptr.offset(1);
                 if self.is_match_or_dead_state(*state_id) {
                     if *state_id == dead_id() {
@@ -452,7 +444,7 @@ pub trait Automaton {
                 // (in which case, we assert above that it is valid), or it
                 // comes from the return value of next_state, which is also
                 // guaranteed to be valid.
-                state_id = self.next_state_unchecked_no_fail(state_id, *ptr);
+                state_id = self.next_state_no_fail(state_id, *ptr);
                 ptr = ptr.offset(1);
                 if self.is_match_or_dead_state(state_id) {
                     if state_id == dead_id() {
