@@ -17,5 +17,5 @@ harness = false
 path = "src/bench.rs"
 
 [dependencies]
-criterion = "0.2"
+criterion = "0.3"
 aho-corasick = { version = "*", path = ".." }

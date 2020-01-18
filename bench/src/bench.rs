@@ -161,7 +161,7 @@ fn define(
     corpus: &[u8],
     bench: impl FnMut(&mut Bencher) + 'static,
 ) {
-    let tput = Throughput::Bytes(corpus.len() as u32);
+    let tput = Throughput::Bytes(corpus.len() as u64);
     let benchmark = Benchmark::new(bench_name, bench)
         .throughput(tput)
         .sample_size(30)
@@ -179,7 +179,7 @@ fn define_long(
     corpus: &[u8],
     bench: impl FnMut(&mut Bencher) + 'static,
 ) {
-    let tput = Throughput::Bytes(corpus.len() as u32);
+    let tput = Throughput::Bytes(corpus.len() as u64);
     let benchmark = Benchmark::new(bench_name, bench)
         .throughput(tput)
         .sample_size(20)
