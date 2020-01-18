@@ -36,7 +36,7 @@ impl ByteClasses {
     pub fn get(&self, byte: u8) -> u8 {
         // SAFETY: This is safe because all dense transitions have
         // exactly 256 elements, so all u8 values are valid indices.
-        unsafe { *self.0.get_unchecked(byte as usize) }
+        self.0[byte as usize]
     }
 
     /// Return the total number of elements in the alphabet represented by

@@ -262,14 +262,14 @@ impl<S: StateID> Automaton for NFA<S> {
         self.states[id.to_usize()].matches.len()
     }
 
-    unsafe fn next_state_unchecked(&self, mut current: S, input: u8) -> S {
+    fn next_state(&self, mut current: S, input: u8) -> S {
         // This terminates since:
         //
         // 1. `State.fail` never points to fail_id().
         // 2. All `State.fail` values point to a state closer to `start`.
         // 3. The start state has no transitions to fail_id().
         loop {
-            let state = self.states.get_unchecked(current.to_usize());
+            let state = &self.states[current.to_usize()];
             let next = state.next_state(input);
             if next != fail_id() {
                 return next;
@@ -335,9 +335,9 @@ impl<S: StateID> State<S> {
 
 /// Represents the transitions for a single dense state.
 ///
-/// The primary purpose here is to encapsulate unchecked index access. Namely,
-/// since a dense representation always contains 256 elements, all values of
-/// `u8` are valid indices.
+/// The primary purpose here is to encapsulate index access. Namely, since a
+/// dense representation always contains 256 elements, all values of `u8` are
+/// valid indices.
 #[derive(Clone, Debug)]
 struct Dense<S>(Vec<S>);
 
@@ -362,7 +362,7 @@ impl<S> Index<u8> for Dense<S> {
     fn index(&self, i: u8) -> &S {
         // SAFETY: This is safe because all dense transitions have
         // exactly 256 elements, so all u8 values are valid indices.
-        unsafe { self.0.get_unchecked(i as usize) }
+        &self.0[i as usize]
     }
 }
 
@@ -371,7 +371,7 @@ impl<S> IndexMut<u8> for Dense<S> {
     fn index_mut(&mut self, i: u8) -> &mut S {
         // SAFETY: This is safe because all dense transitions have
         // exactly 256 elements, so all u8 values are valid indices.
-        unsafe { self.0.get_unchecked_mut(i as usize) }
+        &mut self.0[i as usize]
     }
 }
 

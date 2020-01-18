@@ -189,9 +189,9 @@ impl<S: StateID> Automaton for Standard<S> {
         self.repr().match_count(id)
     }
 
-    unsafe fn next_state_unchecked(&self, current: S, input: u8) -> S {
+    fn next_state(&self, current: S, input: u8) -> S {
         let o = current.to_usize() * 256 + input as usize;
-        *self.repr().trans.get_unchecked(o)
+        self.repr().trans[o]
     }
 }
 
@@ -248,11 +248,11 @@ impl<S: StateID> Automaton for ByteClass<S> {
         self.repr().match_count(id)
     }
 
-    unsafe fn next_state_unchecked(&self, current: S, input: u8) -> S {
+    fn next_state(&self, current: S, input: u8) -> S {
         let alphabet_len = self.repr().byte_classes.alphabet_len();
         let input = self.repr().byte_classes.get(input);
         let o = current.to_usize() * alphabet_len + input as usize;
-        *self.repr().trans.get_unchecked(o)
+        self.repr().trans[o]
     }
 }
 
@@ -317,9 +317,9 @@ impl<S: StateID> Automaton for Premultiplied<S> {
         self.repr().matches[o].len()
     }
 
-    unsafe fn next_state_unchecked(&self, current: S, input: u8) -> S {
+    fn next_state(&self, current: S, input: u8) -> S {
         let o = current.to_usize() + input as usize;
-        *self.repr().trans.get_unchecked(o)
+        self.repr().trans[o]
     }
 }
 
@@ -384,10 +384,10 @@ impl<S: StateID> Automaton for PremultipliedByteClass<S> {
         self.repr().matches[o].len()
     }
 
-    unsafe fn next_state_unchecked(&self, current: S, input: u8) -> S {
+    fn next_state(&self, current: S, input: u8) -> S {
         let input = self.repr().byte_classes.get(input);
         let o = current.to_usize() + input as usize;
-        *self.repr().trans.get_unchecked(o)
+        self.repr().trans[o]
     }
 }
 
