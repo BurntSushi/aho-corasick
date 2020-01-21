@@ -28,6 +28,42 @@ use Match;
 //   for tracking the state ID and one that doesn't. We should ideally do the
 //   same for standard searching, but my sanity stopped me.
 
+// SAFETY RATIONALE: Previously, the code below went to some length to remove
+// all bounds checks. This generally produced tighter assembly and lead to
+// 20-50% improvements in micro-benchmarks on corpora made up of random
+// characters. This somewhat makes sense, since the branch predictor is going
+// to be at its worse on random text.
+//
+// However, using the aho-corasick-debug tool and manually benchmarking
+// different inputs, the code *with* bounds checks actually wound up being
+// slightly faster:
+//
+//     $ cat input
+//     Sherlock Holmes
+//     John Watson
+//     Professor Moriarty
+//     Irene Adler
+//     Mary Watson
+//
+//     $ aho-corasick-debug-safe \
+//         input OpenSubtitles2018.raw.sample.en --kind leftmost-first --dfa
+//     pattern read time: 32.824µs
+//     automaton build time: 444.687µs
+//     automaton heap usage: 72392 bytes
+//     match count: 639
+//     count time: 1.809961702s
+//
+//     $ aho-corasick-debug-master \
+//         input OpenSubtitles2018.raw.sample.en --kind leftmost-first --dfa
+//     pattern read time: 31.425µs
+//     automaton build time: 317.434µs
+//     automaton heap usage: 72392 bytes
+//     match count: 639
+//     count time: 2.059157705s
+//
+// I was able to reproduce this result on two different machines (an i5 and
+// an i7). Therefore, we go the route of safe code for now.
+
 /// A trait describing the interface of an Aho-Corasick finite state machine.
 ///
 /// Every automaton has exactly one fail state, one dead state and exactly one
