@@ -117,6 +117,8 @@ impl Buffer {
             // SAFETY: A buffer contains Copy data, so there's no problem
             // moving it around. Safety also depends on our indices being in
             // bounds, which they always should be, given the assert above.
+            //
+            // TODO: Switch to [T]::copy_within once our MSRV is high enough.
             ptr::copy(
                 self.buf[roll_start..].as_ptr(),
                 self.buf.as_mut_ptr(),
