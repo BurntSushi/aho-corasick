@@ -702,6 +702,10 @@ impl<'a, S: StateID> Compiler<'a, S> {
                 // building a DFA. They would technically be useful for the
                 // NFA, but it would require a second pass over the patterns.
                 self.byte_classes.set_range(b, b);
+                if self.builder.ascii_case_insensitive {
+                    let b = opposite_ascii_case(b);
+                    self.byte_classes.set_range(b, b);
+                }
 
                 // If the transition from prev using the current byte already
                 // exists, then just move through it. Otherwise, add a new

@@ -549,6 +549,29 @@ const ANCHORED_OVERLAPPING: &'static [SearchTest] = &[
     t!(aover360, &["foo", "foofoo"], "foofoo", &[(0, 0, 3), (1, 0, 6)]),
 ];
 
+/// Tests for ASCII case insensitivity.
+///
+/// These tests should all have the same behavior regardless of match semantics
+/// or whether the search is overlapping.
+const ASCII_CASE_INSENSITIVE: &'static [SearchTest] = &[
+    t!(acasei000, &["a"], "A", &[(0, 0, 1)]),
+    t!(acasei010, &["Samwise"], "SAMWISE", &[(0, 0, 7)]),
+    t!(acasei011, &["Samwise"], "SAMWISE.abcd", &[(0, 0, 7)]),
+    t!(acasei020, &["fOoBaR"], "quux foobar baz", &[(0, 5, 11)]),
+];
+
+/// Like ASCII_CASE_INSENSITIVE, but specifically for non-overlapping tests.
+const ASCII_CASE_INSENSITIVE_NON_OVERLAPPING: &'static [SearchTest] = &[
+    t!(acasei000, &["foo", "FOO"], "fOo", &[(0, 0, 3)]),
+    t!(acasei000, &["FOO", "foo"], "fOo", &[(0, 0, 3)]),
+];
+
+/// Like ASCII_CASE_INSENSITIVE, but specifically for overlapping tests.
+const ASCII_CASE_INSENSITIVE_OVERLAPPING: &'static [SearchTest] = &[
+    t!(acasei000, &["foo", "FOO"], "fOo", &[(0, 0, 3), (1, 0, 3)]),
+    t!(acasei001, &["FOO", "foo"], "fOo", &[(0, 0, 3), (1, 0, 3)]),
+];
+
 /// Regression tests that are applied to all Aho-Corasick combinations.
 ///
 /// If regression tests are needed for specific match semantics, then add them
@@ -904,6 +927,74 @@ testconfig!(
     LeftmostLongest,
     |b: &mut AhoCorasickBuilder| {
         b.anchored(true).dfa(true);
+    }
+);
+
+// And also write out the test combinations for ASCII case insensitivity.
+testconfig!(
+    acasei_standard_nfa_default,
+    &[ASCII_CASE_INSENSITIVE],
+    Standard,
+    |b: &mut AhoCorasickBuilder| {
+        b.prefilter(false).ascii_case_insensitive(true);
+    }
+);
+testconfig!(
+    acasei_standard_dfa_default,
+    &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_NON_OVERLAPPING],
+    Standard,
+    |b: &mut AhoCorasickBuilder| {
+        b.ascii_case_insensitive(true).dfa(true);
+    }
+);
+testconfig!(
+    overlapping,
+    acasei_standard_overlapping_nfa_default,
+    &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_OVERLAPPING],
+    Standard,
+    |b: &mut AhoCorasickBuilder| {
+        b.ascii_case_insensitive(true);
+    }
+);
+testconfig!(
+    overlapping,
+    acasei_standard_overlapping_dfa_default,
+    &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_OVERLAPPING],
+    Standard,
+    |b: &mut AhoCorasickBuilder| {
+        b.ascii_case_insensitive(true).dfa(true);
+    }
+);
+testconfig!(
+    acasei_leftmost_first_nfa_default,
+    &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_NON_OVERLAPPING],
+    LeftmostFirst,
+    |b: &mut AhoCorasickBuilder| {
+        b.ascii_case_insensitive(true);
+    }
+);
+testconfig!(
+    acasei_leftmost_first_dfa_default,
+    &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_NON_OVERLAPPING],
+    LeftmostFirst,
+    |b: &mut AhoCorasickBuilder| {
+        b.ascii_case_insensitive(true).dfa(true);
+    }
+);
+testconfig!(
+    acasei_leftmost_longest_nfa_default,
+    &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_NON_OVERLAPPING],
+    LeftmostLongest,
+    |b: &mut AhoCorasickBuilder| {
+        b.ascii_case_insensitive(true);
+    }
+);
+testconfig!(
+    acasei_leftmost_longest_dfa_default,
+    &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_NON_OVERLAPPING],
+    LeftmostLongest,
+    |b: &mut AhoCorasickBuilder| {
+        b.ascii_case_insensitive(true).dfa(true);
     }
 );
 
