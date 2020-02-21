@@ -60,10 +60,12 @@ The fundamental problem this crate is trying to solve is to determine the
 occurrences of possibly many patterns in a haystack. The naive way to solve
 this is to look for a match for each pattern at each position in the haystack:
 
+``` rust
     for i in 0..haystack.len():
       for p in patterns.iter():
         if haystack[i..].starts_with(p.bytes()):
           return Match(p.id(), i, i + p.bytes().len())
+```
 
 Those four lines are effectively all this crate does. The problem with those
 four lines is that they are very slow, especially when you're searching for a
@@ -107,6 +109,7 @@ So given this trie, it should be somewhat straight-forward to see how it can
 be used to determine whether any particular haystack *starts* with either
 `abcd` or `cef`. It's easy to express this in code:
 
+``` rust
     fn has_prefix(trie: &Trie, haystack: &[u8]) -> bool {
       let mut state_id = trie.start();
       // If the empty pattern is in trie, then state_id is a match state.
@@ -126,6 +129,7 @@ be used to determine whether any particular haystack *starts* with either
       }
       false
     }
+```
 
 And that's pretty much it. All we do is move through the trie starting with the
 bytes at the beginning of the haystack. If we find ourselves in a position
@@ -165,6 +169,7 @@ The code for traversing this *automaton* or *finite state machine* (it is no
 longer just a trie) is not that much different from the `has_prefix` code
 above:
 
+``` rust
     fn contains(fsm: &FiniteStateMachine, haystack: &[u8]) -> bool {
       let mut state_id = fsm.start();
       // If the empty pattern is in fsm, then state_id is a match state.
@@ -200,6 +205,7 @@ above:
       }
       false
     }
+```
 
 Other than the complication around traversing failure transitions, this code
 is still roughly "traverse the automaton with bytes from the haystack, and quit
@@ -240,6 +246,7 @@ overlapping patterns with a lot of failure transitions.
 
 A DFA's search code, by contrast, looks like this:
 
+``` rust
     fn contains(dfa: &DFA, haystack: &[u8]) -> bool {
       let mut state_id = dfa.start();
       // If the empty pattern is in dfa, then state_id is a match state.
@@ -257,6 +264,7 @@ A DFA's search code, by contrast, looks like this:
       }
       false
     }
+```
 
 The search logic here is much simpler than for the NFA, and this tends to
 translate into significant performance benefits as well, since there's a lot
