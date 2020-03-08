@@ -194,7 +194,7 @@ impl<S: StateID> NFA<S> {
             trans,
             // Anchored automatons do not have any failure transitions.
             fail: if self.anchored { dead_id() } else { self.start_id },
-            depth: depth,
+            depth,
             matches: vec![],
         });
         Ok(id)
@@ -207,7 +207,7 @@ impl<S: StateID> NFA<S> {
             trans,
             // Anchored automatons do not have any failure transitions.
             fail: if self.anchored { dead_id() } else { self.start_id },
-            depth: depth,
+            depth,
             matches: vec![],
         });
         Ok(id)
@@ -619,7 +619,7 @@ struct Compiler<'a, S: StateID> {
 impl<'a, S: StateID> Compiler<'a, S> {
     fn new(builder: &'a Builder) -> Result<Compiler<'a, S>> {
         Ok(Compiler {
-            builder: builder,
+            builder,
             prefilter: prefilter::Builder::new(builder.match_kind)
                 .ascii_case_insensitive(builder.ascii_case_insensitive),
             nfa: NFA {
@@ -1263,6 +1263,7 @@ impl<S: StateID> fmt::Debug for NFA<S> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "NFA(")?;
         writeln!(f, "match_kind: {:?}", self.match_kind)?;
+        writeln!(f, "prefilter: {:?}", self.prefilter)?;
         writeln!(f, "{}", "-".repeat(79))?;
         for (id, s) in self.states.iter().enumerate() {
             let mut trans = vec![];
