@@ -269,8 +269,8 @@ impl Builder {
         };
         Some(Searcher {
             config: self.config.clone(),
-            patterns: patterns,
-            rabinkarp: rabinkarp,
+            patterns,
+            rabinkarp,
             search_kind,
             minimum_len,
         })

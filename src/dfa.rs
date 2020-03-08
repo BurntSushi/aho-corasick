@@ -637,8 +637,8 @@ impl Builder {
             heap_bytes: 0,
             prefilter: nfa.prefilter_obj().map(|p| p.clone()),
             byte_classes: byte_classes.clone(),
-            trans: trans,
-            matches: matches,
+            trans,
+            matches,
         };
         for id in (0..nfa.state_len()).map(S::from_usize) {
             repr.matches[id.to_usize()].extend_from_slice(nfa.matches(id));

@@ -119,7 +119,7 @@ impl Builder {
         // safe to call functions marked with the `avx2` target feature.
         match (masks.len(), avx, fat) {
             (1, false, _) => Some(Teddy {
-                buckets: buckets,
+                buckets,
                 max_pattern_id: patterns.max_pattern_id(),
                 exec: runtime::Exec::TeddySlim1Mask128(
                     runtime::TeddySlim1Mask128 {
@@ -128,7 +128,7 @@ impl Builder {
                 ),
             }),
             (1, true, false) => Some(Teddy {
-                buckets: buckets,
+                buckets,
                 max_pattern_id: patterns.max_pattern_id(),
                 exec: runtime::Exec::TeddySlim1Mask256(
                     runtime::TeddySlim1Mask256 {
@@ -137,7 +137,7 @@ impl Builder {
                 ),
             }),
             (1, true, true) => Some(Teddy {
-                buckets: buckets,
+                buckets,
                 max_pattern_id: patterns.max_pattern_id(),
                 exec: runtime::Exec::TeddyFat1Mask256(
                     runtime::TeddyFat1Mask256 {
@@ -146,7 +146,7 @@ impl Builder {
                 ),
             }),
             (2, false, _) => Some(Teddy {
-                buckets: buckets,
+                buckets,
                 max_pattern_id: patterns.max_pattern_id(),
                 exec: runtime::Exec::TeddySlim2Mask128(
                     runtime::TeddySlim2Mask128 {
@@ -156,7 +156,7 @@ impl Builder {
                 ),
             }),
             (2, true, false) => Some(Teddy {
-                buckets: buckets,
+                buckets,
                 max_pattern_id: patterns.max_pattern_id(),
                 exec: runtime::Exec::TeddySlim2Mask256(
                     runtime::TeddySlim2Mask256 {
@@ -166,7 +166,7 @@ impl Builder {
                 ),
             }),
             (2, true, true) => Some(Teddy {
-                buckets: buckets,
+                buckets,
                 max_pattern_id: patterns.max_pattern_id(),
                 exec: runtime::Exec::TeddyFat2Mask256(
                     runtime::TeddyFat2Mask256 {
@@ -176,7 +176,7 @@ impl Builder {
                 ),
             }),
             (3, false, _) => Some(Teddy {
-                buckets: buckets,
+                buckets,
                 max_pattern_id: patterns.max_pattern_id(),
                 exec: runtime::Exec::TeddySlim3Mask128(
                     runtime::TeddySlim3Mask128 {
@@ -187,7 +187,7 @@ impl Builder {
                 ),
             }),
             (3, true, false) => Some(Teddy {
-                buckets: buckets,
+                buckets,
                 max_pattern_id: patterns.max_pattern_id(),
                 exec: runtime::Exec::TeddySlim3Mask256(
                     runtime::TeddySlim3Mask256 {
@@ -198,7 +198,7 @@ impl Builder {
                 ),
             }),
             (3, true, true) => Some(Teddy {
-                buckets: buckets,
+                buckets,
                 max_pattern_id: patterns.max_pattern_id(),
                 exec: runtime::Exec::TeddyFat3Mask256(
                     runtime::TeddyFat3Mask256 {
