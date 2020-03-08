@@ -591,7 +591,7 @@ impl RareBytesBuilder {
         // `memchr2` for `k` and `j`.
         let mut found = false;
         for (pos, &b) in bytes.iter().enumerate() {
-            self.byte_offsets.set(b, RareByteOffset::new(pos).unwrap());
+            self.set_offset(pos, b);
             if found {
                 continue;
             }
@@ -606,6 +606,15 @@ impl RareBytesBuilder {
         }
         if !found {
             self.add_rare_byte(rarest.0);
+        }
+    }
+
+    fn set_offset(&mut self, pos: usize, byte: u8) {
+        // This unwrap is OK because pos is never bigger than our max.
+        let offset = RareByteOffset::new(pos).unwrap();
+        self.byte_offsets.set(byte, offset);
+        if self.ascii_case_insensitive {
+            self.byte_offsets.set(opposite_ascii_case(byte), offset);
         }
     }
 
