@@ -1100,6 +1100,32 @@ fn regression_rare_byte_prefilter() {
     assert!(ac.is_match("ab/j/"));
 }
 
+#[test]
+fn regression_case_insensitive_prefilter() {
+    use AhoCorasickBuilder;
+
+    for c in b'a'..b'z' {
+        for c2 in b'a'..b'z' {
+            let c = c as char;
+            let c2 = c2 as char;
+            let needle = format!("{}{}", c, c2).to_lowercase();
+            let haystack = needle.to_uppercase();
+            let ac = AhoCorasickBuilder::new()
+                .ascii_case_insensitive(true)
+                .prefilter(true)
+                .build(&[&needle]);
+            assert_eq!(
+                1,
+                ac.find_iter(&haystack).count(),
+                "failed to find {:?} in {:?}\n\nautomaton:\n{:?}",
+                needle,
+                haystack,
+                ac,
+            );
+        }
+    }
+}
+
 fn run_search_tests<F: FnMut(&SearchTest) -> Vec<Match>>(
     which: TestCollection,
     mut f: F,
