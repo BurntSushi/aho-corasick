@@ -502,7 +502,7 @@ impl<S: StateID> AhoCorasick<S> {
     /// The closure accepts three parameters: the match found, the text of
     /// the match and a string buffer with which to write the replaced text
     /// (if any). If the closure returns `true`, then it continues to the next
-    /// match. If the closure returns false, then searching is stopped.
+    /// match. If the closure returns `false`, then searching is stopped.
     ///
     /// # Examples
     ///
@@ -524,6 +524,24 @@ impl<S: StateID> AhoCorasick<S> {
     /// });
     /// assert_eq!("0 the 2 to the 0age", result);
     /// ```
+    ///
+    /// Stopping the replacement by returning `false` (continued from the
+    /// example above):
+    ///
+    /// ```
+    /// # use aho_corasick::{AhoCorasickBuilder, MatchKind};
+    /// # let patterns = &["append", "appendage", "app"];
+    /// # let haystack = "append the app to the appendage";
+    /// # let ac = AhoCorasickBuilder::new()
+    /// #    .match_kind(MatchKind::LeftmostFirst)
+    /// #    .build(patterns);
+    /// let mut result = String::new();
+    /// ac.replace_all_with(haystack, &mut result, |mat, _, dst| {
+    ///     dst.push_str(&mat.pattern().to_string());
+    ///     mat.pattern() != 2
+    /// });
+    /// assert_eq!("0 the 2 to the appendage", result);
+    /// ```
     pub fn replace_all_with<F>(
         &self,
         haystack: &str,
@@ -536,7 +554,9 @@ impl<S: StateID> AhoCorasick<S> {
         for mat in self.find_iter(haystack) {
             dst.push_str(&haystack[last_match..mat.start()]);
             last_match = mat.end();
-            replace_with(&mat, &haystack[mat.start()..mat.end()], dst);
+            if !replace_with(&mat, &haystack[mat.start()..mat.end()], dst) {
+                break;
+            };
         }
         dst.push_str(&haystack[last_match..]);
     }
@@ -548,7 +568,7 @@ impl<S: StateID> AhoCorasick<S> {
     /// The closure accepts three parameters: the match found, the text of
     /// the match and a byte buffer with which to write the replaced text
     /// (if any). If the closure returns `true`, then it continues to the next
-    /// match. If the closure returns false, then searching is stopped.
+    /// match. If the closure returns `false`, then searching is stopped.
     ///
     /// # Examples
     ///
@@ -570,6 +590,24 @@ impl<S: StateID> AhoCorasick<S> {
     /// });
     /// assert_eq!(b"0 the 2 to the 0age".to_vec(), result);
     /// ```
+    ///
+    /// Stopping the replacement by returning `false` (continued from the
+    /// example above):
+    ///
+    /// ```
+    /// # use aho_corasick::{AhoCorasickBuilder, MatchKind};
+    /// # let patterns = &["append", "appendage", "app"];
+    /// # let haystack = b"append the app to the appendage";
+    /// # let ac = AhoCorasickBuilder::new()
+    /// #    .match_kind(MatchKind::LeftmostFirst)
+    /// #    .build(patterns);
+    /// let mut result = vec![];
+    /// ac.replace_all_with_bytes(haystack, &mut result, |mat, _, dst| {
+    ///     dst.extend(mat.pattern().to_string().bytes());
+    ///     mat.pattern() != 2
+    /// });
+    /// assert_eq!(b"0 the 2 to the appendage".to_vec(), result);
+    /// ```
     pub fn replace_all_with_bytes<F>(
         &self,
         haystack: &[u8],
@@ -582,7 +620,9 @@ impl<S: StateID> AhoCorasick<S> {
         for mat in self.find_iter(haystack) {
             dst.extend(&haystack[last_match..mat.start()]);
             last_match = mat.end();
-            replace_with(&mat, &haystack[mat.start()..mat.end()], dst);
+            if !replace_with(&mat, &haystack[mat.start()..mat.end()], dst) {
+                break;
+            };
         }
         dst.extend(&haystack[last_match..]);
     }
@@ -735,9 +775,7 @@ impl<S: StateID> AhoCorasick<S> {
     /// [`find_iter`](struct.AhoCorasick.html#method.find_iter).
     ///
     /// The closure accepts three parameters: the match found, the text of
-    /// the match and the writer with which to write the replaced text
-    /// (if any). If the closure returns `true`, then it continues to the next
-    /// match. If the closure returns false, then searching is stopped.
+    /// the match and the writer with which to write the replaced text (if any).
     ///
     /// After all matches are replaced, the writer is _not_ flushed.
     ///
