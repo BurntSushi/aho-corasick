@@ -186,11 +186,11 @@ performance in some cases. For that reason, prefilters can be disabled via
 compile_error!("`std` feature is currently required to build this crate");
 
 extern crate memchr;
-#[cfg(test)]
+#[cfg(doctest)]
 #[macro_use]
 extern crate doc_comment;
 
-#[cfg(test)]
+#[cfg(doctest)]
 doctest!("../README.md");
 
 pub use ahocorasick::{
