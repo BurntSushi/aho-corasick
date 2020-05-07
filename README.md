@@ -103,7 +103,8 @@ let rdr = "The quick brown fox.";
 let mut wtr = vec![];
 
 let ac = AhoCorasick::new(patterns);
-ac.stream_replace_all(rdr.as_bytes(), &mut wtr, replace_with)?;
+ac.stream_replace_all(rdr.as_bytes(), &mut wtr, replace_with)
+    .expect("stream_replace_all failed");
 assert_eq!(b"The slow grey sloth.".to_vec(), wtr);
 ```
 
