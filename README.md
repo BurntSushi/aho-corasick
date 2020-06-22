@@ -5,8 +5,8 @@ acceleration in some cases. This library provides multiple pattern
 search principally through an implementation of the
 [Aho-Corasick algorithm](https://en.wikipedia.org/wiki/Aho%E2%80%93Corasick_algorithm),
 which builds a finite state machine for executing searches in linear time.
-Features include case insensitive matching, overlapping matches and search &
-replace in streams.
+Features include case insensitive matching, overlapping matches, fast searching
+via SIMD and optional full DFA construction and search & replace in streams.
 
 [![Build status](https://github.com/BurntSushi/aho-corasick/workflows/ci/badge.svg)](https://github.com/BurntSushi/aho-corasick/actions)
 [![](http://meritbadge.herokuapp.com/aho-corasick)](https://crates.io/crates/aho-corasick)

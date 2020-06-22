@@ -168,13 +168,14 @@ naive solutions, it is generally slower than more specialized algorithms that
 are accelerated using vector instructions such as SIMD.
 
 For that reason, this library will internally use a "prefilter" to attempt
-to accelerate searches when possible. Currently, this library has fairly
-limited implementation that only applies when there are 3 or fewer unique
-starting bytes among all patterns in an automaton.
+to accelerate searches when possible. Currently, this library has several
+different algorithms it might use depending on the patterns provided. Once the
+number of patterns gets too big, prefilters are no longer used.
 
-While a prefilter is generally good to have on by default since it works well
-in the common case, it can lead to less predictable or even sub-optimal
-performance in some cases. For that reason, prefilters can be disabled via
+While a prefilter is generally good to have on by default since it works
+well in the common case, it can lead to less predictable or even sub-optimal
+performance in some cases. For that reason, prefilters can be explicitly
+disabled via
 [`AhoCorasickBuilder::prefilter`](struct.AhoCorasickBuilder.html#method.prefilter).
 */
 
