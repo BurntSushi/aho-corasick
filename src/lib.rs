@@ -187,12 +187,12 @@ disabled via
 compile_error!("`std` feature is currently required to build this crate");
 
 extern crate memchr;
-#[cfg(doctest)]
-#[macro_use]
-extern crate doc_comment;
+// #[cfg(doctest)]
+// #[macro_use]
+// extern crate doc_comment;
 
-#[cfg(doctest)]
-doctest!("../README.md");
+// #[cfg(doctest)]
+// doctest!("../README.md");
 
 pub use ahocorasick::{
     AhoCorasick, AhoCorasickBuilder, FindIter, FindOverlappingIter, MatchKind,

@@ -35,6 +35,8 @@ std = ["memchr/use_std"]
 memchr = { version = "2.2.0", default-features = false }
 
 [dev-dependencies]
+# TODO: Re-enable this once the MSRV is 1.43 or greater.
+# See: https://github.com/BurntSushi/aho-corasick/issues/62
 doc-comment = "0.3.1"
 
 [profile.release]
