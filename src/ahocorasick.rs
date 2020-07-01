@@ -1847,7 +1847,7 @@ impl AhoCorasickBuilder {
     /// finite automaton (NFA) is used instead.
     ///
     /// The main benefit to a DFA is that it can execute searches more quickly
-    /// than a DFA (perhaps 2-4 times as fast). The main drawback is that the
+    /// than a NFA (perhaps 2-4 times as fast). The main drawback is that the
     /// DFA uses more space and can take much longer to build.
     ///
     /// Enabling this option does not change the time complexity for
