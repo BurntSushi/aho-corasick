@@ -6,7 +6,7 @@ use dfa::{self, DFA};
 use error::Result;
 use nfa::{self, NFA};
 use packed;
-use prefilter::PrefilterState;
+use prefilter::{Prefilter, PrefilterState};
 use state_id::StateID;
 use Match;
 
@@ -1075,6 +1075,24 @@ impl<S: StateID> Imp<S> {
         }
     }
 
+    /// Returns the prefilter object, if one exists, for the underlying
+    /// automaton.
+    fn prefilter(&self) -> Option<&dyn Prefilter> {
+        match *self {
+            Imp::NFA(ref nfa) => nfa.prefilter(),
+            Imp::DFA(ref dfa) => dfa.prefilter(),
+        }
+    }
+
+    /// Returns true if and only if we should attempt to use a prefilter.
+    fn use_prefilter(&self) -> bool {
+        let p = match self.prefilter() {
+            None => return false,
+            Some(p) => p,
+        };
+        !p.looks_for_non_start_of_match()
+    }
+
     #[inline(always)]
     fn overlapping_find_at(
         &self,
@@ -1363,7 +1381,11 @@ impl<'a, R: io::Read, S: StateID> StreamChunkIter<'a, R, S> {
             "stream searching is only supported for Standard match semantics"
         );
 
-        let prestate = PrefilterState::new(ac.max_pattern_len());
+        let prestate = if ac.imp.use_prefilter() {
+            PrefilterState::new(ac.max_pattern_len())
+        } else {
+            PrefilterState::disabled()
+        };
         let buf = Buffer::new(ac.imp.max_pattern_len());
         let state_id = ac.imp.start_state();
         StreamChunkIter {

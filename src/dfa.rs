@@ -43,6 +43,10 @@ impl<S: StateID> DFA<S> {
         self.repr().pattern_count
     }
 
+    pub fn prefilter(&self) -> Option<&dyn Prefilter> {
+        self.repr().prefilter.as_ref().map(|p| p.as_ref())
+    }
+
     pub fn start_state(&self) -> S {
         self.repr().start_id
     }

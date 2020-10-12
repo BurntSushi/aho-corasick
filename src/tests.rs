@@ -998,6 +998,31 @@ testconfig!(
     }
 );
 
+fn run_search_tests<F: FnMut(&SearchTest) -> Vec<Match>>(
+    which: TestCollection,
+    mut f: F,
+) {
+    let get_match_triples =
+        |matches: Vec<Match>| -> Vec<(usize, usize, usize)> {
+            matches
+                .into_iter()
+                .map(|m| (m.pattern(), m.start(), m.end()))
+                .collect()
+        };
+    for &tests in which {
+        for test in tests {
+            assert_eq!(
+                test.matches,
+                get_match_triples(f(&test)).as_slice(),
+                "test: {}, patterns: {:?}, haystack: {:?}",
+                test.name,
+                test.patterns,
+                test.haystack
+            );
+        }
+    }
+}
+
 #[test]
 fn search_tests_have_unique_names() {
     let assert = |constname, tests: &[SearchTest]| {
@@ -1126,27 +1151,80 @@ fn regression_case_insensitive_prefilter() {
     }
 }
 
-fn run_search_tests<F: FnMut(&SearchTest) -> Vec<Match>>(
-    which: TestCollection,
-    mut f: F,
-) {
-    let get_match_triples =
-        |matches: Vec<Match>| -> Vec<(usize, usize, usize)> {
-            matches
-                .into_iter()
-                .map(|m| (m.pattern(), m.start(), m.end()))
-                .collect()
-        };
-    for &tests in which {
-        for test in tests {
-            assert_eq!(
-                test.matches,
-                get_match_triples(f(&test)).as_slice(),
-                "test: {}, patterns: {:?}, haystack: {:?}",
-                test.name,
-                test.patterns,
-                test.haystack
-            );
+// See: https://github.com/BurntSushi/aho-corasick/issues/64
+//
+// This occurs when the rare byte prefilter is active
+#[test]
+fn regression_stream_rare_byte_prefilter() {
+    use std::io::Read;
+
+    // NOTE: The test only fails if this ends with j.
+    const MAGIC: [u8; 5] = *b"1234j";
+
+    // NOTE: The test fails for value in 8188..=8191 These value put the string
+    // to search accross two call to read because the buffer size is 8192 by
+    // default.
+    const BEGIN: usize = 8191;
+
+    /// This is just a structure that implements Reader. The reader
+    /// implementation will simulate a file filled with 0, except for the MAGIC
+    /// string at offset BEGIN.
+    #[derive(Default)]
+    struct R {
+        read: usize,
+    }
+
+    impl Read for R {
+        fn read(&mut self, buf: &mut [u8]) -> ::std::io::Result<usize> {
+            //dbg!(buf.len());
+            if self.read > 100000 {
+                return Ok(0);
+            }
+            let mut from = 0;
+            if self.read < BEGIN {
+                from = buf.len().min(BEGIN - self.read);
+                for x in 0..from {
+                    buf[x] = 0;
+                }
+                self.read += from;
+            }
+            if self.read >= BEGIN && self.read <= BEGIN + MAGIC.len() {
+                let to = buf.len().min(BEGIN + MAGIC.len() - self.read + from);
+                if to > from {
+                    buf[from..to].copy_from_slice(
+                        &MAGIC
+                            [self.read - BEGIN..self.read - BEGIN + to - from],
+                    );
+                    self.read += to - from;
+                    from = to;
+                }
+            }
+            for x in from..buf.len() {
+                buf[x] = 0;
+                self.read += 1;
+            }
+            Ok(buf.len())
         }
     }
+
+    fn run() -> ::std::io::Result<()> {
+        let aut = AhoCorasickBuilder::new().build(&[&MAGIC]);
+
+        // While reading from a vector, it works:
+        let mut buf = vec![];
+        R::default().read_to_end(&mut buf)?;
+        let from_whole = aut.find_iter(&buf).next().unwrap().start();
+
+        //But using stream_find_iter fails!
+        let mut file = R::default();
+        let begin = aut
+            .stream_find_iter(&mut file)
+            .next()
+            .expect("NOT FOUND!!!!")? // Panic here
+            .start();
+        assert_eq!(from_whole, begin);
+        Ok(())
+    }
+
+    run().unwrap()
 }
