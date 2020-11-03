@@ -858,10 +858,17 @@ impl<'a, S: StateID> Compiler<'a, S> {
         while let Some(id) = queue.pop_front() {
             let mut it = self.nfa.iter_transitions_mut(id);
             while let Some((b, next)) = it.next() {
-                if !seen.contains(next) {
-                    queue.push_back(next);
-                    seen.insert(next);
+                if seen.contains(next) {
+                    // The only way to visit a duplicate state in a transition
+                    // list is when ASCII case insensitivity is enabled. In
+                    // this case, we want to skip it since it's redundant work.
+                    // But it would also end up duplicating matches, which
+                    // results in reporting duplicate matches in some cases.
+                    // See the 'acasei010' regression test.
+                    continue;
                 }
+                queue.push_back(next);
+                seen.insert(next);
 
                 let mut fail = it.nfa().state(id).fail;
                 while it.nfa().state(fail).next_state(b) == fail_id() {
@@ -1012,10 +1019,17 @@ impl<'a, S: StateID> Compiler<'a, S> {
 
                 // Queue up the next state.
                 let next = item.next_queued_state(it.nfa(), next_id);
-                if !seen.contains(next.id) {
-                    queue.push_back(next);
-                    seen.insert(next.id);
+                if seen.contains(next.id) {
+                    // The only way to visit a duplicate state in a transition
+                    // list is when ASCII case insensitivity is enabled. In
+                    // this case, we want to skip it since it's redundant work.
+                    // But it would also end up duplicating matches, which
+                    // results in reporting duplicate matches in some cases.
+                    // See the 'acasei010' regression test.
+                    continue;
                 }
+                queue.push_back(next);
+                seen.insert(next.id);
 
                 // Find the failure state for next. Same as standard.
                 let mut fail = it.nfa().state(item.id).fail;

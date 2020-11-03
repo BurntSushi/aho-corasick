@@ -564,12 +564,22 @@ const ASCII_CASE_INSENSITIVE: &'static [SearchTest] = &[
 const ASCII_CASE_INSENSITIVE_NON_OVERLAPPING: &'static [SearchTest] = &[
     t!(acasei000, &["foo", "FOO"], "fOo", &[(0, 0, 3)]),
     t!(acasei000, &["FOO", "foo"], "fOo", &[(0, 0, 3)]),
+    t!(acasei010, &["abc", "def"], "abcdef", &[(0, 0, 3), (1, 3, 6)]),
 ];
 
 /// Like ASCII_CASE_INSENSITIVE, but specifically for overlapping tests.
 const ASCII_CASE_INSENSITIVE_OVERLAPPING: &'static [SearchTest] = &[
     t!(acasei000, &["foo", "FOO"], "fOo", &[(0, 0, 3), (1, 0, 3)]),
     t!(acasei001, &["FOO", "foo"], "fOo", &[(0, 0, 3), (1, 0, 3)]),
+    // This is a regression test from:
+    // https://github.com/BurntSushi/aho-corasick/issues/68
+    // Previously, it was reporting a duplicate (1, 3, 6) match.
+    t!(
+        acasei010,
+        &["abc", "def", "abcdef"],
+        "abcdef",
+        &[(0, 0, 3), (2, 0, 6), (1, 3, 6)]
+    ),
 ];
 
 /// Regression tests that are applied to all Aho-Corasick combinations.
@@ -1153,7 +1163,7 @@ fn regression_case_insensitive_prefilter() {
 
 // See: https://github.com/BurntSushi/aho-corasick/issues/64
 //
-// This occurs when the rare byte prefilter is active
+// This occurs when the rare byte prefilter is active.
 #[test]
 fn regression_stream_rare_byte_prefilter() {
     use std::io::Read;
