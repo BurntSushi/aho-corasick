@@ -1,10 +1,9 @@
-#[macro_use]
-extern crate criterion;
-
 use std::time::Duration;
 
 use aho_corasick::{packed, AhoCorasick, AhoCorasickBuilder, MatchKind};
-use criterion::{Bencher, Benchmark, Criterion, Throughput};
+use criterion::{
+    criterion_group, criterion_main, Bencher, Criterion, Throughput,
+};
 
 mod build;
 mod input;
@@ -160,13 +159,12 @@ fn define(
     corpus: &[u8],
     bench: impl FnMut(&mut Bencher<'_>) + 'static,
 ) {
-    let tput = Throughput::Bytes(corpus.len() as u64);
-    let benchmark = Benchmark::new(bench_name, bench)
-        .throughput(tput)
-        .sample_size(30)
+    c.benchmark_group(group_name)
+        .throughput(Throughput::Bytes(corpus.len() as u64))
+        .sample_size(10)
         .warm_up_time(Duration::from_millis(500))
-        .measurement_time(Duration::from_secs(2));
-    c.bench(group_name, benchmark);
+        .measurement_time(Duration::from_secs(2))
+        .bench_function(bench_name, bench);
 }
 
 /// Like define, but specifically useful for defining benchmarks that measure a
@@ -178,13 +176,12 @@ fn define_long(
     corpus: &[u8],
     bench: impl FnMut(&mut Bencher<'_>) + 'static,
 ) {
-    let tput = Throughput::Bytes(corpus.len() as u64);
-    let benchmark = Benchmark::new(bench_name, bench)
-        .throughput(tput)
+    c.benchmark_group(group_name)
+        .throughput(Throughput::Bytes(corpus.len() as u64))
         .sample_size(20)
         .warm_up_time(Duration::from_millis(500))
-        .measurement_time(Duration::from_secs(2));
-    c.bench(group_name, benchmark);
+        .measurement_time(Duration::from_secs(2))
+        .bench_function(bench_name, bench);
 }
 
 criterion_group!(g1, all);
