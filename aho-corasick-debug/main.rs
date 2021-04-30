@@ -122,6 +122,8 @@ impl Args {
         eprintln!("pattern read time: {:?}", read_time);
 
         let start = Instant::now();
+        // TODO: remove when byte classes and premultiply options are removed.
+        #[allow(deprecated)]
         let ac = AhoCorasickBuilder::new()
             .match_kind(self.match_kind)
             .ascii_case_insensitive(self.ascii_casei)

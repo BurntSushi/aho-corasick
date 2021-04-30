@@ -739,6 +739,8 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
+                    // TODO: remove tests when option is removed.
+                    #[allow(deprecated)]
                     b.dfa(true).byte_classes(false);
                 }
             );
@@ -747,6 +749,8 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
+                    // TODO: remove tests when option is removed.
+                    #[allow(deprecated)]
                     b.dfa(true).premultiply(false);
                 }
             );
@@ -755,6 +759,8 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
+                    // TODO: remove tests when options are removed.
+                    #[allow(deprecated)]
                     b.dfa(true).byte_classes(false).premultiply(false);
                 }
             );
@@ -830,6 +836,8 @@ testconfig!(
     AC_STANDARD_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
+        // TODO: remove tests when option is removed.
+        #[allow(deprecated)]
         b.dfa(true).byte_classes(false);
     }
 );
@@ -839,6 +847,8 @@ testconfig!(
     AC_STANDARD_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
+        // TODO: remove tests when option is removed.
+        #[allow(deprecated)]
         b.dfa(true).premultiply(false);
     }
 );
@@ -848,6 +858,8 @@ testconfig!(
     AC_STANDARD_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
+        // TODO: remove tests when options are removed.
+        #[allow(deprecated)]
         b.dfa(true).byte_classes(false).premultiply(false);
     }
 );

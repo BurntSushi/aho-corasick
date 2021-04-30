@@ -1005,18 +1005,6 @@ impl<S: StateID> AhoCorasick<S> {
     ///
     /// let ac = AhoCorasickBuilder::new()
     ///     .dfa(true)
-    ///     .byte_classes(false)
-    ///     .build(&["foo", "bar", "baz"]);
-    /// assert_eq!(20_768, ac.heap_bytes());
-    ///
-    /// let ac = AhoCorasickBuilder::new()
-    ///     .dfa(true)
-    ///     .byte_classes(true) // default
-    ///     .build(&["foo", "bar", "baz"]);
-    /// assert_eq!(1_248, ac.heap_bytes());
-    ///
-    /// let ac = AhoCorasickBuilder::new()
-    ///     .dfa(true)
     ///     .ascii_case_insensitive(true)
     ///     .build(&["foo", "bar", "baz"]);
     /// assert_eq!(1_248, ac.heap_bytes());
@@ -1681,7 +1669,7 @@ impl AhoCorasickBuilder {
             // N.B. Using byte classes can actually be faster by improving
             // locality, but this only really applies for multi-megabyte
             // automata (i.e., automata that don't fit in your CPU's cache).
-            self.dfa(true).byte_classes(false);
+            self.dfa(true);
         } else if patterns.len() <= 5000 {
             self.dfa(true);
         }
@@ -1928,6 +1916,10 @@ impl AhoCorasickBuilder {
     /// overall performance.
     ///
     /// This option is enabled by default.
+    #[deprecated(
+        since = "0.7.16",
+        note = "not carrying its weight, will be always enabled, see: https://github.com/BurntSushi/aho-corasick/issues/57"
+    )]
     pub fn byte_classes(&mut self, yes: bool) -> &mut AhoCorasickBuilder {
         self.dfa_builder.byte_classes(yes);
         self
@@ -1956,6 +1948,10 @@ impl AhoCorasickBuilder {
     /// non-premultiplied form only requires 8 bits.
     ///
     /// This option is enabled by default.
+    #[deprecated(
+        since = "0.7.16",
+        note = "not carrying its weight, will be always enabled, see: https://github.com/BurntSushi/aho-corasick/issues/57"
+    )]
     pub fn premultiply(&mut self, yes: bool) -> &mut AhoCorasickBuilder {
         self.dfa_builder.premultiply(yes);
         self
