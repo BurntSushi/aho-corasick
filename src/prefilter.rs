@@ -435,7 +435,7 @@ impl ByteSet {
 }
 
 impl fmt::Debug for ByteSet {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut bytes = vec![];
         for b in 0..=255 {
             if self.contains(b) {
@@ -471,7 +471,7 @@ impl RareByteOffsets {
 }
 
 impl fmt::Debug for RareByteOffsets {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut offsets = vec![];
         for off in self.set.iter() {
             if off.max > 0 {

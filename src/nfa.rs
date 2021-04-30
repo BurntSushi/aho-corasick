@@ -172,7 +172,7 @@ impl<S: StateID> NFA<S> {
         self.state_mut(id)
     }
 
-    fn iter_transitions_mut(&mut self, id: S) -> IterTransitionsMut<S> {
+    fn iter_transitions_mut(&mut self, id: S) -> IterTransitionsMut<'_, S> {
         IterTransitionsMut::new(self, id)
     }
 
@@ -497,7 +497,7 @@ impl<S: StateID> Transitions<S> {
 /// is iterating over transitions, the caller can still mutate the NFA. This
 /// is useful when creating failure transitions.
 #[derive(Debug)]
-struct IterTransitionsMut<'a, S: StateID + 'a> {
+struct IterTransitionsMut<'a, S: StateID> {
     nfa: &'a mut NFA<S>,
     state_id: S,
     cur: usize,
@@ -1274,7 +1274,7 @@ impl Iterator for AllBytesIter {
 }
 
 impl<S: StateID> fmt::Debug for NFA<S> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "NFA(")?;
         writeln!(f, "match_kind: {:?}", self.match_kind)?;
         writeln!(f, "prefilter: {:?}", self.prefilter)?;

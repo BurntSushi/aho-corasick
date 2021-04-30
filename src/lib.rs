@@ -186,7 +186,6 @@ disabled via
 #[cfg(not(feature = "std"))]
 compile_error!("`std` feature is currently required to build this crate");
 
-extern crate memchr;
 // #[cfg(doctest)]
 // #[macro_use]
 // extern crate doc_comment;
