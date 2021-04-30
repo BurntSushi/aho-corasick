@@ -7,6 +7,7 @@ description = "Criterion benchmark suite for aho-corasick."
 homepage = "https://github.com/BurntSushi/aho-corasick"
 repository = "https://github.com/BurntSushi/aho-corasick"
 license = "Unlicense OR MIT"
+edition = "2018"
 
 [lib]
 bench = false

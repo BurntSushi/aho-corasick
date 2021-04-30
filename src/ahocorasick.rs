@@ -1,14 +1,14 @@
 use std::io;
 
-use automaton::Automaton;
-use buffer::Buffer;
-use dfa::{self, DFA};
-use error::Result;
-use nfa::{self, NFA};
-use packed;
-use prefilter::{Prefilter, PrefilterState};
-use state_id::StateID;
-use Match;
+use crate::automaton::Automaton;
+use crate::buffer::Buffer;
+use crate::dfa::{self, DFA};
+use crate::error::Result;
+use crate::nfa::{self, NFA};
+use crate::packed;
+use crate::prefilter::{Prefilter, PrefilterState};
+use crate::state_id::StateID;
+use crate::Match;
 
 /// An automaton for searching multiple strings in linear time.
 ///

@@ -4,7 +4,7 @@ use std::mem;
 use std::u16;
 use std::usize;
 
-use packed::api::MatchKind;
+use crate::packed::api::MatchKind;
 
 /// The type used for representing a pattern identifier.
 ///

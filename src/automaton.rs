@@ -1,7 +1,7 @@
-use ahocorasick::MatchKind;
-use prefilter::{self, Candidate, Prefilter, PrefilterState};
-use state_id::{dead_id, fail_id, StateID};
-use Match;
+use crate::ahocorasick::MatchKind;
+use crate::prefilter::{self, Candidate, Prefilter, PrefilterState};
+use crate::state_id::{dead_id, fail_id, StateID};
+use crate::Match;
 
 // NOTE: This trait essentially started as a copy of the same trait from from
 // regex-automata, with some wording changed since we use this trait for

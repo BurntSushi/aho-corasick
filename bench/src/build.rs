@@ -1,8 +1,8 @@
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
 use criterion::{black_box, Criterion};
 
-use input::{words_15000, words_5000};
-use {define, define_long};
+use crate::input::{words_15000, words_5000};
+use crate::{define, define_long};
 
 /// Benchmarks that measure the performance of constructing an Aho-Corasick
 /// automaton.

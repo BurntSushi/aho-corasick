@@ -194,12 +194,12 @@ extern crate memchr;
 // #[cfg(doctest)]
 // doctest!("../README.md");
 
-pub use ahocorasick::{
+pub use crate::ahocorasick::{
     AhoCorasick, AhoCorasickBuilder, FindIter, FindOverlappingIter, MatchKind,
     StreamFindIter,
 };
-pub use error::{Error, ErrorKind};
-pub use state_id::StateID;
+pub use crate::error::{Error, ErrorKind};
+pub use crate::state_id::StateID;
 
 mod ahocorasick;
 mod automaton;

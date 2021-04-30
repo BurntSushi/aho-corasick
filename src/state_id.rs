@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::hash::Hash;
 
-use error::{Error, Result};
+use crate::error::{Error, Result};
 
 // NOTE: Most of this code was copied from regex-automata, but without the
 // (de)serialization specific stuff.
