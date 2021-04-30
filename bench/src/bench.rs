@@ -1,4 +1,3 @@
-extern crate aho_corasick;
 #[macro_use]
 extern crate criterion;
 
@@ -159,7 +158,7 @@ fn define(
     group_name: &str,
     bench_name: &str,
     corpus: &[u8],
-    bench: impl FnMut(&mut Bencher) + 'static,
+    bench: impl FnMut(&mut Bencher<'_>) + 'static,
 ) {
     let tput = Throughput::Bytes(corpus.len() as u64);
     let benchmark = Benchmark::new(bench_name, bench)
@@ -177,7 +176,7 @@ fn define_long(
     group_name: &str,
     bench_name: &str,
     corpus: &[u8],
-    bench: impl FnMut(&mut Bencher) + 'static,
+    bench: impl FnMut(&mut Bencher<'_>) + 'static,
 ) {
     let tput = Throughput::Bytes(corpus.len() as u64);
     let benchmark = Benchmark::new(bench_name, bench)

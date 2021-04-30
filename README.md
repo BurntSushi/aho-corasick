@@ -28,12 +28,6 @@ Add this to your `Cargo.toml`:
 aho-corasick = "0.7"
 ```
 
-and this to your crate root (if you're using Rust 2015):
-
-```rust
-extern crate aho_corasick;
-```
-
 
 ### Example: basic searching
 

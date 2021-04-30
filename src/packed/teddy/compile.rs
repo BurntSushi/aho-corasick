@@ -296,7 +296,7 @@ impl<'p> Compiler<'p> {
 }
 
 impl<'p> fmt::Debug for Compiler<'p> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut buckets = vec![vec![]; self.buckets.len()];
         for (i, bucket) in self.buckets.iter().enumerate() {
             for &patid in bucket {
@@ -400,7 +400,7 @@ impl Mask {
 }
 
 impl fmt::Debug for Mask {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (mut parts_lo, mut parts_hi) = (vec![], vec![]);
         for i in 0..32 {
             parts_lo.push(format!("{:02}: {:08b}", i, self.lo[i]));

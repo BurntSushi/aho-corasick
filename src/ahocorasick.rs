@@ -1169,7 +1169,7 @@ impl<S: StateID> Imp<S> {
 ///
 /// The lifetime `'b` refers to the lifetime of the haystack being searched.
 #[derive(Debug)]
-pub struct FindIter<'a, 'b, S: 'a + StateID> {
+pub struct FindIter<'a, 'b, S: StateID> {
     fsm: &'a Imp<S>,
     prestate: PrefilterState,
     haystack: &'b [u8],
@@ -1226,7 +1226,7 @@ impl<'a, 'b, S: StateID> Iterator for FindIter<'a, 'b, S> {
 ///
 /// The lifetime `'b` refers to the lifetime of the haystack being searched.
 #[derive(Debug)]
-pub struct FindOverlappingIter<'a, 'b, S: 'a + StateID> {
+pub struct FindOverlappingIter<'a, 'b, S: StateID> {
     fsm: &'a Imp<S>,
     prestate: PrefilterState,
     haystack: &'b [u8],
@@ -1297,7 +1297,7 @@ impl<'a, 'b, S: StateID> Iterator for FindOverlappingIter<'a, 'b, S> {
 ///
 /// The lifetime `'a` refers to the lifetime of the `AhoCorasick` automaton.
 #[derive(Debug)]
-pub struct StreamFindIter<'a, R, S: 'a + StateID> {
+pub struct StreamFindIter<'a, R, S: StateID> {
     it: StreamChunkIter<'a, R, S>,
 }
 
@@ -1332,7 +1332,7 @@ impl<'a, R: io::Read, S: StateID> Iterator for StreamFindIter<'a, R, S> {
 /// N.B. This does not actually implement Iterator because we need to borrow
 /// from the underlying reader. But conceptually, it's still an iterator.
 #[derive(Debug)]
-struct StreamChunkIter<'a, R, S: 'a + StateID> {
+struct StreamChunkIter<'a, R, S: StateID> {
     /// The AC automaton.
     fsm: &'a Imp<S>,
     /// State associated with this automaton's prefilter. It is a heuristic
