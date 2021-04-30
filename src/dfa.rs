@@ -1,13 +1,13 @@
 use std::mem::size_of;
 
-use ahocorasick::MatchKind;
-use automaton::Automaton;
-use classes::ByteClasses;
-use error::Result;
-use nfa::{PatternID, PatternLength, NFA};
-use prefilter::{Prefilter, PrefilterObj, PrefilterState};
-use state_id::{dead_id, fail_id, premultiply_overflow_error, StateID};
-use Match;
+use crate::ahocorasick::MatchKind;
+use crate::automaton::Automaton;
+use crate::classes::ByteClasses;
+use crate::error::Result;
+use crate::nfa::{PatternID, PatternLength, NFA};
+use crate::prefilter::{Prefilter, PrefilterObj, PrefilterState};
+use crate::state_id::{dead_id, fail_id, premultiply_overflow_error, StateID};
+use crate::Match;
 
 #[derive(Clone, Debug)]
 pub enum DFA<S> {

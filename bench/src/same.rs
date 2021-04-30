@@ -1,6 +1,6 @@
 use criterion::Criterion;
 
-use define_aho_corasick;
+use crate::define_aho_corasick;
 
 /// These benchmarks test various workloads on a corpus that corresponds to the
 /// repetition of a single byte. For the most part, we compare the impact of

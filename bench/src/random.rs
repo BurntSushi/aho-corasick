@@ -1,7 +1,7 @@
 use criterion::Criterion;
 
-use input::*;
-use {define_aho_corasick, define_aho_corasick_dfa};
+use crate::input::*;
+use crate::{define_aho_corasick, define_aho_corasick_dfa};
 
 /// These benchmarks test various words on random text.
 pub fn all(c: &mut Criterion) {

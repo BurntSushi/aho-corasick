@@ -4,13 +4,13 @@ use std::fmt;
 use std::mem::size_of;
 use std::ops::{Index, IndexMut};
 
-use ahocorasick::MatchKind;
-use automaton::Automaton;
-use classes::{ByteClassBuilder, ByteClasses};
-use error::Result;
-use prefilter::{self, opposite_ascii_case, Prefilter, PrefilterObj};
-use state_id::{dead_id, fail_id, usize_to_state_id, StateID};
-use Match;
+use crate::ahocorasick::MatchKind;
+use crate::automaton::Automaton;
+use crate::classes::{ByteClassBuilder, ByteClasses};
+use crate::error::Result;
+use crate::prefilter::{self, opposite_ascii_case, Prefilter, PrefilterObj};
+use crate::state_id::{dead_id, fail_id, usize_to_state_id, StateID};
+use crate::Match;
 
 /// The identifier for a pattern, which is simply the position of the pattern
 /// in the sequence of patterns given by the caller.

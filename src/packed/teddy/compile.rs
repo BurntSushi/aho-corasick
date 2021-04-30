@@ -4,8 +4,8 @@ use std::cmp;
 use std::collections::BTreeMap;
 use std::fmt;
 
-use packed::pattern::{PatternID, Patterns};
-use packed::teddy::Teddy;
+use crate::packed::pattern::{PatternID, Patterns};
+use crate::packed::teddy::Teddy;
 
 /// A builder for constructing a Teddy matcher.
 ///
@@ -73,7 +73,7 @@ impl Builder {
     }
 
     fn build_imp(&self, patterns: &Patterns) -> Option<Teddy> {
-        use packed::teddy::runtime;
+        use crate::packed::teddy::runtime;
 
         // Most of the logic here is just about selecting the optimal settings,
         // or perhaps even rejecting construction altogether. The choices

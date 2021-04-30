@@ -5,9 +5,9 @@ use std::u8;
 
 use memchr::{memchr, memchr2, memchr3};
 
-use ahocorasick::MatchKind;
-use packed;
-use Match;
+use crate::ahocorasick::MatchKind;
+use crate::packed;
+use crate::Match;
 
 /// A candidate is the result of running a prefilter on a haystack at a
 /// particular position. The result is either no match, a confirmed match or
@@ -1032,7 +1032,7 @@ pub fn opposite_ascii_case(b: u8) -> u8 {
 /// Return the frequency rank of the given byte. The higher the rank, the more
 /// common the byte (heuristically speaking).
 fn freq_rank(b: u8) -> u8 {
-    use byte_frequencies::BYTE_FREQUENCIES;
+    use crate::byte_frequencies::BYTE_FREQUENCIES;
     BYTE_FREQUENCIES[b as usize]
 }
 

@@ -1,7 +1,7 @@
 use criterion::Criterion;
 
-use define_aho_corasick;
-use input::*;
+use crate::define_aho_corasick;
+use crate::input::*;
 
 /// These benchmarks test various words on natural language text.
 ///

@@ -13,16 +13,10 @@ autotests = false
 exclude = [
   "/aho-corasick-debug", "/ci/*", "/.travis.yml", "/appveyor.yml",
 ]
+edition = "2018"
 
 [workspace]
-members = ["bench"]
-# We'd ideally not do this, but since the debug tool uses Rust 2018, older
-# versions of Rust (such as 1.28) fail to parse the manifest because it treats
-# `edition = "2018"` as an unstable feature.
-#
-# When we move our MSRV to Rust 2018, then we should be able to add this back
-# to the workspace.
-exclude = ["aho-corasick-debug"]
+members = ["aho-corasick-debug", "bench"]
 
 [lib]
 name = "aho_corasick"

@@ -1,11 +1,11 @@
 #[cfg(target_arch = "x86_64")]
-pub use packed::teddy::compile::Builder;
+pub use crate::packed::teddy::compile::Builder;
 #[cfg(not(target_arch = "x86_64"))]
 pub use packed::teddy::fallback::Builder;
 #[cfg(not(target_arch = "x86_64"))]
 pub use packed::teddy::fallback::Teddy;
 #[cfg(target_arch = "x86_64")]
-pub use packed::teddy::runtime::Teddy;
+pub use crate::packed::teddy::runtime::Teddy;
 
 #[cfg(target_arch = "x86_64")]
 mod compile;
