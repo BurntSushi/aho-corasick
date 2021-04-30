@@ -23,15 +23,15 @@ name = "aho_corasick"
 
 [features]
 default = ["std"]
-std = ["memchr/use_std"]
+std = ["memchr/std"]
 
 [dependencies]
-memchr = { version = "2.2.0", default-features = false }
+memchr = { version = "2.4.0", default-features = false }
 
 [dev-dependencies]
 # TODO: Re-enable this once the MSRV is 1.43 or greater.
 # See: https://github.com/BurntSushi/aho-corasick/issues/62
-doc-comment = "0.3.1"
+# doc-comment = "0.3.1"
 
 [profile.release]
 debug = true
