@@ -168,6 +168,12 @@ In general, this crate will be conservative with respect to the minimum
 supported version of Rust.
 
 
+### FFI bindings
+
+* [G-Research/ahocorasick_rs](https://github.com/G-Research/ahocorasick_rs/)
+is a Python wrapper for this library.
+
+
 ### Future work
 
 Here are some plans for the future:
