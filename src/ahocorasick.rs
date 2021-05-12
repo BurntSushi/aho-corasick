@@ -1219,7 +1219,6 @@ pub struct FindOverlappingIter<'a, 'b, S: StateID> {
     prestate: PrefilterState,
     haystack: &'b [u8],
     pos: usize,
-    last_match_end: usize,
     state_id: S,
     match_index: usize,
 }
@@ -1239,7 +1238,6 @@ impl<'a, 'b, S: StateID> FindOverlappingIter<'a, 'b, S> {
             prestate,
             haystack,
             pos: 0,
-            last_match_end: 0,
             state_id: ac.imp.start_state(),
             match_index: 0,
         }
@@ -1390,7 +1388,7 @@ impl<'a, R: io::Read, S: StateID> StreamChunkIter<'a, R, S> {
         }
     }
 
-    fn next<'r>(&'r mut self) -> Option<io::Result<StreamChunk<'r>>> {
+    fn next(&mut self) -> Option<io::Result<StreamChunk>> {
         loop {
             if let Some(mut mat) = self.pending_match.take() {
                 let bytes = &self.buf.buffer()[mat.start()..mat.end()];
