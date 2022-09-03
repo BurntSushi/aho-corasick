@@ -275,7 +275,7 @@ impl Match {
         self.end
     }
 
-    /// The length of the match
+    /// The length, in bytes, of the match.
     #[inline]
     pub fn len(&self) -> usize {
         self.len
