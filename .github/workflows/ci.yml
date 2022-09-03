@@ -64,7 +64,7 @@ jobs:
       with:
         fetch-depth: 1
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@v1
+      uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ matrix.rust }}
     - name: Use Cross
@@ -101,7 +101,7 @@ jobs:
       with:
         fetch-depth: 1
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@v1
+      uses: dtolnay/rust-toolchain@master
       with:
         toolchain: stable
         components: rustfmt
