@@ -1,8 +1,6 @@
-use std::cmp;
-use std::fmt;
-use std::mem;
-use std::u16;
-use std::usize;
+use core::{cmp, fmt, mem, u16, usize};
+
+use alloc::{string::String, vec, vec::Vec};
 
 use crate::packed::api::MatchKind;
 
@@ -166,7 +164,7 @@ impl Patterns {
     ///
     /// Callers must ensure that a pattern with the given identifier exists
     /// before using this method.
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(all(feature = "std", target_arch = "x86_64"))]
     pub unsafe fn get_unchecked(&self, id: PatternID) -> Pattern<'_> {
         Pattern(self.by_id.get_unchecked(id as usize))
     }
@@ -246,7 +244,7 @@ impl<'p> Pattern<'p> {
 
     /// Returns the first `len` low nybbles from this pattern. If this pattern
     /// is shorter than `len`, then this panics.
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(all(feature = "std", target_arch = "x86_64"))]
     pub fn low_nybbles(&self, len: usize) -> Vec<u8> {
         let mut nybs = vec![];
         for &b in self.bytes().iter().take(len) {

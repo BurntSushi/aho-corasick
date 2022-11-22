@@ -1,6 +1,4 @@
-use std::collections::HashMap;
-use std::io;
-use std::usize;
+use std::{collections::HashMap, format, string::String, vec, vec::Vec};
 
 use crate::{AhoCorasickBuilder, Match, MatchKind};
 
@@ -645,8 +643,10 @@ macro_rules! testconfig {
         #[test]
         fn $name() {
             run_search_tests($collection, |test| {
-                let buf =
-                    io::BufReader::with_capacity(1, test.haystack.as_bytes());
+                let buf = std::io::BufReader::with_capacity(
+                    1,
+                    test.haystack.as_bytes(),
+                );
                 let mut builder = AhoCorasickBuilder::new();
                 $with(&mut builder);
                 builder
@@ -869,6 +869,7 @@ testconfig!(
 // Also write out tests manually for streams, since we only test the standard
 // match semantics. We also don't bother testing different automaton
 // configurations, since those are well covered by tests above.
+#[cfg(feature = "std")]
 testconfig!(
     stream,
     search_standard_stream_nfa_default,
@@ -876,6 +877,7 @@ testconfig!(
     Standard,
     |_| ()
 );
+#[cfg(feature = "std")]
 testconfig!(
     stream,
     search_standard_stream_dfa_default,
@@ -1073,6 +1075,7 @@ fn search_tests_have_unique_names() {
     assert("REGRESSION", REGRESSION);
 }
 
+#[cfg(feature = "std")]
 #[test]
 #[should_panic]
 fn stream_not_allowed_leftmost_first() {
@@ -1082,6 +1085,7 @@ fn stream_not_allowed_leftmost_first() {
     assert_eq!(fsm.stream_find_iter(&b""[..]).count(), 0);
 }
 
+#[cfg(feature = "std")]
 #[test]
 #[should_panic]
 fn stream_not_allowed_leftmost_longest() {
@@ -1178,6 +1182,7 @@ fn regression_case_insensitive_prefilter() {
 // See: https://github.com/BurntSushi/aho-corasick/issues/64
 //
 // This occurs when the rare byte prefilter is active.
+#[cfg(feature = "std")]
 #[test]
 fn regression_stream_rare_byte_prefilter() {
     use std::io::Read;
@@ -1199,7 +1204,7 @@ fn regression_stream_rare_byte_prefilter() {
     }
 
     impl Read for R {
-        fn read(&mut self, buf: &mut [u8]) -> ::std::io::Result<usize> {
+        fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
             //dbg!(buf.len());
             if self.read > 100000 {
                 return Ok(0);
@@ -1231,7 +1236,7 @@ fn regression_stream_rare_byte_prefilter() {
         }
     }
 
-    fn run() -> ::std::io::Result<()> {
+    fn run() -> std::io::Result<()> {
         let aut = AhoCorasickBuilder::new().build(&[&MAGIC]);
 
         // While reading from a vector, it works:

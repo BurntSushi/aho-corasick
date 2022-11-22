@@ -1,11 +1,13 @@
 // See the README in this directory for an explanation of the Teddy algorithm.
 
-use std::cmp;
-use std::collections::BTreeMap;
-use std::fmt;
+use core::{cmp, fmt};
 
-use crate::packed::pattern::{PatternID, Patterns};
-use crate::packed::teddy::Teddy;
+use alloc::{collections::BTreeMap, format, vec, vec::Vec};
+
+use crate::packed::{
+    pattern::{PatternID, Patterns},
+    teddy::Teddy,
+};
 
 /// A builder for constructing a Teddy matcher.
 ///
@@ -86,8 +88,8 @@ impl Builder {
         if patterns.len() > 64 {
             return None;
         }
-        let has_ssse3 = is_x86_feature_detected!("ssse3");
-        let has_avx = is_x86_feature_detected!("avx2");
+        let has_ssse3 = std::is_x86_feature_detected!("ssse3");
+        let has_avx = std::is_x86_feature_detected!("avx2");
         let avx = if self.avx == Some(true) {
             if !has_avx {
                 return None;

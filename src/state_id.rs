@@ -1,5 +1,4 @@
-use std::fmt::Debug;
-use std::hash::Hash;
+use core::{fmt::Debug, hash::Hash};
 
 use crate::error::{Error, Result};
 
@@ -117,7 +116,7 @@ impl StateID for usize {
 
     #[inline]
     fn max_id() -> usize {
-        ::std::usize::MAX
+        usize::MAX
     }
 }
 
@@ -134,7 +133,7 @@ impl StateID for u8 {
 
     #[inline]
     fn max_id() -> usize {
-        ::std::u8::MAX as usize
+        u8::MAX as usize
     }
 }
 
@@ -151,7 +150,7 @@ impl StateID for u16 {
 
     #[inline]
     fn max_id() -> usize {
-        ::std::u16::MAX as usize
+        u16::MAX as usize
     }
 }
 
@@ -169,7 +168,7 @@ impl StateID for u32 {
 
     #[inline]
     fn max_id() -> usize {
-        ::std::u32::MAX as usize
+        u32::MAX as usize
     }
 }
 
@@ -187,6 +186,6 @@ impl StateID for u64 {
 
     #[inline]
     fn max_id() -> usize {
-        ::std::u64::MAX as usize
+        u64::MAX as usize
     }
 }

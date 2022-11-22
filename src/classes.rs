@@ -1,4 +1,6 @@
-use std::fmt;
+use core::fmt;
+
+use alloc::{vec, vec::Vec};
 
 /// A representation of byte oriented equivalence classes.
 ///

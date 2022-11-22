@@ -1,14 +1,15 @@
-use std::io;
+use alloc::{string::String, vec::Vec};
 
-use crate::automaton::Automaton;
-use crate::buffer::Buffer;
-use crate::dfa::{self, DFA};
-use crate::error::Result;
-use crate::nfa::{self, NFA};
-use crate::packed;
-use crate::prefilter::{Prefilter, PrefilterState};
-use crate::state_id::StateID;
-use crate::Match;
+use crate::{
+    automaton::Automaton,
+    dfa::{self, DFA},
+    error::Result,
+    nfa::{self, NFA},
+    packed,
+    prefilter::PrefilterState,
+    state_id::StateID,
+    Match,
+};
 
 /// An automaton for searching multiple strings in linear time.
 ///
@@ -682,7 +683,8 @@ impl<S: StateID> AhoCorasick<S> {
     /// assert_eq!(vec![2, 2, 2], matches);
     /// # Ok(()) }; example().unwrap()
     /// ```
-    pub fn stream_find_iter<'a, R: io::Read>(
+    #[cfg(feature = "std")]
+    pub fn stream_find_iter<'a, R: std::io::Read>(
         &'a self,
         rdr: R,
     ) -> StreamFindIter<'a, R, S> {
@@ -747,15 +749,16 @@ impl<S: StateID> AhoCorasick<S> {
     /// assert_eq!(b"The slow grey sloth.".to_vec(), result);
     /// # Ok(()) }; example().unwrap()
     /// ```
+    #[cfg(feature = "std")]
     pub fn stream_replace_all<R, W, B>(
         &self,
         rdr: R,
         wtr: W,
         replace_with: &[B],
-    ) -> io::Result<()>
+    ) -> std::io::Result<()>
     where
-        R: io::Read,
-        W: io::Write,
+        R: std::io::Read,
+        W: std::io::Write,
         B: AsRef<[u8]>,
     {
         assert_eq!(
@@ -832,16 +835,17 @@ impl<S: StateID> AhoCorasick<S> {
     /// assert_eq!(b"The 2 1 0.".to_vec(), result);
     /// # Ok(()) }; example().unwrap()
     /// ```
+    #[cfg(feature = "std")]
     pub fn stream_replace_all_with<R, W, F>(
         &self,
         rdr: R,
         mut wtr: W,
         mut replace_with: F,
-    ) -> io::Result<()>
+    ) -> std::io::Result<()>
     where
-        R: io::Read,
-        W: io::Write,
-        F: FnMut(&Match, &[u8], &mut W) -> io::Result<()>,
+        R: std::io::Read,
+        W: std::io::Write,
+        F: FnMut(&Match, &[u8], &mut W) -> std::io::Result<()>,
     {
         let mut it = StreamChunkIter::new(self, rdr);
         while let Some(result) = it.next() {
@@ -1065,7 +1069,8 @@ impl<S: StateID> Imp<S> {
 
     /// Returns the prefilter object, if one exists, for the underlying
     /// automaton.
-    fn prefilter(&self) -> Option<&dyn Prefilter> {
+    #[cfg(feature = "std")]
+    fn prefilter(&self) -> Option<&dyn crate::prefilter::Prefilter> {
         match *self {
             Imp::NFA(ref nfa) => nfa.prefilter(),
             Imp::DFA(ref dfa) => dfa.prefilter(),
@@ -1073,6 +1078,7 @@ impl<S: StateID> Imp<S> {
     }
 
     /// Returns true if and only if we should attempt to use a prefilter.
+    #[cfg(feature = "std")]
     fn use_prefilter(&self) -> bool {
         let p = match self.prefilter() {
             None => return false,
@@ -1282,21 +1288,24 @@ impl<'a, 'b, S: StateID> Iterator for FindOverlappingIter<'a, 'b, S> {
 /// identifiers. (By default, this is `usize`.)
 ///
 /// The lifetime `'a` refers to the lifetime of the `AhoCorasick` automaton.
+#[cfg(feature = "std")]
 #[derive(Debug)]
 pub struct StreamFindIter<'a, R, S: StateID> {
     it: StreamChunkIter<'a, R, S>,
 }
 
-impl<'a, R: io::Read, S: StateID> StreamFindIter<'a, R, S> {
+#[cfg(feature = "std")]
+impl<'a, R: std::io::Read, S: StateID> StreamFindIter<'a, R, S> {
     fn new(ac: &'a AhoCorasick<S>, rdr: R) -> StreamFindIter<'a, R, S> {
         StreamFindIter { it: StreamChunkIter::new(ac, rdr) }
     }
 }
 
-impl<'a, R: io::Read, S: StateID> Iterator for StreamFindIter<'a, R, S> {
-    type Item = io::Result<Match>;
+#[cfg(feature = "std")]
+impl<'a, R: std::io::Read, S: StateID> Iterator for StreamFindIter<'a, R, S> {
+    type Item = std::io::Result<Match>;
 
-    fn next(&mut self) -> Option<io::Result<Match>> {
+    fn next(&mut self) -> Option<std::io::Result<Match>> {
         loop {
             match self.it.next() {
                 None => return None,
@@ -1317,6 +1326,7 @@ impl<'a, R: io::Read, S: StateID> Iterator for StreamFindIter<'a, R, S> {
 ///
 /// N.B. This does not actually implement Iterator because we need to borrow
 /// from the underlying reader. But conceptually, it's still an iterator.
+#[cfg(feature = "std")]
 #[derive(Debug)]
 struct StreamChunkIter<'a, R, S: StateID> {
     /// The AC automaton.
@@ -1329,7 +1339,7 @@ struct StreamChunkIter<'a, R, S: StateID> {
     /// A fixed size buffer. This is what we actually search. There are some
     /// invariants around the buffer's size, namely, it must be big enough to
     /// contain the longest possible match.
-    buf: Buffer,
+    buf: crate::buffer::Buffer,
     /// The ID of the FSM state we're currently in.
     state_id: S,
     /// The current position at which to start the next search in `buf`.
@@ -1352,6 +1362,7 @@ struct StreamChunkIter<'a, R, S: StateID> {
 /// A single chunk yielded by the stream chunk iterator.
 ///
 /// The `'r` lifetime refers to the lifetime of the stream chunk iterator.
+#[cfg(feature = "std")]
 #[derive(Debug)]
 enum StreamChunk<'r> {
     /// A chunk that does not contain any matches.
@@ -1360,7 +1371,8 @@ enum StreamChunk<'r> {
     Match { bytes: &'r [u8], mat: Match },
 }
 
-impl<'a, R: io::Read, S: StateID> StreamChunkIter<'a, R, S> {
+#[cfg(feature = "std")]
+impl<'a, R: std::io::Read, S: StateID> StreamChunkIter<'a, R, S> {
     fn new(ac: &'a AhoCorasick<S>, rdr: R) -> StreamChunkIter<'a, R, S> {
         assert!(
             ac.supports_stream(),
@@ -1372,7 +1384,7 @@ impl<'a, R: io::Read, S: StateID> StreamChunkIter<'a, R, S> {
         } else {
             PrefilterState::disabled()
         };
-        let buf = Buffer::new(ac.imp.max_pattern_len());
+        let buf = crate::buffer::Buffer::new(ac.imp.max_pattern_len());
         let state_id = ac.imp.start_state();
         StreamChunkIter {
             fsm: &ac.imp,
@@ -1388,7 +1400,7 @@ impl<'a, R: io::Read, S: StateID> StreamChunkIter<'a, R, S> {
         }
     }
 
-    fn next(&mut self) -> Option<io::Result<StreamChunk>> {
+    fn next(&mut self) -> Option<std::io::Result<StreamChunk>> {
         loop {
             if let Some(mut mat) = self.pending_match.take() {
                 let bytes = &self.buf.buffer()[mat.start()..mat.end()];

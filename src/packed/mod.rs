@@ -41,7 +41,7 @@ let matches: Vec<usize> = searcher
     .collect();
 assert_eq!(vec![0], matches);
 # Some(()) }
-# if cfg!(target_arch = "x86_64") {
+# if cfg!(all(feature = "std", target_arch = "x86_64")) {
 #     example().unwrap()
 # } else {
 #     assert!(example().is_none());
@@ -67,7 +67,7 @@ let matches: Vec<usize> = searcher
     .collect();
 assert_eq!(vec![1], matches);
 # Some(()) }
-# if cfg!(target_arch = "x86_64") {
+# if cfg!(all(feature = "std", target_arch = "x86_64")) {
 #     example().unwrap()
 # } else {
 #     assert!(example().is_none());
@@ -111,7 +111,7 @@ mod api;
 mod pattern;
 mod rabinkarp;
 mod teddy;
-#[cfg(test)]
+#[cfg(all(feature = "std", test))]
 mod tests;
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(feature = "std", target_arch = "x86_64"))]
 mod vector;

@@ -85,7 +85,7 @@ assert_eq!(matches, vec![
 This example shows how to execute a search and replace on a stream without
 loading the entire stream into memory first.
 
-```rust
+```rust,ignore
 use aho_corasick::AhoCorasick;
 
 let patterns = &["fox", "brown", "quick"];

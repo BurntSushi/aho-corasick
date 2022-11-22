@@ -1,7 +1,9 @@
-use std::mem;
+use alloc::{vec, vec::Vec};
 
-use crate::packed::pattern::{PatternID, Patterns};
-use crate::Match;
+use crate::{
+    packed::pattern::{PatternID, Patterns},
+    Match,
+};
 
 /// The type of the rolling hash used in the Rabin-Karp algorithm.
 type Hash = usize;
@@ -134,8 +136,8 @@ impl RabinKarp {
     /// units of bytes.
     pub fn heap_bytes(&self) -> usize {
         let num_patterns = self.max_pattern_id as usize + 1;
-        self.buckets.len() * mem::size_of::<Vec<(Hash, PatternID)>>()
-            + num_patterns * mem::size_of::<(Hash, PatternID)>()
+        self.buckets.len() * core::mem::size_of::<Vec<(Hash, PatternID)>>()
+            + num_patterns * core::mem::size_of::<(Hash, PatternID)>()
     }
 
     /// Verify whether the pattern with the given id matches at

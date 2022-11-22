@@ -92,6 +92,7 @@ This example shows how to execute a search and replace on a stream without
 loading the entire stream into memory first.
 
 ```
+# #[cfg(feature = "std")] {
 use aho_corasick::AhoCorasick;
 
 # fn example() -> Result<(), ::std::io::Error> {
@@ -107,6 +108,7 @@ let ac = AhoCorasick::new(patterns);
 ac.stream_replace_all(rdr.as_bytes(), &mut wtr, replace_with)?;
 assert_eq!(b"The slow grey sloth.".to_vec(), wtr);
 # Ok(()) }; example().unwrap()
+# }
 ```
 
 # Example: finding the leftmost first match
@@ -179,35 +181,58 @@ disabled via
 [`AhoCorasickBuilder::prefilter`](struct.AhoCorasickBuilder.html#method.prefilter).
 */
 
+#![no_std]
 #![deny(missing_docs)]
 
 // We can never be truly no_std, but we could be alloc-only some day, so
 // require the std feature for now.
-#[cfg(not(feature = "std"))]
-compile_error!("`std` feature is currently required to build this crate");
+#[cfg(not(feature = "alloc"))]
+compile_error!("`alloc` feature is currently required to build this crate");
+
+#[cfg(any(test, feature = "std"))]
+extern crate std;
+
+#[cfg(feature = "alloc")]
+extern crate alloc;
 
 #[cfg(doctest)]
 doc_comment::doctest!("../README.md");
 
-pub use crate::ahocorasick::{
-    AhoCorasick, AhoCorasickBuilder, FindIter, FindOverlappingIter, MatchKind,
-    StreamFindIter,
+#[cfg(feature = "std")]
+pub use crate::ahocorasick::StreamFindIter;
+#[cfg(feature = "alloc")]
+pub use crate::{
+    ahocorasick::{
+        AhoCorasick, AhoCorasickBuilder, FindIter, FindOverlappingIter,
+        MatchKind,
+    },
+    error::{Error, ErrorKind},
+    state_id::StateID,
 };
-pub use crate::error::{Error, ErrorKind};
-pub use crate::state_id::StateID;
 
+#[cfg(feature = "alloc")]
 mod ahocorasick;
+#[cfg(feature = "alloc")]
 mod automaton;
+#[cfg(feature = "std")]
 mod buffer;
+#[cfg(feature = "alloc")]
 mod byte_frequencies;
+#[cfg(feature = "alloc")]
 mod classes;
+#[cfg(feature = "alloc")]
 mod dfa;
+#[cfg(feature = "alloc")]
 mod error;
+#[cfg(feature = "alloc")]
 mod nfa;
+#[cfg(feature = "alloc")]
 pub mod packed;
+#[cfg(feature = "alloc")]
 mod prefilter;
+#[cfg(feature = "alloc")]
 mod state_id;
-#[cfg(test)]
+#[cfg(all(feature = "alloc", test))]
 mod tests;
 
 /// A representation of a match reported by an Aho-Corasick automaton.
@@ -288,6 +313,7 @@ impl Match {
     }
 
     #[inline]
+    #[cfg(feature = "std")]
     fn increment(&self, by: usize) -> Match {
         Match { pattern: self.pattern, len: self.len, end: self.end + by }
     }
