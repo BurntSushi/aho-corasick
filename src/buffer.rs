@@ -1,6 +1,8 @@
-use std::cmp;
+use core::{cmp, ptr};
+
+use alloc::{vec, vec::Vec};
+
 use std::io;
-use std::ptr;
 
 /// The default buffer capacity that we use for the stream buffer.
 const DEFAULT_BUFFER_CAPACITY: usize = 8 * (1 << 10); // 8 KB

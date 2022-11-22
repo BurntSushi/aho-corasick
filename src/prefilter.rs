@@ -1,13 +1,14 @@
-use std::cmp;
-use std::fmt;
-use std::panic::{RefUnwindSafe, UnwindSafe};
-use std::u8;
+use core::{
+    cmp, fmt,
+    panic::{RefUnwindSafe, UnwindSafe},
+    u8,
+};
+
+use alloc::{boxed::Box, vec, vec::Vec};
 
 use memchr::{memchr, memchr2, memchr3};
 
-use crate::ahocorasick::MatchKind;
-use crate::packed;
-use crate::Match;
+use crate::{ahocorasick::MatchKind, packed, Match};
 
 /// A candidate is the result of running a prefilter on a haystack at a
 /// particular position. The result is either no match, a confirmed match or
@@ -203,6 +204,7 @@ impl PrefilterState {
     }
 
     /// Create a prefilter state that always disables the prefilter.
+    #[cfg(feature = "std")]
     pub fn disabled() -> PrefilterState {
         PrefilterState {
             skips: 0,
@@ -1034,24 +1036,4 @@ pub fn opposite_ascii_case(b: u8) -> u8 {
 fn freq_rank(b: u8) -> u8 {
     use crate::byte_frequencies::BYTE_FREQUENCIES;
     BYTE_FREQUENCIES[b as usize]
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn scratch() {
-        let mut b = Builder::new(MatchKind::LeftmostFirst);
-        b.add(b"Sherlock");
-        b.add(b"locjaw");
-        // b.add(b"Sherlock");
-        // b.add(b"Holmes");
-        // b.add(b"Watson");
-        // b.add("Шерлок Холмс".as_bytes());
-        // b.add("Джон Уотсон".as_bytes());
-
-        let s = b.build().unwrap();
-        println!("{:?}", s);
-    }
 }

@@ -1,9 +1,11 @@
-use std::u16;
-
-use crate::packed::pattern::Patterns;
-use crate::packed::rabinkarp::RabinKarp;
-use crate::packed::teddy::{self, Teddy};
-use crate::Match;
+use crate::{
+    packed::{
+        pattern::Patterns,
+        rabinkarp::RabinKarp,
+        teddy::{self, Teddy},
+    },
+    Match,
+};
 
 /// This is a limit placed on the total number of patterns we're willing to try
 /// and match at once. As more sophisticated algorithms are added, this number
@@ -84,7 +86,7 @@ impl Default for MatchKind {
 ///     .collect();
 /// assert_eq!(vec![1], matches);
 /// # Some(()) }
-/// # if cfg!(target_arch = "x86_64") {
+/// # if cfg!(all(feature = "std", target_arch = "x86_64")) {
 /// #     example().unwrap()
 /// # } else {
 /// #     assert!(example().is_none());
@@ -216,7 +218,7 @@ impl Config {
 ///     .collect();
 /// assert_eq!(vec![0], matches);
 /// # Some(()) }
-/// # if cfg!(target_arch = "x86_64") {
+/// # if cfg!(all(feature = "std", target_arch = "x86_64")) {
 /// #     example().unwrap()
 /// # } else {
 /// #     assert!(example().is_none());
@@ -297,7 +299,7 @@ impl Builder {
             return self;
         }
         // Just in case PATTERN_LIMIT increases beyond u16::MAX.
-        assert!(self.patterns.len() <= u16::MAX as usize);
+        assert!(self.patterns.len() <= core::u16::MAX as usize);
 
         let pattern = pattern.as_ref();
         if pattern.is_empty() {
@@ -363,7 +365,7 @@ impl Default for Builder {
 ///     .collect();
 /// assert_eq!(vec![0], matches);
 /// # Some(()) }
-/// # if cfg!(target_arch = "x86_64") {
+/// # if cfg!(all(feature = "std", target_arch = "x86_64")) {
 /// #     example().unwrap()
 /// # } else {
 /// #     assert!(example().is_none());
@@ -406,7 +408,7 @@ impl Searcher {
     ///     .collect();
     /// assert_eq!(vec![0], matches);
     /// # Some(()) }
-    /// # if cfg!(target_arch = "x86_64") {
+    /// # if cfg!(all(feature = "std", target_arch = "x86_64")) {
     /// #     example().unwrap()
     /// # } else {
     /// #     assert!(example().is_none());
@@ -440,7 +442,7 @@ impl Searcher {
     /// assert_eq!(0, mat.start());
     /// assert_eq!(6, mat.end());
     /// # Some(()) }
-    /// # if cfg!(target_arch = "x86_64") {
+    /// # if cfg!(all(feature = "std", target_arch = "x86_64")) {
     /// #     example().unwrap()
     /// # } else {
     /// #     assert!(example().is_none());
@@ -473,7 +475,7 @@ impl Searcher {
     /// assert_eq!(3, mat.start());
     /// assert_eq!(9, mat.end());
     /// # Some(()) }
-    /// # if cfg!(target_arch = "x86_64") {
+    /// # if cfg!(all(feature = "std", target_arch = "x86_64")) {
     /// #     example().unwrap()
     /// # } else {
     /// #     assert!(example().is_none());
@@ -516,7 +518,7 @@ impl Searcher {
     ///     .collect();
     /// assert_eq!(vec![0, 1, 1, 1], matches);
     /// # Some(()) }
-    /// # if cfg!(target_arch = "x86_64") {
+    /// # if cfg!(all(feature = "std", target_arch = "x86_64")) {
     /// #     example().unwrap()
     /// # } else {
     /// #     assert!(example().is_none());
@@ -543,7 +545,7 @@ impl Searcher {
     /// // leftmost-first is the default.
     /// assert_eq!(&MatchKind::LeftmostFirst, searcher.match_kind());
     /// # Some(()) }
-    /// # if cfg!(target_arch = "x86_64") {
+    /// # if cfg!(all(feature = "std", target_arch = "x86_64")) {
     /// #     example().unwrap()
     /// # } else {
     /// #     assert!(example().is_none());

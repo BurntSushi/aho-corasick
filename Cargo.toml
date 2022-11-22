@@ -21,7 +21,8 @@ name = "aho_corasick"
 
 [features]
 default = ["std"]
-std = ["memchr/std"]
+std = ["alloc", "memchr/std"]
+alloc = []
 
 [dependencies]
 memchr = { version = "2.4.0", default-features = false }

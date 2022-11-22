@@ -1,6 +1,4 @@
-use std::error;
-use std::fmt;
-use std::result;
+use core::{fmt, result};
 
 pub type Result<T> = result::Result<T, Error>;
 
@@ -54,7 +52,8 @@ impl Error {
     }
 }
 
-impl error::Error for Error {
+#[cfg(feature = "std")]
+impl std::error::Error for Error {
     fn description(&self) -> &str {
         match self.kind {
             ErrorKind::StateIDOverflow { .. } => {
@@ -84,7 +83,7 @@ impl fmt::Display for Error {
                         "premultiplication of states requires the ability to \
                          represent a state ID greater than what can fit on \
                          this platform's usize, which is {}",
-                        ::std::usize::MAX,
+                        usize::MAX,
                     )
                 } else {
                     write!(

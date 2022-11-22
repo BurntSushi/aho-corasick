@@ -1,13 +1,17 @@
-use std::mem::size_of;
+use core::mem::size_of;
 
-use crate::ahocorasick::MatchKind;
-use crate::automaton::Automaton;
-use crate::classes::ByteClasses;
-use crate::error::Result;
-use crate::nfa::{PatternID, PatternLength, NFA};
-use crate::prefilter::{Prefilter, PrefilterObj, PrefilterState};
-use crate::state_id::{dead_id, fail_id, premultiply_overflow_error, StateID};
-use crate::Match;
+use alloc::{vec, vec::Vec};
+
+use crate::{
+    ahocorasick::MatchKind,
+    automaton::Automaton,
+    classes::ByteClasses,
+    error::Result,
+    nfa::{PatternID, PatternLength, NFA},
+    prefilter::{Prefilter, PrefilterObj, PrefilterState},
+    state_id::{dead_id, fail_id, premultiply_overflow_error, StateID},
+    Match,
+};
 
 #[derive(Clone, Debug)]
 pub enum DFA<S> {
@@ -43,6 +47,7 @@ impl<S: StateID> DFA<S> {
         self.repr().pattern_count
     }
 
+    #[cfg(feature = "std")]
     pub fn prefilter(&self) -> Option<&dyn Prefilter> {
         self.repr().prefilter.as_ref().map(|p| p.as_ref())
     }

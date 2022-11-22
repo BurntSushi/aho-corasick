@@ -1,8 +1,16 @@
 use std::collections::HashMap;
-use std::usize;
 
-use crate::packed::{Config, MatchKind};
-use crate::Match;
+use alloc::{
+    format,
+    string::{String, ToString},
+    vec,
+    vec::Vec,
+};
+
+use crate::{
+    packed::{Config, MatchKind},
+    Match,
+};
 
 /// A description of a single test against a multi-pattern searcher.
 ///
@@ -433,7 +441,7 @@ testconfig!(
     PACKED_LEFTMOST_FIRST,
     |c: &mut Config| {
         c.force_teddy(true);
-        if is_x86_feature_detected!("ssse3") {
+        if std::is_x86_feature_detected!("ssse3") {
             c.force_avx(Some(false));
         }
     }
@@ -445,7 +453,7 @@ testconfig!(
     PACKED_LEFTMOST_LONGEST,
     |c: &mut Config| {
         c.force_teddy(true).match_kind(MatchKind::LeftmostLongest);
-        if is_x86_feature_detected!("ssse3") {
+        if std::is_x86_feature_detected!("ssse3") {
             c.force_avx(Some(false));
         }
     }
@@ -457,7 +465,7 @@ testconfig!(
     PACKED_LEFTMOST_FIRST,
     |c: &mut Config| {
         c.force_teddy(true);
-        if is_x86_feature_detected!("avx2") {
+        if std::is_x86_feature_detected!("avx2") {
             c.force_avx(Some(true));
         }
     }
@@ -469,7 +477,7 @@ testconfig!(
     PACKED_LEFTMOST_LONGEST,
     |c: &mut Config| {
         c.force_teddy(true).match_kind(MatchKind::LeftmostLongest);
-        if is_x86_feature_detected!("avx2") {
+        if std::is_x86_feature_detected!("avx2") {
             c.force_avx(Some(true));
         }
     }
@@ -481,7 +489,7 @@ testconfig!(
     PACKED_LEFTMOST_FIRST,
     |c: &mut Config| {
         c.force_teddy(true);
-        if is_x86_feature_detected!("avx2") {
+        if std::is_x86_feature_detected!("avx2") {
             c.force_teddy_fat(Some(true));
         }
     }
@@ -493,7 +501,7 @@ testconfig!(
     PACKED_LEFTMOST_LONGEST,
     |c: &mut Config| {
         c.force_teddy(true).match_kind(MatchKind::LeftmostLongest);
-        if is_x86_feature_detected!("avx2") {
+        if std::is_x86_feature_detected!("avx2") {
             c.force_teddy_fat(Some(true));
         }
     }

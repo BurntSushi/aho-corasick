@@ -16,7 +16,7 @@
 // inside of TeddySlim3Mask256 can use any of the functions below without any
 // additional checks: its very existence *is* the check.
 
-use std::arch::x86_64::*;
+use core::arch::x86_64::*;
 
 /// Shift `a` to the left by two bytes (removing its two most significant
 /// bytes), and concatenate it with the the two most significant bytes of `b`.

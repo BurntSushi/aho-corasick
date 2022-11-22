@@ -1,16 +1,26 @@
-use std::cmp;
-use std::collections::{BTreeSet, VecDeque};
-use std::fmt;
-use std::mem::size_of;
-use std::ops::{Index, IndexMut};
+use core::{
+    cmp, fmt,
+    mem::size_of,
+    ops::{Index, IndexMut},
+};
 
-use crate::ahocorasick::MatchKind;
-use crate::automaton::Automaton;
-use crate::classes::{ByteClassBuilder, ByteClasses};
-use crate::error::Result;
-use crate::prefilter::{self, opposite_ascii_case, Prefilter, PrefilterObj};
-use crate::state_id::{dead_id, fail_id, usize_to_state_id, StateID};
-use crate::Match;
+use alloc::{
+    collections::{BTreeSet, VecDeque},
+    format,
+    string::String,
+    vec,
+    vec::Vec,
+};
+
+use crate::{
+    ahocorasick::MatchKind,
+    automaton::Automaton,
+    classes::{ByteClassBuilder, ByteClasses},
+    error::Result,
+    prefilter::{self, opposite_ascii_case, Prefilter, PrefilterObj},
+    state_id::{dead_id, fail_id, usize_to_state_id, StateID},
+    Match,
+};
 
 /// The identifier for a pattern, which is simply the position of the pattern
 /// in the sequence of patterns given by the caller.
@@ -1139,7 +1149,7 @@ impl<S: StateID> fmt::Debug for NFA<S> {
             let matches: Vec<String> = s
                 .matches
                 .iter()
-                .map(|&(pattern_id, _)| pattern_id.to_string())
+                .map(|&(pattern_id, _)| format!("{}", pattern_id))
                 .collect();
             writeln!(f, "  matches: {}", matches.join(", "))?;
             writeln!(f, "     fail: {}", s.fail.to_usize())?;
@@ -1184,31 +1194,7 @@ fn get_two_mut<T>(xs: &mut [T], i: usize, j: usize) -> (&mut T, &mut T) {
 
 /// Return the given byte as its escaped string form.
 fn escape(b: u8) -> String {
-    use std::ascii;
+    use core::ascii;
 
     String::from_utf8(ascii::escape_default(b).collect::<Vec<_>>()).unwrap()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn scratch() {
-        let nfa: NFA<usize> = Builder::new()
-            .dense_depth(0)
-            // .match_kind(MatchKind::LeftmostShortest)
-            // .match_kind(MatchKind::LeftmostLongest)
-            .match_kind(MatchKind::LeftmostFirst)
-            // .build(&["abcd", "ce", "b"])
-            // .build(&["ab", "bc"])
-            // .build(&["b", "bcd", "ce"])
-            // .build(&["abc", "bx"])
-            // .build(&["abc", "bd", "ab"])
-            // .build(&["abcdefghi", "hz", "abcdefgh"])
-            // .build(&["abcd", "bce", "b"])
-            .build(&["abcdefg", "bcde", "bcdef"])
-            .unwrap();
-        println!("{:?}", nfa);
-    }
 }
