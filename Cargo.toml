@@ -7,12 +7,10 @@ homepage = "https://github.com/BurntSushi/aho-corasick"
 repository = "https://github.com/BurntSushi/aho-corasick"
 readme = "README.md"
 keywords = ["string", "search", "text", "aho", "multi"]
-license = "Unlicense/MIT"
+license = "Unlicense OR MIT"
 categories = ["text-processing"]
 autotests = false
-exclude = [
-  "/aho-corasick-debug", "/ci/*", "/.travis.yml", "/appveyor.yml",
-]
+exclude = ["/aho-corasick-debug"]
 edition = "2018"
 
 [workspace]

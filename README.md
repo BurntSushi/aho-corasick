@@ -9,7 +9,7 @@ Features include case insensitive matching, overlapping matches, fast searching
 via SIMD and optional full DFA construction and search & replace in streams.
 
 [![Build status](https://github.com/BurntSushi/aho-corasick/workflows/ci/badge.svg)](https://github.com/BurntSushi/aho-corasick/actions)
-[![](https://meritbadge.herokuapp.com/aho-corasick)](https://crates.io/crates/aho-corasick)
+[![crates.io](https://img.shields.io/crates/v/aho-corasick.svg)](https://crates.io/crates/aho-corasick)
 
 Dual-licensed under MIT or the [UNLICENSE](https://unlicense.org/).
 
