@@ -65,7 +65,7 @@ pub struct NFA<S> {
     /// A set of equivalence classes in terms of bytes. We compute this while
     /// building the NFA, but don't use it in the NFA's states. Instead, we
     /// use this for building the DFA. We store it on the NFA since it's easy
-    /// to compute while visiting the the patterns.
+    /// to compute while visiting the patterns.
     byte_classes: ByteClasses,
     /// A set of states. Each state defines its own transitions, a fail
     /// transition and a set of indices corresponding to matches.
