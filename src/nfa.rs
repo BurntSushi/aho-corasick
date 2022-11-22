@@ -1013,7 +1013,7 @@ impl<'a, S: StateID> Compiler<'a, S> {
     fn calculate_size(&mut self) {
         let mut size = 0;
         for state in &self.nfa.states {
-            size += state.heap_bytes();
+            size += size_of::<State<S>>() + state.heap_bytes();
         }
         self.nfa.heap_bytes = size;
     }
