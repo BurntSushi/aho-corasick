@@ -172,16 +172,3 @@ supported version of Rust.
 
 * [G-Research/ahocorasick_rs](https://github.com/G-Research/ahocorasick_rs/)
 is a Python wrapper for this library.
-
-
-### Future work
-
-Here are some plans for the future:
-
-* Assuming the current API is sufficient, I'd like to commit to it and release
-  a `1.0` version of this crate some time in the next 6-12 months.
-* Support stream searching with leftmost match semantics. Currently, only
-  standard match semantics are supported. Getting this right seems possible,
-  but is tricky since the match state needs to be propagated through multiple
-  searches. (With standard semantics, as soon as a match is seen the search
-  ends.)
