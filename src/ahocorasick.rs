@@ -1795,9 +1795,12 @@ impl AhoCorasickBuilder {
     /// Enabling this option does not change the search algorithm, but it may
     /// increase the size of the automaton.
     ///
-    /// **NOTE:** In the future, support for full Unicode case insensitivity
-    /// may be added, but ASCII case insensitivity is comparatively much
-    /// simpler to add.
+    /// **NOTE:** It is unlikely that support for Unicode case folding will
+    /// be added in the future. The ASCII case works via a simple hack to the
+    /// underlying automaton, but full Unicode handling requires a fair bit of
+    /// sophistication. If you do need Unicode handling, you might consider
+    /// using the [`regex` crate](https://docs.rs/regex) or the lower level
+    /// [`regex-automata` crate](https://docs.rs/regex-automata).
     ///
     /// # Examples
     ///
