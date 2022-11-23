@@ -122,24 +122,18 @@ impl<S: StateID> DFA<S> {
     }
 
     #[inline(always)]
-    pub fn find_at_no_state(
+    pub fn find_at(
         &self,
         prestate: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
     ) -> Option<Match> {
         match *self {
-            DFA::Standard(ref dfa) => {
-                dfa.find_at_no_state(prestate, haystack, at)
-            }
-            DFA::ByteClass(ref dfa) => {
-                dfa.find_at_no_state(prestate, haystack, at)
-            }
-            DFA::Premultiplied(ref dfa) => {
-                dfa.find_at_no_state(prestate, haystack, at)
-            }
+            DFA::Standard(ref dfa) => dfa.find_at(prestate, haystack, at),
+            DFA::ByteClass(ref dfa) => dfa.find_at(prestate, haystack, at),
+            DFA::Premultiplied(ref dfa) => dfa.find_at(prestate, haystack, at),
             DFA::PremultipliedByteClass(ref dfa) => {
-                dfa.find_at_no_state(prestate, haystack, at)
+                dfa.find_at(prestate, haystack, at)
             }
         }
     }

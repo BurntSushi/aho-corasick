@@ -283,7 +283,7 @@ impl<S: StateID> AhoCorasick<S> {
     /// ```
     pub fn find<B: AsRef<[u8]>>(&self, haystack: B) -> Option<Match> {
         let mut prestate = PrefilterState::new(self.max_pattern_len());
-        self.imp.find_at_no_state(&mut prestate, haystack.as_ref(), 0)
+        self.imp.find_at(&mut prestate, haystack.as_ref(), 0)
     }
 
     /// Returns an iterator of non-overlapping matches, using the match
@@ -1133,15 +1133,15 @@ impl<S: StateID> Imp<S> {
     }
 
     #[inline(always)]
-    fn find_at_no_state(
+    fn find_at(
         &self,
         prestate: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
     ) -> Option<Match> {
         match *self {
-            Imp::NFA(ref nfa) => nfa.find_at_no_state(prestate, haystack, at),
-            Imp::DFA(ref dfa) => dfa.find_at_no_state(prestate, haystack, at),
+            Imp::NFA(ref nfa) => nfa.find_at(prestate, haystack, at),
+            Imp::DFA(ref dfa) => dfa.find_at(prestate, haystack, at),
         }
     }
 }
@@ -1184,11 +1184,8 @@ impl<'a, 'b, S: StateID> Iterator for FindIter<'a, 'b, S> {
         if self.pos > self.haystack.len() {
             return None;
         }
-        let result = self.fsm.find_at_no_state(
-            &mut self.prestate,
-            self.haystack,
-            self.pos,
-        );
+        let result =
+            self.fsm.find_at(&mut self.prestate, self.haystack, self.pos);
         let mat = match result {
             None => return None,
             Some(mat) => mat,

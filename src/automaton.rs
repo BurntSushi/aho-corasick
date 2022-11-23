@@ -258,100 +258,6 @@ pub trait Automaton {
         None
     }
 
-    /// Execute a search using leftmost (either first or longest) match
-    /// semantics.
-    ///
-    /// The principle difference between searching with standard semantics and
-    /// searching with leftmost semantics is that leftmost searching will
-    /// continue searching even after a match has been found. Once a match
-    /// is found, the search does not stop until either the haystack has been
-    /// exhausted or a dead state is observed in the automaton. (Dead states
-    /// only exist in automatons constructed with leftmost semantics.) That is,
-    /// we rely on the construction of the automaton to tell us when to quit.
-    #[inline(never)]
-    fn leftmost_find_at(
-        &self,
-        prestate: &mut PrefilterState,
-        haystack: &[u8],
-        at: usize,
-        state_id: &mut Self::ID,
-    ) -> Option<Match> {
-        if let Some(pre) = self.prefilter() {
-            self.leftmost_find_at_imp(
-                prestate,
-                Some(pre),
-                haystack,
-                at,
-                state_id,
-            )
-        } else {
-            self.leftmost_find_at_imp(prestate, None, haystack, at, state_id)
-        }
-    }
-
-    // It's important for this to always be inlined. Namely, its only caller
-    // is leftmost_find_at, and the inlining should remove the case analysis
-    // for prefilter scanning when there is no prefilter available.
-    #[inline(always)]
-    fn leftmost_find_at_imp(
-        &self,
-        prestate: &mut PrefilterState,
-        prefilter: Option<&dyn Prefilter>,
-        haystack: &[u8],
-        mut at: usize,
-        state_id: &mut Self::ID,
-    ) -> Option<Match> {
-        debug_assert!(self.match_kind().is_leftmost());
-        if self.anchored() && at > 0 && *state_id == self.start_state() {
-            return None;
-        }
-        let mut last_match = self.get_match(*state_id, 0, at);
-        while at < haystack.len() {
-            if let Some(pre) = prefilter {
-                if prestate.is_effective(at) && *state_id == self.start_state()
-                {
-                    let c = prefilter::next(prestate, pre, haystack, at)
-                        .into_option();
-                    match c {
-                        None => return None,
-                        Some(i) => {
-                            at = i;
-                        }
-                    }
-                }
-            }
-            // CORRECTNESS: next_state is correct for all possible u8 values,
-            // so the only thing we're concerned about is the validity of
-            // `state_id`. `state_id` either comes from the caller (in which
-            // case, we assume it is correct), or it comes from the return
-            // value of next_state, which is guaranteed to be correct.
-            *state_id = self.next_state_no_fail(*state_id, haystack[at]);
-            at += 1;
-            if self.is_match_or_dead_state(*state_id) {
-                if *state_id == dead_id() {
-                    // The only way to enter into a dead state is if a match
-                    // has been found, so we assert as much. This is different
-                    // from normal automata, where you might enter a dead state
-                    // if you know a subsequent match will never be found
-                    // (regardless of whether a match has already been found).
-                    // For Aho-Corasick, it is built so that we can match at
-                    // any position, so the possibility of a match always
-                    // exists.
-                    //
-                    // (Unless we have an anchored automaton, in which case,
-                    // dead states are used to stop a search.)
-                    debug_assert!(
-                        last_match.is_some() || self.anchored(),
-                        "dead state should only be seen after match"
-                    );
-                    return last_match;
-                }
-                last_match = self.get_match(*state_id, 0, at);
-            }
-        }
-        last_match
-    }
-
     /// This is like leftmost_find_at, but does not need to track a caller
     /// provided state id. In other words, the only output of this routine is a
     /// match, if one exists.
@@ -370,29 +276,24 @@ pub trait Automaton {
     /// optimized as well as this approach. (In microbenchmarks, there was
     /// about a 25% difference.)
     #[inline(never)]
-    fn leftmost_find_at_no_state(
+    fn leftmost_find_at(
         &self,
         prestate: &mut PrefilterState,
         haystack: &[u8],
         at: usize,
     ) -> Option<Match> {
         if let Some(pre) = self.prefilter() {
-            self.leftmost_find_at_no_state_imp(
-                prestate,
-                Some(pre),
-                haystack,
-                at,
-            )
+            self.leftmost_find_at_imp(prestate, Some(pre), haystack, at)
         } else {
-            self.leftmost_find_at_no_state_imp(prestate, None, haystack, at)
+            self.leftmost_find_at_imp(prestate, None, haystack, at)
         }
     }
 
-    // It's important for this to always be inlined. Namely, its only caller
-    // is leftmost_find_at_no_state, and the inlining should remove the case
-    // analysis for prefilter scanning when there is no prefilter available.
+    // It's important for this to always be inlined. Namely, its only caller is
+    // leftmost_find_at, and the inlining should remove the case analysis for
+    // prefilter scanning when there is no prefilter available.
     #[inline(always)]
-    fn leftmost_find_at_no_state_imp(
+    fn leftmost_find_at_imp(
         &self,
         prestate: &mut PrefilterState,
         prefilter: Option<&dyn Prefilter>,
@@ -529,33 +430,11 @@ pub trait Automaton {
         self.standard_find_at(prestate, haystack, at, state_id)
     }
 
-    /// A convenience function for finding the next match according to the
-    /// match semantics of this automaton. For standard match semantics, this
-    /// finds the earliest match. Otherwise, the leftmost match is found.
-    #[inline(always)]
-    fn find_at(
-        &self,
-        prestate: &mut PrefilterState,
-        haystack: &[u8],
-        at: usize,
-        state_id: &mut Self::ID,
-    ) -> Option<Match> {
-        match *self.match_kind() {
-            MatchKind::Standard => {
-                self.earliest_find_at(prestate, haystack, at, state_id)
-            }
-            MatchKind::LeftmostFirst | MatchKind::LeftmostLongest => {
-                self.leftmost_find_at(prestate, haystack, at, state_id)
-            }
-            MatchKind::__Nonexhaustive => unreachable!(),
-        }
-    }
-
     /// Like find_at, but does not track state identifiers. This permits some
     /// optimizations when a prefilter that confirms its own matches is
     /// present.
     #[inline(always)]
-    fn find_at_no_state(
+    fn find_at(
         &self,
         prestate: &mut PrefilterState,
         haystack: &[u8],
@@ -567,7 +446,7 @@ pub trait Automaton {
                 self.earliest_find_at(prestate, haystack, at, &mut state)
             }
             MatchKind::LeftmostFirst | MatchKind::LeftmostLongest => {
-                self.leftmost_find_at_no_state(prestate, haystack, at)
+                self.leftmost_find_at(prestate, haystack, at)
             }
             MatchKind::__Nonexhaustive => unreachable!(),
         }
