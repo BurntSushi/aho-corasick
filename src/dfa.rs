@@ -15,8 +15,6 @@ use crate::{
 
 #[derive(Clone, Debug)]
 pub enum DFA<S> {
-    Standard(Standard<S>),
-    ByteClass(ByteClass<S>),
     Premultiplied(Premultiplied<S>),
     PremultipliedByteClass(PremultipliedByteClass<S>),
 }
@@ -24,8 +22,6 @@ pub enum DFA<S> {
 impl<S: StateID> DFA<S> {
     fn repr(&self) -> &Repr<S> {
         match *self {
-            DFA::Standard(ref dfa) => dfa.repr(),
-            DFA::ByteClass(ref dfa) => dfa.repr(),
             DFA::Premultiplied(ref dfa) => dfa.repr(),
             DFA::PremultipliedByteClass(ref dfa) => dfa.repr(),
         }
@@ -66,20 +62,6 @@ impl<S: StateID> DFA<S> {
         match_index: &mut usize,
     ) -> Option<Match> {
         match *self {
-            DFA::Standard(ref dfa) => dfa.overlapping_find_at(
-                prestate,
-                haystack,
-                at,
-                state_id,
-                match_index,
-            ),
-            DFA::ByteClass(ref dfa) => dfa.overlapping_find_at(
-                prestate,
-                haystack,
-                at,
-                state_id,
-                match_index,
-            ),
             DFA::Premultiplied(ref dfa) => dfa.overlapping_find_at(
                 prestate,
                 haystack,
@@ -106,12 +88,6 @@ impl<S: StateID> DFA<S> {
         state_id: &mut S,
     ) -> Option<Match> {
         match *self {
-            DFA::Standard(ref dfa) => {
-                dfa.earliest_find_at(prestate, haystack, at, state_id)
-            }
-            DFA::ByteClass(ref dfa) => {
-                dfa.earliest_find_at(prestate, haystack, at, state_id)
-            }
             DFA::Premultiplied(ref dfa) => {
                 dfa.earliest_find_at(prestate, haystack, at, state_id)
             }
@@ -129,133 +105,11 @@ impl<S: StateID> DFA<S> {
         at: usize,
     ) -> Option<Match> {
         match *self {
-            DFA::Standard(ref dfa) => dfa.find_at(prestate, haystack, at),
-            DFA::ByteClass(ref dfa) => dfa.find_at(prestate, haystack, at),
             DFA::Premultiplied(ref dfa) => dfa.find_at(prestate, haystack, at),
             DFA::PremultipliedByteClass(ref dfa) => {
                 dfa.find_at(prestate, haystack, at)
             }
         }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct Standard<S>(Repr<S>);
-
-impl<S: StateID> Standard<S> {
-    fn repr(&self) -> &Repr<S> {
-        &self.0
-    }
-}
-
-impl<S: StateID> Automaton for Standard<S> {
-    type ID = S;
-
-    fn match_kind(&self) -> &MatchKind {
-        &self.repr().match_kind
-    }
-
-    fn anchored(&self) -> bool {
-        self.repr().anchored
-    }
-
-    fn prefilter(&self) -> Option<&dyn Prefilter> {
-        self.repr().prefilter.as_ref().map(|p| p.as_ref())
-    }
-
-    fn start_state(&self) -> S {
-        self.repr().start_id
-    }
-
-    fn is_valid(&self, id: S) -> bool {
-        id.to_usize() < self.repr().state_count
-    }
-
-    fn is_match_state(&self, id: S) -> bool {
-        self.repr().is_match_state(id)
-    }
-
-    fn is_match_or_dead_state(&self, id: S) -> bool {
-        self.repr().is_match_or_dead_state(id)
-    }
-
-    fn get_match(
-        &self,
-        id: S,
-        match_index: usize,
-        end: usize,
-    ) -> Option<Match> {
-        self.repr().get_match(id, match_index, end)
-    }
-
-    fn match_count(&self, id: S) -> usize {
-        self.repr().match_count(id)
-    }
-
-    fn next_state(&self, current: S, input: u8) -> S {
-        let o = current.to_usize() * 256 + input as usize;
-        self.repr().trans[o]
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct ByteClass<S>(Repr<S>);
-
-impl<S: StateID> ByteClass<S> {
-    fn repr(&self) -> &Repr<S> {
-        &self.0
-    }
-}
-
-impl<S: StateID> Automaton for ByteClass<S> {
-    type ID = S;
-
-    fn match_kind(&self) -> &MatchKind {
-        &self.repr().match_kind
-    }
-
-    fn anchored(&self) -> bool {
-        self.repr().anchored
-    }
-
-    fn prefilter(&self) -> Option<&dyn Prefilter> {
-        self.repr().prefilter.as_ref().map(|p| p.as_ref())
-    }
-
-    fn start_state(&self) -> S {
-        self.repr().start_id
-    }
-
-    fn is_valid(&self, id: S) -> bool {
-        id.to_usize() < self.repr().state_count
-    }
-
-    fn is_match_state(&self, id: S) -> bool {
-        self.repr().is_match_state(id)
-    }
-
-    fn is_match_or_dead_state(&self, id: S) -> bool {
-        self.repr().is_match_or_dead_state(id)
-    }
-
-    fn get_match(
-        &self,
-        id: S,
-        match_index: usize,
-        end: usize,
-    ) -> Option<Match> {
-        self.repr().get_match(id, match_index, end)
-    }
-
-    fn match_count(&self, id: S) -> usize {
-        self.repr().match_count(id)
-    }
-
-    fn next_state(&self, current: S, input: u8) -> S {
-        let alphabet_len = self.repr().byte_classes.alphabet_len();
-        let input = self.repr().byte_classes.get(input);
-        let o = current.to_usize() * alphabet_len + input as usize;
-        self.repr().trans[o]
     }
 }
 
@@ -305,19 +159,11 @@ impl<S: StateID> Automaton for Premultiplied<S> {
         match_index: usize,
         end: usize,
     ) -> Option<Match> {
-        if id > self.repr().max_match {
-            return None;
-        }
-        self.repr()
-            .matches
-            .get(id.to_usize() / 256)
-            .and_then(|m| m.get(match_index))
-            .map(|&(id, len)| Match { pattern: id, len, end })
+        self.repr().get_match(id, match_index, end)
     }
 
     fn match_count(&self, id: S) -> usize {
-        let o = id.to_usize() / 256;
-        self.repr().matches[o].len()
+        self.repr().match_count(id)
     }
 
     fn next_state(&self, current: S, input: u8) -> S {
@@ -372,19 +218,11 @@ impl<S: StateID> Automaton for PremultipliedByteClass<S> {
         match_index: usize,
         end: usize,
     ) -> Option<Match> {
-        if id > self.repr().max_match {
-            return None;
-        }
-        self.repr()
-            .matches
-            .get(id.to_usize() / self.repr().alphabet_len())
-            .and_then(|m| m.get(match_index))
-            .map(|&(id, len)| Match { pattern: id, len, end })
+        self.repr().get_match(id, match_index, end)
     }
 
     fn match_count(&self, id: S) -> usize {
-        let o = id.to_usize() / self.repr().alphabet_len();
-        self.repr().matches[o].len()
+        self.repr().match_count(id)
     }
 
     fn next_state(&self, current: S, input: u8) -> S {
@@ -456,7 +294,7 @@ impl<S: StateID> Repr<S> {
             return None;
         }
         self.matches
-            .get(id.to_usize())
+            .get(id.to_usize() / self.alphabet_len())
             .and_then(|m| m.get(match_index))
             .map(|&(id, len)| Match { pattern: id, len, end })
     }
@@ -468,7 +306,8 @@ impl<S: StateID> Repr<S> {
     /// The caller must ensure that the given identifier is valid, or else
     /// this panics.
     fn match_count(&self, id: S) -> usize {
-        self.matches[id.to_usize()].len()
+        // self.matches[id.to_usize()].len()
+        self.matches[id.to_usize() / self.alphabet_len()].len()
     }
 
     /// Get the next state given `from` as the current state and `byte` as the
@@ -604,14 +443,13 @@ impl<S: StateID> Repr<S> {
 /// A builder for configuring the determinization of an NFA into a DFA.
 #[derive(Clone, Debug)]
 pub struct Builder {
-    premultiply: bool,
     byte_classes: bool,
 }
 
 impl Builder {
     /// Create a new builder for a DFA.
     pub fn new() -> Builder {
-        Builder { premultiply: true, byte_classes: true }
+        Builder { byte_classes: true }
     }
 
     /// Build a DFA from the given NFA.
@@ -656,31 +494,17 @@ impl Builder {
         }
         repr.shuffle_match_states();
         repr.calculate_size();
-        if self.premultiply {
-            repr.premultiply()?;
-            if byte_classes.is_singleton() {
-                Ok(DFA::Premultiplied(Premultiplied(repr)))
-            } else {
-                Ok(DFA::PremultipliedByteClass(PremultipliedByteClass(repr)))
-            }
+        repr.premultiply()?;
+        if byte_classes.is_singleton() {
+            Ok(DFA::Premultiplied(Premultiplied(repr)))
         } else {
-            if byte_classes.is_singleton() {
-                Ok(DFA::Standard(Standard(repr)))
-            } else {
-                Ok(DFA::ByteClass(ByteClass(repr)))
-            }
+            Ok(DFA::PremultipliedByteClass(PremultipliedByteClass(repr)))
         }
     }
 
     /// Whether to use byte classes or in the DFA.
     pub fn byte_classes(&mut self, yes: bool) -> &mut Builder {
         self.byte_classes = yes;
-        self
-    }
-
-    /// Whether to premultiply state identifier in the DFA.
-    pub fn premultiply(&mut self, yes: bool) -> &mut Builder {
-        self.premultiply = yes;
         self
     }
 }

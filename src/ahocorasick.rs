@@ -1931,38 +1931,6 @@ impl AhoCorasickBuilder {
         self.dfa_builder.byte_classes(yes);
         self
     }
-
-    /// Premultiply state identifiers in the transition table. This only has
-    /// an effect when the `dfa` option is enabled.
-    ///
-    /// When enabled, state identifiers are premultiplied to point to their
-    /// corresponding row in the transition table. That is, given the `i`th
-    /// state, its corresponding premultiplied identifier is `i * k` where `k`
-    /// is the alphabet size of the automaton. (The alphabet size is at most
-    /// 256, but is in practice smaller if byte classes is enabled.)
-    ///
-    /// When state identifiers are not premultiplied, then the identifier of
-    /// the `i`th state is `i`.
-    ///
-    /// The advantage of premultiplying state identifiers is that is saves a
-    /// multiplication instruction per byte when searching with a DFA. This has
-    /// been observed to lead to a 20% performance benefit in micro-benchmarks.
-    ///
-    /// The primary disadvantage of premultiplying state identifiers is
-    /// that they require a larger integer size to represent. For example,
-    /// if the DFA has 200 states, then its premultiplied form requires 16
-    /// bits to represent every possible state identifier, where as its
-    /// non-premultiplied form only requires 8 bits.
-    ///
-    /// This option is enabled by default.
-    #[deprecated(
-        since = "0.7.16",
-        note = "not carrying its weight, will be always enabled, see: https://github.com/BurntSushi/aho-corasick/issues/57"
-    )]
-    pub fn premultiply(&mut self, yes: bool) -> &mut AhoCorasickBuilder {
-        self.dfa_builder.premultiply(yes);
-        self
-    }
 }
 
 /// A knob for controlling the match semantics of an Aho-Corasick automaton.
