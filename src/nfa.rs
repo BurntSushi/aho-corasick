@@ -439,7 +439,7 @@ impl<S: StateID> Transitions<S> {
                 }
             }
             Transitions::Dense(ref dense) => {
-                for b in AllBytesIter::new() {
+                for b in 0..=255 {
                     let id = dense[b];
                     if id != fail_id() {
                         f(b, id);
@@ -458,7 +458,7 @@ impl<S: StateID> Transitions<S> {
                     sparse_iter(sparse, f);
                 }
                 Transitions::Dense(ref dense) => {
-                    for b in AllBytesIter::new() {
+                    for b in 0..=255 {
                         f(b, dense[b]);
                     }
                 }
@@ -974,7 +974,7 @@ impl<'a, S: StateID> Compiler<'a, S> {
     fn add_start_state_loop(&mut self) {
         let start_id = self.nfa.start_id;
         let start = self.nfa.start_mut();
-        for b in AllBytesIter::new() {
+        for b in 0..=255 {
             if start.next_state(b) == fail_id() {
                 start.set_next_state(b, start_id);
             }
@@ -1001,7 +1001,7 @@ impl<'a, S: StateID> Compiler<'a, S> {
         {
             let start_id = self.nfa.start_id;
             let start = self.nfa.start_mut();
-            for b in AllBytesIter::new() {
+            for b in 0..=255 {
                 if start.next_state(b) == start_id {
                     start.set_next_state(b, dead_id());
                 }
@@ -1014,7 +1014,7 @@ impl<'a, S: StateID> Compiler<'a, S> {
     /// point of the dead state is to act as a sink that can never be escaped.
     fn add_dead_state_loop(&mut self) {
         let dead = self.nfa.state_mut(dead_id());
-        for b in AllBytesIter::new() {
+        for b in 0..=255 {
             dead.set_next_state(b, dead_id());
         }
     }
@@ -1085,37 +1085,6 @@ impl<S: StateID> QueuedSet<S> {
         match self.set {
             None => false,
             Some(ref set) => set.contains(&state_id),
-        }
-    }
-}
-
-/// An iterator over every byte value.
-///
-/// We use this instead of (0..256).map(|b| b as u8) because this optimizes
-/// better in debug builds.
-///
-/// We also use this instead of 0..=255 because we're targeting Rust 1.24 and
-/// inclusive range syntax was stabilized in Rust 1.26. We can get rid of this
-/// once our MSRV is Rust 1.26 or newer.
-#[derive(Debug)]
-struct AllBytesIter(u16);
-
-impl AllBytesIter {
-    fn new() -> AllBytesIter {
-        AllBytesIter(0)
-    }
-}
-
-impl Iterator for AllBytesIter {
-    type Item = u8;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.0 >= 256 {
-            None
-        } else {
-            let b = self.0 as u8;
-            self.0 += 1;
-            Some(b)
         }
     }
 }
