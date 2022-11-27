@@ -98,51 +98,10 @@ fn define_aho_corasick_dfa<B, F>(
 
     let counter = find_count.clone();
     let haystack = corpus.to_vec();
-    let name = format!("dfa/byteclass-premultiply/{}", bench_name);
+    let name = format!("dfa/{}", bench_name);
     let aut = AhoCorasickBuilder::new()
         .match_kind(kind)
         .dfa(true)
-        .byte_classes(true)
-        .premultiply(true)
-        .build(patterns.clone());
-    define(c, group_name, &name, corpus, move |b| {
-        b.iter(|| assert_eq!(count, counter(&aut, &haystack)))
-    });
-
-    let counter = find_count.clone();
-    let haystack = corpus.to_vec();
-    let name = format!("dfa/nobyteclass-premultiply/{}", bench_name);
-    let aut = AhoCorasickBuilder::new()
-        .match_kind(kind)
-        .dfa(true)
-        .byte_classes(false)
-        .premultiply(true)
-        .build(patterns.clone());
-    define(c, group_name, &name, corpus, move |b| {
-        b.iter(|| assert_eq!(count, counter(&aut, &haystack)))
-    });
-
-    let counter = find_count.clone();
-    let haystack = corpus.to_vec();
-    let name = format!("dfa/byteclass-nopremultiply/{}", bench_name);
-    let aut = AhoCorasickBuilder::new()
-        .match_kind(kind)
-        .dfa(true)
-        .byte_classes(true)
-        .premultiply(false)
-        .build(patterns.clone());
-    define(c, group_name, &name, corpus, move |b| {
-        b.iter(|| assert_eq!(count, counter(&aut, &haystack)))
-    });
-
-    let counter = find_count.clone();
-    let haystack = corpus.to_vec();
-    let name = format!("dfa/nobyteclass-nopremultiply/{}", bench_name);
-    let aut = AhoCorasickBuilder::new()
-        .match_kind(kind)
-        .dfa(true)
-        .byte_classes(false)
-        .premultiply(false)
         .build(patterns.clone());
     define(c, group_name, &name, corpus, move |b| {
         b.iter(|| assert_eq!(count, counter(&aut, &haystack)))
