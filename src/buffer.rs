@@ -1,11 +1,11 @@
-use core::{cmp, ptr};
+use core::cmp;
 
 use alloc::{vec, vec::Vec};
 
 use std::io;
 
 /// The default buffer capacity that we use for the stream buffer.
-const DEFAULT_BUFFER_CAPACITY: usize = 8 * (1 << 10); // 8 KB
+const DEFAULT_BUFFER_CAPACITY: usize = 64 * (1 << 10); // 64 KB
 
 /// A fairly simple roll buffer for supporting stream searches.
 ///
@@ -114,21 +114,10 @@ impl Buffer {
             .end
             .checked_sub(self.min)
             .expect("buffer capacity should be bigger than minimum amount");
-        let roll_len = self.min;
+        let roll_end = roll_start + self.min;
 
-        assert!(roll_start + roll_len <= self.end);
-        unsafe {
-            // SAFETY: A buffer contains Copy data, so there's no problem
-            // moving it around. Safety also depends on our indices being in
-            // bounds, which they always should be, given the assert above.
-            //
-            // TODO: Switch to [T]::copy_within once our MSRV is high enough.
-            ptr::copy(
-                self.buf[roll_start..].as_ptr(),
-                self.buf.as_mut_ptr(),
-                roll_len,
-            );
-        }
-        self.end = roll_len;
+        assert!(roll_end <= self.end);
+        self.buf.copy_within(roll_start..roll_end, 0);
+        self.end = self.min;
     }
 }

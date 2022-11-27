@@ -1149,9 +1149,9 @@ fn regression_stream_rare_byte_prefilter() {
     const MAGIC: [u8; 5] = *b"1234j";
 
     // NOTE: The test fails for value in 8188..=8191 These value put the string
-    // to search accross two call to read because the buffer size is 8192 by
+    // to search accross two call to read because the buffer size is 64KB by
     // default.
-    const BEGIN: usize = 8191;
+    const BEGIN: usize = 65_535;
 
     /// This is just a structure that implements Reader. The reader
     /// implementation will simulate a file filled with 0, except for the MAGIC
@@ -1163,7 +1163,6 @@ fn regression_stream_rare_byte_prefilter() {
 
     impl Read for R {
         fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-            //dbg!(buf.len());
             if self.read > 100000 {
                 return Ok(0);
             }
@@ -1202,7 +1201,7 @@ fn regression_stream_rare_byte_prefilter() {
         R::default().read_to_end(&mut buf)?;
         let from_whole = aut.find_iter(&buf).next().unwrap().start();
 
-        //But using stream_find_iter fails!
+        // But using stream_find_iter fails!
         let mut file = R::default();
         let begin = aut
             .stream_find_iter(&mut file)
