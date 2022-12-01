@@ -197,27 +197,25 @@ impl<S: StateID> NFA<S> {
         self.copy_matches(start_id, dst);
     }
 
-    fn add_dense_state(&mut self, depth: usize) -> Result<S> {
+    fn add_dense_state(&mut self) -> Result<S> {
         let trans = Transitions::Dense(Dense::new());
         let id = usize_to_state_id(self.states.len())?;
         self.states.push(State {
             trans,
             // Anchored automatons do not have any failure transitions.
             fail: if self.anchored { dead_id() } else { self.start_id },
-            depth,
             matches: vec![],
         });
         Ok(id)
     }
 
-    fn add_sparse_state(&mut self, depth: usize) -> Result<S> {
+    fn add_sparse_state(&mut self) -> Result<S> {
         let trans = Transitions::Sparse(vec![]);
         let id = usize_to_state_id(self.states.len())?;
         self.states.push(State {
             trans,
             // Anchored automatons do not have any failure transitions.
             fail: if self.anchored { dead_id() } else { self.start_id },
-            depth,
             matches: vec![],
         });
         Ok(id)
@@ -301,12 +299,6 @@ pub struct State<S> {
     trans: Transitions<S>,
     fail: S,
     matches: Vec<(PatternID, PatternLength)>,
-    // TODO: Strictly speaking, this isn't needed for searching. It's only
-    // used when building an NFA that supports leftmost match semantics. We
-    // could drop this from the state and dynamically build a map only when
-    // computing failure transitions, but it's not clear which is better.
-    // Benchmark this.
-    depth: usize,
 }
 
 impl<S: StateID> State<S> {
@@ -1035,9 +1027,9 @@ impl<'a, S: StateID> Compiler<'a, S> {
     /// representation, then this returns an error.
     fn add_state(&mut self, depth: usize) -> Result<S> {
         if depth < self.builder.dense_depth {
-            self.nfa.add_dense_state(depth)
+            self.nfa.add_dense_state()
         } else {
-            self.nfa.add_sparse_state(depth)
+            self.nfa.add_sparse_state()
         }
     }
 
@@ -1122,7 +1114,6 @@ impl<S: StateID> fmt::Debug for NFA<S> {
                 .collect();
             writeln!(f, "  matches: {}", matches.join(", "))?;
             writeln!(f, "     fail: {}", s.fail.to_usize())?;
-            writeln!(f, "    depth: {}", s.depth)?;
         }
         writeln!(f, "{}", "-".repeat(79))?;
         writeln!(f, ")")?;
