@@ -25,7 +25,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-aho-corasick = "0.7"
+aho-corasick = "1"
 ```
 
 
@@ -36,46 +36,47 @@ simultaneously. Each match includes the pattern that matched along with the
 byte offsets of the match.
 
 ```rust
-use aho_corasick::AhoCorasick;
+use aho_corasick::{AhoCorasick, PatternID};
 
 let patterns = &["apple", "maple", "Snapple"];
 let haystack = "Nobody likes maple in their apple flavored Snapple.";
 
-let ac = AhoCorasick::new(patterns);
+let ac = AhoCorasick::new(patterns).unwrap();
 let mut matches = vec![];
 for mat in ac.find_iter(haystack) {
     matches.push((mat.pattern(), mat.start(), mat.end()));
 }
 assert_eq!(matches, vec![
-    (1, 13, 18),
-    (0, 28, 33),
-    (2, 43, 50),
+    (PatternID::must(1), 13, 18),
+    (PatternID::must(0), 28, 33),
+    (PatternID::must(2), 43, 50),
 ]);
 ```
 
 
-### Example: case insensitivity
+### Example: ASCII case insensitivity
 
 This is like the previous example, but matches `Snapple` case insensitively
 using `AhoCorasickBuilder`:
 
 ```rust
-use aho_corasick::AhoCorasickBuilder;
+use aho_corasick::{AhoCorasick, PatternID};
 
 let patterns = &["apple", "maple", "snapple"];
 let haystack = "Nobody likes maple in their apple flavored Snapple.";
 
-let ac = AhoCorasickBuilder::new()
+let ac = AhoCorasick::builder()
     .ascii_case_insensitive(true)
-    .build(patterns);
+    .build(patterns)
+    .unwrap();
 let mut matches = vec![];
 for mat in ac.find_iter(haystack) {
     matches.push((mat.pattern(), mat.start(), mat.end()));
 }
 assert_eq!(matches, vec![
-    (1, 13, 18),
-    (0, 28, 33),
-    (2, 43, 50),
+    (PatternID::must(1), 13, 18),
+    (PatternID::must(0), 28, 33),
+    (PatternID::must(2), 43, 50),
 ]);
 ```
 
@@ -96,7 +97,7 @@ let replace_with = &["sloth", "grey", "slow"];
 let rdr = "The quick brown fox.";
 let mut wtr = vec![];
 
-let ac = AhoCorasick::new(patterns);
+let ac = AhoCorasick::new(patterns).unwrap();
 ac.stream_replace_all(rdr.as_bytes(), &mut wtr, replace_with)
     .expect("stream_replace_all failed");
 assert_eq!(b"The slow grey sloth.".to_vec(), wtr);
@@ -128,7 +129,7 @@ use aho_corasick::AhoCorasick;
 let patterns = &["Samwise", "Sam"];
 let haystack = "Samwise";
 
-let ac = AhoCorasick::new(patterns);
+let ac = AhoCorasick::new(patterns).unwrap();
 let mat = ac.find(haystack).expect("should have a match");
 assert_eq!("Sam", &haystack[mat.start()..mat.end()]);
 ```
@@ -137,14 +138,15 @@ And now here's the leftmost-first version, which matches how a Perl-like
 regex will work:
 
 ```rust
-use aho_corasick::{AhoCorasickBuilder, MatchKind};
+use aho_corasick::{AhoCorasick, MatchKind};
 
 let patterns = &["Samwise", "Sam"];
 let haystack = "Samwise";
 
-let ac = AhoCorasickBuilder::new()
+let ac = AhoCorasick::builder()
     .match_kind(MatchKind::LeftmostFirst)
-    .build(patterns);
+    .build(patterns)
+    .unwrap();
 let mat = ac.find(haystack).expect("should have a match");
 assert_eq!("Samwise", &haystack[mat.start()..mat.end()]);
 ```

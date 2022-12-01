@@ -1,4 +1,4 @@
-use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
+use aho_corasick::{AhoCorasick, AhoCorasickKind};
 use criterion::{black_box, Criterion};
 
 use crate::input::{words_15000, words_5000};
@@ -39,14 +39,54 @@ fn define_build<B: AsRef<[u8]>>(
         patterns.into_iter().map(|b| b.as_ref().to_vec()).collect();
 
     let pats = patterns.clone();
-    let name = format!("nfa/{}", bench_name);
+    let name = format!("nfa/noncontiguous/{}", bench_name);
     if long {
         define_long(c, "build", &name, &[], move |b| {
-            b.iter(|| black_box(AhoCorasick::new(&pats)))
+            b.iter(|| {
+                black_box(
+                    AhoCorasick::builder()
+                        .kind(AhoCorasickKind::NoncontiguousNFA)
+                        .build(&pats)
+                        .unwrap(),
+                )
+            })
         });
     } else {
         define(c, "build", &name, &[], move |b| {
-            b.iter(|| black_box(AhoCorasick::new(&pats)))
+            b.iter(|| {
+                black_box(
+                    AhoCorasick::builder()
+                        .kind(AhoCorasickKind::NoncontiguousNFA)
+                        .build(&pats)
+                        .unwrap(),
+                )
+            })
+        });
+    }
+
+    let pats = patterns.clone();
+    let name = format!("nfa/contiguous/{}", bench_name);
+    if long {
+        define_long(c, "build", &name, &[], move |b| {
+            b.iter(|| {
+                black_box(
+                    AhoCorasick::builder()
+                        .kind(AhoCorasickKind::ContiguousNFA)
+                        .build(&pats)
+                        .unwrap(),
+                )
+            })
+        });
+    } else {
+        define(c, "build", &name, &[], move |b| {
+            b.iter(|| {
+                black_box(
+                    AhoCorasick::builder()
+                        .kind(AhoCorasickKind::ContiguousNFA)
+                        .build(&pats)
+                        .unwrap(),
+                )
+            })
         });
     }
 
@@ -55,13 +95,23 @@ fn define_build<B: AsRef<[u8]>>(
     if long {
         define_long(c, "build", &name, &[], move |b| {
             b.iter(|| {
-                black_box(AhoCorasickBuilder::new().dfa(true).build(&pats))
+                black_box(
+                    AhoCorasick::builder()
+                        .kind(AhoCorasickKind::DFA)
+                        .build(&pats)
+                        .unwrap(),
+                )
             })
         });
     } else {
         define(c, "build", &name, &[], move |b| {
             b.iter(|| {
-                black_box(AhoCorasickBuilder::new().dfa(true).build(&pats))
+                black_box(
+                    AhoCorasick::builder()
+                        .kind(AhoCorasickKind::DFA)
+                        .build(&pats)
+                        .unwrap(),
+                )
             })
         });
     }

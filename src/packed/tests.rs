@@ -9,7 +9,7 @@ use alloc::{
 
 use crate::{
     packed::{Config, MatchKind},
-    Match,
+    util::search::Match,
 };
 
 /// A description of a single test against a multi-pattern searcher.
@@ -555,7 +555,7 @@ fn run_search_tests<F: FnMut(&SearchTestOwned) -> Vec<Match>>(
         |matches: Vec<Match>| -> Vec<(usize, usize, usize)> {
             matches
                 .into_iter()
-                .map(|m| (m.pattern(), m.start(), m.end()))
+                .map(|m| (m.pattern().as_usize(), m.start(), m.end()))
                 .collect()
         };
     for &tests in which {

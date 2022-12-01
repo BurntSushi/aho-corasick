@@ -1,7 +1,7 @@
 use criterion::Criterion;
 
+use crate::define_aho_corasick;
 use crate::input::*;
-use crate::{define_aho_corasick, define_aho_corasick_dfa};
 
 /// These benchmarks test various words on random text.
 pub fn all(c: &mut Criterion) {
@@ -76,103 +76,13 @@ fn misc(c: &mut Criterion) {
 
 /// Various benchmarks using a large pattern set.
 fn many_patterns(c: &mut Criterion) {
-    use aho_corasick::MatchKind::*;
-
     let name = "5000words";
 
-    let group = "random10x/standard";
-    define_aho_corasick_dfa(
-        c,
-        group,
-        name,
-        RANDOM10X,
-        Standard,
-        0,
-        words_5000(),
-        |ac, haystack| ac.find_iter(haystack).count(),
-    );
     let group = "random10x/leftmost-first";
-    define_aho_corasick_dfa(
-        c,
-        group,
-        name,
-        RANDOM10X,
-        LeftmostFirst,
-        0,
-        words_5000(),
-        |ac, haystack| ac.find_iter(haystack).count(),
-    );
-    let group = "random10x/leftmost-longest";
-    define_aho_corasick_dfa(
-        c,
-        group,
-        name,
-        RANDOM10X,
-        LeftmostLongest,
-        0,
-        words_5000(),
-        |ac, haystack| ac.find_iter(haystack).count(),
-    );
+    define_aho_corasick(c, group, name, RANDOM10X, 0, words_5000());
 
-    let group = "random10x/overlapping";
-    define_aho_corasick_dfa(
-        c,
-        group,
-        name,
-        RANDOM10X,
-        Standard,
-        0,
-        words_5000(),
-        |ac, haystack| ac.find_overlapping_iter(haystack).count(),
-    );
-
-    let name = "100words";
-
-    let group = "random10x/standard";
-    define_aho_corasick_dfa(
-        c,
-        group,
-        name,
-        RANDOM10X,
-        Standard,
-        0,
-        words_100(),
-        |ac, haystack| ac.find_iter(haystack).count(),
-    );
     let group = "random10x/leftmost-first";
-    define_aho_corasick_dfa(
-        c,
-        group,
-        name,
-        RANDOM10X,
-        LeftmostFirst,
-        0,
-        words_100(),
-        |ac, haystack| ac.find_iter(haystack).count(),
-    );
-    let group = "random10x/leftmost-longest";
-    define_aho_corasick_dfa(
-        c,
-        group,
-        name,
-        RANDOM10X,
-        LeftmostLongest,
-        0,
-        words_100(),
-        |ac, haystack| ac.find_iter(haystack).count(),
-    );
-
-    let group = "random10x/overlapping";
-    define_aho_corasick_dfa(
-        c,
-        group,
-        name,
-        RANDOM10X,
-        Standard,
-        0,
-        words_100(),
-        |ac, haystack| ac.find_overlapping_iter(haystack).count(),
-    );
+    define_aho_corasick(c, group, name, RANDOM10X, 0, words_100());
 }
 
 fn define_random<B: AsRef<[u8]>>(

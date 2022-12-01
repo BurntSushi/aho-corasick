@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use aho_corasick::{packed, AhoCorasick, AhoCorasickBuilder, MatchKind};
+use aho_corasick::{packed, AhoCorasick, AhoCorasickKind, MatchKind};
 use criterion::{
     criterion_group, criterion_main, Bencher, Criterion, Throughput,
 };
@@ -32,23 +32,34 @@ fn define_aho_corasick<B: AsRef<[u8]>>(
         patterns.into_iter().map(|b| b.as_ref().to_vec()).collect();
 
     let haystack = corpus.to_vec();
-    let name = format!("nfa/{}", bench_name);
-    // let aut = AhoCorasick::new(patterns.clone());
-    let aut = AhoCorasickBuilder::new()
+    let name = format!("nfa/noncontiguous/{}", bench_name);
+    let aut = AhoCorasick::builder()
         .match_kind(MatchKind::LeftmostFirst)
-        .dfa(false)
-        .build(patterns.clone());
+        .kind(AhoCorasickKind::NoncontiguousNFA)
+        .build(patterns.clone())
+        .unwrap();
+    define(c, group_name, &name, corpus, move |b| {
+        b.iter(|| assert_eq!(count, aut.find_iter(&haystack).count()));
+    });
+
+    let haystack = corpus.to_vec();
+    let name = format!("nfa/contiguous/{}", bench_name);
+    let aut = AhoCorasick::builder()
+        .match_kind(MatchKind::LeftmostFirst)
+        .kind(AhoCorasickKind::ContiguousNFA)
+        .build(patterns.clone())
+        .unwrap();
     define(c, group_name, &name, corpus, move |b| {
         b.iter(|| assert_eq!(count, aut.find_iter(&haystack).count()));
     });
 
     let haystack = corpus.to_vec();
     let name = format!("dfa/{}", bench_name);
-    // let aut = AhoCorasickBuilder::new().dfa(true).build(patterns.clone());
-    let aut = AhoCorasickBuilder::new()
+    let aut = AhoCorasick::builder()
         .match_kind(MatchKind::LeftmostFirst)
-        .dfa(true)
-        .build(patterns.clone());
+        .kind(AhoCorasickKind::DFA)
+        .build(patterns.clone())
+        .unwrap();
     define(c, group_name, &name, corpus, move |b| {
         b.iter(|| assert_eq!(count, aut.find_iter(&haystack).count()));
     });
@@ -76,36 +87,6 @@ fn define_aho_corasick<B: AsRef<[u8]>>(
             });
         });
     }
-}
-
-/// Define a benchmark that tests the different combinations of Aho-Corasick
-/// DFAs. e.g., With and without byte classes and premultiplied state ids.
-fn define_aho_corasick_dfa<B, F>(
-    c: &mut Criterion,
-    group_name: &str,
-    bench_name: &str,
-    corpus: &[u8],
-    kind: MatchKind,
-    count: usize,
-    patterns: Vec<B>,
-    find_count: F,
-) where
-    B: AsRef<[u8]>,
-    F: 'static + Clone + Fn(&AhoCorasick, &[u8]) -> usize,
-{
-    let patterns: Vec<Vec<u8>> =
-        patterns.into_iter().map(|b| b.as_ref().to_vec()).collect();
-
-    let counter = find_count.clone();
-    let haystack = corpus.to_vec();
-    let name = format!("dfa/{}", bench_name);
-    let aut = AhoCorasickBuilder::new()
-        .match_kind(kind)
-        .dfa(true)
-        .build(patterns.clone());
-    define(c, group_name, &name, corpus, move |b| {
-        b.iter(|| assert_eq!(count, counter(&aut, &haystack)))
-    });
 }
 
 /// A convenience wrapper for defining a benchmark tied to a particular corpus.

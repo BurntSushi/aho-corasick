@@ -1,8 +1,4 @@
-use core::cmp;
-
 use alloc::{vec, vec::Vec};
-
-use std::io;
 
 /// The default buffer capacity that we use for the stream buffer.
 const DEFAULT_BUFFER_CAPACITY: usize = 64 * (1 << 10); // 64 KB
@@ -43,7 +39,7 @@ impl Buffer {
     /// Create a new buffer for stream searching. The minimum buffer length
     /// given should be the size of the maximum possible match length.
     pub fn new(min_buffer_len: usize) -> Buffer {
-        let min = cmp::max(1, min_buffer_len);
+        let min = core::cmp::max(1, min_buffer_len);
         // The minimum buffer amount is also the amount that we roll our
         // buffer in order to support incremental searching. To this end,
         // our actual capacity needs to be at least 1 byte bigger than our
@@ -55,7 +51,7 @@ impl Buffer {
         // implementation with the minimal buffer size. For now, we just
         // uncomment out the next line and comment out the subsequent line.
         // let capacity = 1 + min;
-        let capacity = cmp::max(min * 8, DEFAULT_BUFFER_CAPACITY);
+        let capacity = core::cmp::max(min * 8, DEFAULT_BUFFER_CAPACITY);
         Buffer { buf: vec![0; capacity], min, end: 0 }
     }
 
@@ -88,7 +84,10 @@ impl Buffer {
     /// this buffer's free capacity. If no more bytes could be read, then this
     /// returns false. Otherwise, this reads until it has filled the buffer
     /// past the minimum amount.
-    pub fn fill<R: io::Read>(&mut self, mut rdr: R) -> io::Result<bool> {
+    pub fn fill<R: std::io::Read>(
+        &mut self,
+        mut rdr: R,
+    ) -> std::io::Result<bool> {
         let mut readany = false;
         loop {
             let readlen = rdr.read(self.free_buffer())?;

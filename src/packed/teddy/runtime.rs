@@ -58,7 +58,7 @@ use crate::{
         teddy::compile,
         vector,
     },
-    Match,
+    util::search::Match,
 };
 
 /// The Teddy runtime.
@@ -192,7 +192,7 @@ impl Teddy {
 
     /// Returns the approximate total amount of heap used by this searcher, in
     /// units of bytes.
-    pub fn heap_bytes(&self) -> usize {
+    pub fn memory_usage(&self) -> usize {
         let num_patterns = self.max_pattern_id as usize + 1;
         self.buckets.len() * mem::size_of::<Vec<PatternID>>()
             + num_patterns * mem::size_of::<PatternID>()
@@ -379,7 +379,7 @@ impl Teddy {
             start: usize,
             end: usize,
         ) -> Match {
-            Match::from_span(pati as usize, start, end)
+            Match::must(pati as usize, start..end)
         }
 
         // N.B. The bounds check for this bucket lookup *should* be elided
