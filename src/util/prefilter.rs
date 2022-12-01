@@ -1,18 +1,62 @@
 use core::{
-    cmp, fmt,
+    cmp,
+    fmt::Debug,
     panic::{RefUnwindSafe, UnwindSafe},
     u8,
 };
 
-use alloc::{boxed::Box, vec, vec::Vec};
+use alloc::{sync::Arc, vec, vec::Vec};
 
-use memchr::{memchr, memchr2, memchr3};
+use crate::{
+    packed,
+    util::{
+        alphabet::ByteSet,
+        search::{Match, MatchKind, Span},
+    },
+};
 
-use crate::{ahocorasick::MatchKind, packed, Match};
+/// A prefilter for accelerating a search.
+///
+/// This crate uses prefilters in the core search implementations to accelerate
+/// common cases. They typically only apply to cases where there are a small
+/// number of patterns (less than 100 or so), but when they do, thoughput can
+/// be boosted considerably, perhaps by an order of magnitude. When a prefilter
+/// is active, it is used whenever a search enters an automaton's start state.
+///
+/// Currently, prefilters cannot be constructed by
+/// callers. A `Prefilter` can only be accessed via the
+/// [`Automaton::prefilter`](crate::automaton::Automaton::prefilter)
+/// method and used to execute a search. In other words, a prefilter can be
+/// used to optimize your own search implementation if necessary, but cannot do
+/// much else. If you have a use case for more APIs, please submit an issue.
+#[derive(Clone, Debug)]
+pub struct Prefilter {
+    finder: Arc<dyn PrefilterI>,
+    memory_usage: usize,
+}
+
+impl Prefilter {
+    /// Execute a search in the haystack within the span given. If a match or
+    /// a possible match is returned, then it is guaranteed to occur within
+    /// the bounds of the span.
+    ///
+    /// If the span provided is invalid for the given haystack, then behavior
+    /// is unspecified.
+    #[inline]
+    pub fn find_in(&self, haystack: &[u8], span: Span) -> Candidate {
+        self.finder.find_in(haystack, span)
+    }
+
+    #[inline]
+    pub(crate) fn memory_usage(&self) -> usize {
+        self.memory_usage
+    }
+}
 
 /// A candidate is the result of running a prefilter on a haystack at a
-/// particular position. The result is either no match, a confirmed match or
-/// a possible match.
+/// particular position.
+///
+/// The result is either no match, a confirmed match or a possible match.
 ///
 /// When no match is returned, the prefilter is guaranteeing that no possible
 /// match can be found in the haystack, and the caller may trust this. That is,
@@ -26,16 +70,20 @@ use crate::{ahocorasick::MatchKind, packed, Match};
 /// implementations are permitted to return false positives.
 #[derive(Clone, Debug)]
 pub enum Candidate {
+    /// No match was found. Since false negatives are not possible, this means
+    /// the search can quit as it is guaranteed not to find another match.
     None,
+    /// A confirmed match was found. Callers do not need to confirm it.
     Match(Match),
+    /// The start of a possible match was found. Callers must confirm it before
+    /// reporting it as a match.
     PossibleStartOfMatch(usize),
 }
 
 impl Candidate {
     /// Convert this candidate into an option. This is useful when callers
     /// do not distinguish between true positives and false positives (i.e.,
-    /// the caller must always confirm the match in order to update some other
-    /// state).
+    /// the caller must always confirm the match).
     pub fn into_option(self) -> Option<usize> {
         match self {
             Candidate::None => None,
@@ -48,223 +96,21 @@ impl Candidate {
 /// A prefilter describes the behavior of fast literal scanners for quickly
 /// skipping past bytes in the haystack that we know cannot possibly
 /// participate in a match.
-pub trait Prefilter:
-    Send + Sync + RefUnwindSafe + UnwindSafe + fmt::Debug
+trait PrefilterI:
+    Send + Sync + RefUnwindSafe + UnwindSafe + Debug + 'static
 {
     /// Returns the next possible match candidate. This may yield false
     /// positives, so callers must confirm a match starting at the position
     /// returned. This, however, must never produce false negatives. That is,
     /// this must, at minimum, return the starting position of the next match
     /// in the given haystack after or at the given position.
-    fn next_candidate(
-        &self,
-        state: &mut PrefilterState,
-        haystack: &[u8],
-        at: usize,
-    ) -> Candidate;
-
-    /// A method for cloning a prefilter, to work-around the fact that Clone
-    /// is not object-safe.
-    fn clone_prefilter(&self) -> Box<dyn Prefilter>;
-
-    /// Returns the approximate total amount of heap used by this prefilter, in
-    /// units of bytes.
-    fn heap_bytes(&self) -> usize;
-
-    /// Returns true if and only if this prefilter never returns false
-    /// positives. This is useful for completely avoiding the automaton
-    /// when the prefilter can quickly confirm its own matches.
-    ///
-    /// By default, this returns true, which is conservative; it is always
-    /// correct to return `true`. Returning `false` here and reporting a false
-    /// positive will result in incorrect searches.
-    fn reports_false_positives(&self) -> bool {
-        true
-    }
-
-    /// Returns true if and only if this prefilter may look for a non-starting
-    /// position of a match.
-    ///
-    /// This is useful in a streaming context where prefilters that don't look
-    /// for a starting position of a match can be quite difficult to deal with.
-    ///
-    /// This returns false by default.
-    fn looks_for_non_start_of_match(&self) -> bool {
-        false
-    }
+    fn find_in(&self, haystack: &[u8], span: Span) -> Candidate;
 }
 
-impl<'a, P: Prefilter + ?Sized> Prefilter for &'a P {
-    #[inline]
-    fn next_candidate(
-        &self,
-        state: &mut PrefilterState,
-        haystack: &[u8],
-        at: usize,
-    ) -> Candidate {
-        (**self).next_candidate(state, haystack, at)
-    }
-
-    fn clone_prefilter(&self) -> Box<dyn Prefilter> {
-        (**self).clone_prefilter()
-    }
-
-    fn heap_bytes(&self) -> usize {
-        (**self).heap_bytes()
-    }
-
-    fn reports_false_positives(&self) -> bool {
-        (**self).reports_false_positives()
-    }
-}
-
-/// A convenience object for representing any type that implements Prefilter
-/// and is cloneable.
-#[derive(Debug)]
-pub struct PrefilterObj(Box<dyn Prefilter>);
-
-impl Clone for PrefilterObj {
-    fn clone(&self) -> Self {
-        PrefilterObj(self.0.clone_prefilter())
-    }
-}
-
-impl PrefilterObj {
-    /// Create a new prefilter object.
-    pub fn new<T: Prefilter + 'static>(t: T) -> PrefilterObj {
-        PrefilterObj(Box::new(t))
-    }
-
-    /// Return the underlying prefilter trait object.
-    pub fn as_ref(&self) -> &dyn Prefilter {
-        &*self.0
-    }
-}
-
-/// PrefilterState tracks state associated with the effectiveness of a
-/// prefilter. It is used to track how many bytes, on average, are skipped by
-/// the prefilter. If this average dips below a certain threshold over time,
-/// then the state renders the prefilter inert and stops using it.
-///
-/// A prefilter state should be created for each search. (Where creating an
-/// iterator via, e.g., `find_iter`, is treated as a single search.)
-#[derive(Clone, Debug)]
-pub struct PrefilterState {
-    /// The number of skips that has been executed.
-    skips: usize,
-    /// The total number of bytes that have been skipped.
-    skipped: usize,
-    /// The maximum length of a match. This is used to help determine how many
-    /// bytes on average should be skipped in order for a prefilter to be
-    /// effective.
-    max_match_len: usize,
-    /// Once this heuristic has been deemed permanently ineffective, it will be
-    /// inert throughout the rest of its lifetime. This serves as a cheap way
-    /// to check inertness.
-    inert: bool,
-    /// The last (absolute) position at which a prefilter scanned to.
-    /// Prefilters can use this position to determine whether to re-scan or
-    /// not.
-    ///
-    /// Unlike other things that impact effectiveness, this is a fleeting
-    /// condition. That is, a prefilter can be considered ineffective if it is
-    /// at a position before `last_scan_at`, but can become effective again
-    /// once the search moves past `last_scan_at`.
-    ///
-    /// The utility of this is to both avoid additional overhead from calling
-    /// the prefilter and to avoid quadratic behavior. This ensures that a
-    /// prefilter will scan any particular byte at most once. (Note that some
-    /// prefilters, like the start-byte prefilter, do not need to use this
-    /// field at all, since it only looks for starting bytes.)
-    last_scan_at: usize,
-}
-
-impl PrefilterState {
-    /// The minimum number of skip attempts to try before considering whether
-    /// a prefilter is effective or not.
-    const MIN_SKIPS: usize = 40;
-
-    /// The minimum amount of bytes that skipping must average, expressed as a
-    /// factor of the multiple of the length of a possible match.
-    ///
-    /// That is, after MIN_SKIPS have occurred, if the average number of bytes
-    /// skipped ever falls below MIN_AVG_FACTOR * max-match-length, then the
-    /// prefilter outed to be rendered inert.
-    const MIN_AVG_FACTOR: usize = 2;
-
-    /// Create a fresh prefilter state.
-    pub fn new(max_match_len: usize) -> PrefilterState {
-        PrefilterState {
-            skips: 0,
-            skipped: 0,
-            max_match_len,
-            inert: false,
-            last_scan_at: 0,
-        }
-    }
-
-    /// Create a prefilter state that always disables the prefilter.
-    #[cfg(feature = "std")]
-    pub fn disabled() -> PrefilterState {
-        PrefilterState {
-            skips: 0,
-            skipped: 0,
-            max_match_len: 0,
-            inert: true,
-            last_scan_at: 0,
-        }
-    }
-
-    /// Update this state with the number of bytes skipped on the last
-    /// invocation of the prefilter.
-    #[inline]
-    fn update_skipped_bytes(&mut self, skipped: usize) {
-        self.skips += 1;
-        self.skipped += skipped;
-    }
-
-    /// Updates the position at which the last scan stopped. This may be
-    /// greater than the position of the last candidate reported. For example,
-    /// searching for the "rare" byte `z` in `abczdef` for the pattern `abcz`
-    /// will report a candidate at position `0`, but the end of its last scan
-    /// will be at position `3`.
-    ///
-    /// This position factors into the effectiveness of this prefilter. If the
-    /// current position is less than the last position at which a scan ended,
-    /// then the prefilter should not be re-run until the search moves past
-    /// that position.
-    #[inline]
-    fn update_at(&mut self, at: usize) {
-        if at > self.last_scan_at {
-            self.last_scan_at = at;
-        }
-    }
-
-    /// Return true if and only if this state indicates that a prefilter is
-    /// still effective.
-    ///
-    /// The given pos should correspond to the current starting position of the
-    /// search.
-    #[inline]
-    pub fn is_effective(&mut self, at: usize) -> bool {
-        if self.inert {
-            return false;
-        }
-        if at < self.last_scan_at {
-            return false;
-        }
-        if self.skips < PrefilterState::MIN_SKIPS {
-            return true;
-        }
-
-        let min_avg = PrefilterState::MIN_AVG_FACTOR * self.max_match_len;
-        if self.skipped >= min_avg * self.skips {
-            return true;
-        }
-
-        // We're inert.
-        self.inert = true;
-        false
+impl<P: PrefilterI + ?Sized> PrefilterI for Arc<P> {
+    #[inline(always)]
+    fn find_in(&self, haystack: &[u8], span: Span) -> Candidate {
+        (**self).find_in(haystack, span)
     }
 }
 
@@ -272,17 +118,21 @@ impl PrefilterState {
 /// this builder will heuristically select the best prefilter it can build,
 /// if any, and discard the rest.
 #[derive(Debug)]
-pub struct Builder {
+pub(crate) struct Builder {
     count: usize,
     ascii_case_insensitive: bool,
     start_bytes: StartBytesBuilder,
     rare_bytes: RareBytesBuilder,
+    memmem: MemmemBuilder,
     packed: Option<packed::Builder>,
+    // If we run across a condition that suggests we shouldn't use a prefilter
+    // at all (like an empty pattern), then disable prefilters entirely.
+    enabled: bool,
 }
 
 impl Builder {
     /// Create a new builder for constructing the best possible prefilter.
-    pub fn new(kind: MatchKind) -> Builder {
+    pub(crate) fn new(kind: MatchKind) -> Builder {
         let pbuilder = kind
             .as_packed()
             .map(|kind| packed::Config::new().match_kind(kind).builder());
@@ -291,13 +141,15 @@ impl Builder {
             ascii_case_insensitive: false,
             start_bytes: StartBytesBuilder::new(),
             rare_bytes: RareBytesBuilder::new(),
+            memmem: MemmemBuilder::default(),
             packed: pbuilder,
+            enabled: true,
         }
     }
 
     /// Enable ASCII case insensitivity. When set, byte strings added to this
     /// builder will be interpreted without respect to ASCII case.
-    pub fn ascii_case_insensitive(mut self, yes: bool) -> Builder {
+    pub(crate) fn ascii_case_insensitive(mut self, yes: bool) -> Builder {
         self.ascii_case_insensitive = yes;
         self.start_bytes = self.start_bytes.ascii_case_insensitive(yes);
         self.rare_bytes = self.rare_bytes.ascii_case_insensitive(yes);
@@ -308,8 +160,22 @@ impl Builder {
     ///
     /// All patterns added to an Aho-Corasick automaton should be added to this
     /// builder before attempting to construct the prefilter.
-    pub fn build(&self) -> Option<PrefilterObj> {
-        // match (self.start_bytes.build(), self.rare_bytes.build()) {
+    pub(crate) fn build(&self) -> Option<Prefilter> {
+        if !self.enabled {
+            return None;
+        }
+        // If we only have one pattern, then deferring to memmem is always
+        // the best choice. This is kind of a weird case, because, well, why
+        // use Aho-Corasick if you only have one pattern? But maybe you don't
+        // know exactly how many patterns you'll get up front, and you need to
+        // support the option of multiple patterns. So instead of relying on
+        // the caller to branch and use memmem explicitly, we just do it for
+        // them.
+        if !self.ascii_case_insensitive {
+            if let Some(pre) = self.memmem.build() {
+                return Some(pre);
+            }
+        }
         match (self.start_bytes.build(), self.rare_bytes.build()) {
             // If we could build both start and rare prefilters, then there are
             // a few cases in which we'd want to use the start-byte prefilter
@@ -339,19 +205,27 @@ impl Builder {
             (prestart @ Some(_), None) => prestart,
             (None, prerare @ Some(_)) => prerare,
             (None, None) if self.ascii_case_insensitive => None,
-            (None, None) => self
-                .packed
-                .as_ref()
-                .and_then(|b| b.build())
-                .map(|s| PrefilterObj::new(Packed(s))),
+            (None, None) => {
+                self.packed.as_ref().and_then(|b| b.build()).map(|s| {
+                    let memory_usage = s.memory_usage();
+                    Prefilter { finder: Arc::new(Packed(s)), memory_usage }
+                })
+            }
         }
     }
 
     /// Add a literal string to this prefilter builder.
-    pub fn add(&mut self, bytes: &[u8]) {
+    pub(crate) fn add(&mut self, bytes: &[u8]) {
+        if bytes.is_empty() {
+            self.enabled = false;
+        }
+        if !self.enabled {
+            return;
+        }
         self.count += 1;
         self.start_bytes.add(bytes);
         self.rare_bytes.add(bytes);
+        self.memmem.add(bytes);
         if let Some(ref mut pbuilder) = self.packed {
             pbuilder.add(bytes);
         }
@@ -363,26 +237,86 @@ impl Builder {
 #[derive(Clone, Debug)]
 struct Packed(packed::Searcher);
 
-impl Prefilter for Packed {
-    fn next_candidate(
-        &self,
-        _state: &mut PrefilterState,
-        haystack: &[u8],
-        at: usize,
-    ) -> Candidate {
-        self.0.find_at(haystack, at).map_or(Candidate::None, Candidate::Match)
+impl PrefilterI for Packed {
+    fn find_in(&self, haystack: &[u8], span: Span) -> Candidate {
+        self.0
+            .find_in(&haystack, span)
+            .map_or(Candidate::None, Candidate::Match)
+    }
+}
+
+/// A builder for constructing a prefilter that uses memmem.
+#[derive(Debug, Default)]
+struct MemmemBuilder {
+    /// The number of patterns that have been added.
+    count: usize,
+    /// The singular pattern to search for. This is only set when count==1.
+    one: Option<Vec<u8>>,
+}
+
+impl MemmemBuilder {
+    fn build(&self) -> Option<Prefilter> {
+        #[cfg(all(feature = "std", feature = "perf-literal"))]
+        fn imp(builder: &MemmemBuilder) -> Option<Prefilter> {
+            let pattern = builder.one.as_ref()?;
+            assert_eq!(1, builder.count);
+            let finder = Arc::new(Memmem(
+                memchr::memmem::Finder::new(pattern).into_owned(),
+            ));
+            let memory_usage = pattern.len();
+            Some(Prefilter { finder, memory_usage })
+        }
+
+        #[cfg(not(all(feature = "std", feature = "perf-literal")))]
+        fn imp(_: &MemmemBuilder) -> Option<Prefilter> {
+            None
+        }
+
+        imp(self)
     }
 
-    fn clone_prefilter(&self) -> Box<dyn Prefilter> {
-        Box::new(self.clone())
+    fn add(&mut self, bytes: &[u8]) {
+        self.count += 1;
+        if self.count == 1 {
+            self.one = Some(bytes.to_vec());
+        } else {
+            self.one = None;
+        }
     }
+}
 
-    fn heap_bytes(&self) -> usize {
-        self.0.heap_bytes()
-    }
+/// A type that wraps a SIMD accelerated single substring search from the
+/// `memchr` crate for use as a prefilter.
+///
+/// Currently, this prefilter is only active for Aho-Corasick searchers with
+/// a single pattern. In theory, this could be extended to support searchers
+/// that have a common prefix of more than one byte (for one byte, we would use
+/// memchr), but it's not clear if it's worth it or not.
+///
+/// Also, unfortunately, this currently also requires the 'std' feature to
+/// be enabled. That's because memchr doesn't have a no-std-but-with-alloc
+/// mode, and so APIs like Finder::into_owned aren't available when 'std' is
+/// disabled. But there should be an 'alloc' feature that brings in APIs like
+/// Finder::into_owned but doesn't use std-only features like runtime CPU
+/// feature detection.
+#[cfg(all(feature = "std", feature = "perf-literal"))]
+#[derive(Clone, Debug)]
+struct Memmem(memchr::memmem::Finder<'static>);
 
-    fn reports_false_positives(&self) -> bool {
-        false
+#[cfg(all(feature = "std", feature = "perf-literal"))]
+impl PrefilterI for Memmem {
+    fn find_in(&self, haystack: &[u8], span: Span) -> Candidate {
+        use crate::util::primitives::PatternID;
+
+        self.0.find(&haystack[span]).map_or(Candidate::None, |i| {
+            let start = span.start + i;
+            let end = start + self.0.needle().len();
+            // N.B. We can declare a match and use a fixed pattern ID here
+            // because a Memmem prefilter is only ever created for searchers
+            // with exactly one pattern. Thus, every match is always a match
+            // and it is always for the first and only pattern.
+            Candidate::Match(Match::new(PatternID::ZERO, start..end))
+        })
     }
 }
 
@@ -416,38 +350,6 @@ struct RareBytesBuilder {
     rank_sum: u16,
 }
 
-/// A set of bytes.
-#[derive(Clone, Copy)]
-struct ByteSet([bool; 256]);
-
-impl ByteSet {
-    fn empty() -> ByteSet {
-        ByteSet([false; 256])
-    }
-
-    fn insert(&mut self, b: u8) -> bool {
-        let new = !self.contains(b);
-        self.0[b as usize] = true;
-        new
-    }
-
-    fn contains(&self, b: u8) -> bool {
-        self.0[b as usize]
-    }
-}
-
-impl fmt::Debug for ByteSet {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut bytes = vec![];
-        for b in 0..=255 {
-            if self.contains(b) {
-                bytes.push(b);
-            }
-        }
-        f.debug_struct("ByteSet").field("set", &bytes).finish()
-    }
-}
-
 /// A set of byte offsets, keyed by byte.
 #[derive(Clone, Copy)]
 struct RareByteOffsets {
@@ -458,7 +360,7 @@ struct RareByteOffsets {
 
 impl RareByteOffsets {
     /// Create a new empty set of rare byte offsets.
-    pub fn empty() -> RareByteOffsets {
+    pub(crate) fn empty() -> RareByteOffsets {
         RareByteOffsets { set: [RareByteOffset::default(); 256] }
     }
 
@@ -466,14 +368,14 @@ impl RareByteOffsets {
     /// greater than the existing offset, then it overwrites the previous
     /// value and returns false. If there is no previous value set, then this
     /// sets it and returns true.
-    pub fn set(&mut self, byte: u8, off: RareByteOffset) {
+    pub(crate) fn set(&mut self, byte: u8, off: RareByteOffset) {
         self.set[byte as usize].max =
             cmp::max(self.set[byte as usize].max, off.max);
     }
 }
 
-impl fmt::Debug for RareByteOffsets {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl core::fmt::Debug for RareByteOffsets {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut offsets = vec![];
         for off in self.set.iter() {
             if off.max > 0 {
@@ -548,36 +450,47 @@ impl RareBytesBuilder {
     /// If there are more than 3 distinct starting bytes, or if heuristics
     /// otherwise determine that this prefilter should not be used, then `None`
     /// is returned.
-    fn build(&self) -> Option<PrefilterObj> {
-        if !self.available || self.count > 3 {
-            return None;
-        }
-        let (mut bytes, mut len) = ([0; 3], 0);
-        for b in 0..=255 {
-            if self.rare_set.contains(b) {
-                bytes[len] = b as u8;
-                len += 1;
+    fn build(&self) -> Option<Prefilter> {
+        #[cfg(feature = "perf-literal")]
+        fn imp(builder: &RareBytesBuilder) -> Option<Prefilter> {
+            if !builder.available || builder.count > 3 {
+                return None;
             }
+            let (mut bytes, mut len) = ([0; 3], 0);
+            for b in 0..=255 {
+                if builder.rare_set.contains(b) {
+                    bytes[len] = b as u8;
+                    len += 1;
+                }
+            }
+            let finder: Arc<dyn PrefilterI> = match len {
+                0 => return None,
+                1 => Arc::new(RareBytesOne {
+                    byte1: bytes[0],
+                    offset: builder.byte_offsets.set[bytes[0] as usize],
+                }),
+                2 => Arc::new(RareBytesTwo {
+                    offsets: builder.byte_offsets,
+                    byte1: bytes[0],
+                    byte2: bytes[1],
+                }),
+                3 => Arc::new(RareBytesThree {
+                    offsets: builder.byte_offsets,
+                    byte1: bytes[0],
+                    byte2: bytes[1],
+                    byte3: bytes[2],
+                }),
+                _ => unreachable!(),
+            };
+            Some(Prefilter { finder, memory_usage: 0 })
         }
-        match len {
-            0 => None,
-            1 => Some(PrefilterObj::new(RareBytesOne {
-                byte1: bytes[0],
-                offset: self.byte_offsets.set[bytes[0] as usize],
-            })),
-            2 => Some(PrefilterObj::new(RareBytesTwo {
-                offsets: self.byte_offsets,
-                byte1: bytes[0],
-                byte2: bytes[1],
-            })),
-            3 => Some(PrefilterObj::new(RareBytesThree {
-                offsets: self.byte_offsets,
-                byte1: bytes[0],
-                byte2: bytes[1],
-                byte3: bytes[2],
-            })),
-            _ => unreachable!(),
+
+        #[cfg(not(feature = "perf-literal"))]
+        fn imp(_: &RareBytesBuilder) -> Option<Prefilter> {
+            None
         }
+
+        imp(self)
     }
 
     /// Add a byte string to this builder.
@@ -651,7 +564,8 @@ impl RareBytesBuilder {
     }
 
     fn add_one_rare_byte(&mut self, byte: u8) {
-        if self.rare_set.insert(byte) {
+        if !self.rare_set.contains(byte) {
+            self.rare_set.add(byte);
             self.count += 1;
             self.rank_sum += freq_rank(byte) as u16;
         }
@@ -659,65 +573,30 @@ impl RareBytesBuilder {
 }
 
 /// A prefilter for scanning for a single "rare" byte.
+#[cfg(feature = "perf-literal")]
 #[derive(Clone, Debug)]
 struct RareBytesOne {
     byte1: u8,
     offset: RareByteOffset,
 }
 
-impl Prefilter for RareBytesOne {
-    fn next_candidate(
-        &self,
-        state: &mut PrefilterState,
-        haystack: &[u8],
-        at: usize,
-    ) -> Candidate {
-        memchr(self.byte1, &haystack[at..])
+#[cfg(feature = "perf-literal")]
+impl PrefilterI for RareBytesOne {
+    fn find_in(&self, haystack: &[u8], span: Span) -> Candidate {
+        memchr::memchr(self.byte1, &haystack[span])
             .map(|i| {
-                let pos = at + i;
-                state.last_scan_at = pos;
-                cmp::max(at, pos.saturating_sub(self.offset.max as usize))
+                let pos = span.start + i;
+                cmp::max(
+                    span.start,
+                    pos.saturating_sub(usize::from(self.offset.max)),
+                )
             })
             .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
-    }
-
-    fn clone_prefilter(&self) -> Box<dyn Prefilter> {
-        Box::new(self.clone())
-    }
-
-    fn heap_bytes(&self) -> usize {
-        0
-    }
-
-    fn looks_for_non_start_of_match(&self) -> bool {
-        // TODO: It should be possible to use a rare byte prefilter in a
-        // streaming context. The main problem is that we usually assume that
-        // if a prefilter has scanned some text and not found anything, then no
-        // match *starts* in that text. This doesn't matter in non-streaming
-        // contexts, but in a streaming context, if we're looking for a byte
-        // that doesn't start at the beginning of a match and don't find it,
-        // then it's still possible for a match to start at the end of the
-        // current buffer content. In order to fix this, the streaming searcher
-        // would need to become aware of prefilters that do this and use the
-        // appropriate offset in various places. It is quite a delicate change
-        // and probably shouldn't be attempted until streaming search has a
-        // better testing strategy. In particular, we'd really like to be able
-        // to vary the buffer size to force strange cases that occur at the
-        // edge of the buffer. If we make the buffer size minimal, then these
-        // cases occur more frequently and easier.
-        //
-        // This is also a bummer because this means that if the prefilter
-        // builder chose a rare byte prefilter, then a streaming search won't
-        // use any prefilter at all because the builder doesn't know how it's
-        // going to be used. Assuming we don't make streaming search aware of
-        // these special types of prefilters as described above, we could fix
-        // this by building a "backup" prefilter that could be used when the
-        // rare byte prefilter could not. But that's a bandaide. Sigh.
-        true
     }
 }
 
 /// A prefilter for scanning for two "rare" bytes.
+#[cfg(feature = "perf-literal")]
 #[derive(Clone, Debug)]
 struct RareBytesTwo {
     offsets: RareByteOffsets,
@@ -725,38 +604,21 @@ struct RareBytesTwo {
     byte2: u8,
 }
 
-impl Prefilter for RareBytesTwo {
-    fn next_candidate(
-        &self,
-        state: &mut PrefilterState,
-        haystack: &[u8],
-        at: usize,
-    ) -> Candidate {
-        memchr2(self.byte1, self.byte2, &haystack[at..])
+#[cfg(feature = "perf-literal")]
+impl PrefilterI for RareBytesTwo {
+    fn find_in(&self, haystack: &[u8], span: Span) -> Candidate {
+        memchr::memchr2(self.byte1, self.byte2, &haystack[span])
             .map(|i| {
-                let pos = at + i;
-                state.update_at(pos);
-                let offset = self.offsets.set[haystack[pos] as usize].max;
-                cmp::max(at, pos.saturating_sub(offset as usize))
+                let pos = span.start + i;
+                let offset = self.offsets.set[usize::from(haystack[pos])].max;
+                cmp::max(span.start, pos.saturating_sub(usize::from(offset)))
             })
             .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
-    }
-
-    fn clone_prefilter(&self) -> Box<dyn Prefilter> {
-        Box::new(self.clone())
-    }
-
-    fn heap_bytes(&self) -> usize {
-        0
-    }
-
-    fn looks_for_non_start_of_match(&self) -> bool {
-        // TODO: See Prefilter impl for RareBytesOne.
-        true
     }
 }
 
 /// A prefilter for scanning for three "rare" bytes.
+#[cfg(feature = "perf-literal")]
 #[derive(Clone, Debug)]
 struct RareBytesThree {
     offsets: RareByteOffsets,
@@ -765,34 +627,16 @@ struct RareBytesThree {
     byte3: u8,
 }
 
-impl Prefilter for RareBytesThree {
-    fn next_candidate(
-        &self,
-        state: &mut PrefilterState,
-        haystack: &[u8],
-        at: usize,
-    ) -> Candidate {
-        memchr3(self.byte1, self.byte2, self.byte3, &haystack[at..])
+#[cfg(feature = "perf-literal")]
+impl PrefilterI for RareBytesThree {
+    fn find_in(&self, haystack: &[u8], span: Span) -> Candidate {
+        memchr::memchr3(self.byte1, self.byte2, self.byte3, &haystack[span])
             .map(|i| {
-                let pos = at + i;
-                state.update_at(pos);
-                let offset = self.offsets.set[haystack[pos] as usize].max;
-                cmp::max(at, pos.saturating_sub(offset as usize))
+                let pos = span.start + i;
+                let offset = self.offsets.set[usize::from(haystack[pos])].max;
+                cmp::max(span.start, pos.saturating_sub(usize::from(offset)))
             })
             .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
-    }
-
-    fn clone_prefilter(&self) -> Box<dyn Prefilter> {
-        Box::new(self.clone())
-    }
-
-    fn heap_bytes(&self) -> usize {
-        0
-    }
-
-    fn looks_for_non_start_of_match(&self) -> bool {
-        // TODO: See Prefilter impl for RareBytesOne.
-        true
     }
 }
 
@@ -845,41 +689,52 @@ impl StartBytesBuilder {
     /// If there are more than 3 distinct starting bytes, or if heuristics
     /// otherwise determine that this prefilter should not be used, then `None`
     /// is returned.
-    fn build(&self) -> Option<PrefilterObj> {
-        if self.count > 3 {
-            return None;
-        }
-        let (mut bytes, mut len) = ([0; 3], 0);
-        for b in 0..256 {
-            if !self.byteset[b] {
-                continue;
-            }
-            // We don't handle non-ASCII bytes for now. Getting non-ASCII
-            // bytes right is trickier, since we generally don't want to put
-            // a leading UTF-8 code unit into a prefilter that isn't ASCII,
-            // since they can frequently. Instead, it would be better to use a
-            // continuation byte, but this requires more sophisticated analysis
-            // of the automaton and a richer prefilter API.
-            if b > 0x7F {
+    fn build(&self) -> Option<Prefilter> {
+        #[cfg(feature = "perf-literal")]
+        fn imp(builder: &StartBytesBuilder) -> Option<Prefilter> {
+            if builder.count > 3 {
                 return None;
             }
-            bytes[len] = b as u8;
-            len += 1;
+            let (mut bytes, mut len) = ([0; 3], 0);
+            for b in 0..256 {
+                if !builder.byteset[b] {
+                    continue;
+                }
+                // We don't handle non-ASCII bytes for now. Getting non-ASCII
+                // bytes right is trickier, since we generally don't want to put
+                // a leading UTF-8 code unit into a prefilter that isn't ASCII,
+                // since they can frequently. Instead, it would be better to use a
+                // continuation byte, but this requires more sophisticated analysis
+                // of the automaton and a richer prefilter API.
+                if b > 0x7F {
+                    return None;
+                }
+                bytes[len] = b as u8;
+                len += 1;
+            }
+            let finder: Arc<dyn PrefilterI> = match len {
+                0 => return None,
+                1 => Arc::new(StartBytesOne { byte1: bytes[0] }),
+                2 => Arc::new(StartBytesTwo {
+                    byte1: bytes[0],
+                    byte2: bytes[1],
+                }),
+                3 => Arc::new(StartBytesThree {
+                    byte1: bytes[0],
+                    byte2: bytes[1],
+                    byte3: bytes[2],
+                }),
+                _ => unreachable!(),
+            };
+            Some(Prefilter { finder, memory_usage: 0 })
         }
-        match len {
-            0 => None,
-            1 => Some(PrefilterObj::new(StartBytesOne { byte1: bytes[0] })),
-            2 => Some(PrefilterObj::new(StartBytesTwo {
-                byte1: bytes[0],
-                byte2: bytes[1],
-            })),
-            3 => Some(PrefilterObj::new(StartBytesThree {
-                byte1: bytes[0],
-                byte2: bytes[1],
-                byte3: bytes[2],
-            })),
-            _ => unreachable!(),
+
+        #[cfg(not(feature = "perf-literal"))]
+        fn imp(_: &StartBytesBuilder) -> Option<Prefilter> {
+            None
         }
+
+        imp(self)
     }
 
     /// Add a byte string to this builder.
@@ -908,61 +763,40 @@ impl StartBytesBuilder {
 }
 
 /// A prefilter for scanning for a single starting byte.
+#[cfg(feature = "perf-literal")]
 #[derive(Clone, Debug)]
 struct StartBytesOne {
     byte1: u8,
 }
 
-impl Prefilter for StartBytesOne {
-    fn next_candidate(
-        &self,
-        _state: &mut PrefilterState,
-        haystack: &[u8],
-        at: usize,
-    ) -> Candidate {
-        memchr(self.byte1, &haystack[at..])
-            .map(|i| at + i)
+#[cfg(feature = "perf-literal")]
+impl PrefilterI for StartBytesOne {
+    fn find_in(&self, haystack: &[u8], span: Span) -> Candidate {
+        memchr::memchr(self.byte1, &haystack[span])
+            .map(|i| span.start + i)
             .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
-    }
-
-    fn clone_prefilter(&self) -> Box<dyn Prefilter> {
-        Box::new(self.clone())
-    }
-
-    fn heap_bytes(&self) -> usize {
-        0
     }
 }
 
 /// A prefilter for scanning for two starting bytes.
+#[cfg(feature = "perf-literal")]
 #[derive(Clone, Debug)]
 struct StartBytesTwo {
     byte1: u8,
     byte2: u8,
 }
 
-impl Prefilter for StartBytesTwo {
-    fn next_candidate(
-        &self,
-        _state: &mut PrefilterState,
-        haystack: &[u8],
-        at: usize,
-    ) -> Candidate {
-        memchr2(self.byte1, self.byte2, &haystack[at..])
-            .map(|i| at + i)
+#[cfg(feature = "perf-literal")]
+impl PrefilterI for StartBytesTwo {
+    fn find_in(&self, haystack: &[u8], span: Span) -> Candidate {
+        memchr::memchr2(self.byte1, self.byte2, &haystack[span])
+            .map(|i| span.start + i)
             .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
-    }
-
-    fn clone_prefilter(&self) -> Box<dyn Prefilter> {
-        Box::new(self.clone())
-    }
-
-    fn heap_bytes(&self) -> usize {
-        0
     }
 }
 
 /// A prefilter for scanning for three starting bytes.
+#[cfg(feature = "perf-literal")]
 #[derive(Clone, Debug)]
 struct StartBytesThree {
     byte1: u8,
@@ -970,58 +804,19 @@ struct StartBytesThree {
     byte3: u8,
 }
 
-impl Prefilter for StartBytesThree {
-    fn next_candidate(
-        &self,
-        _state: &mut PrefilterState,
-        haystack: &[u8],
-        at: usize,
-    ) -> Candidate {
-        memchr3(self.byte1, self.byte2, self.byte3, &haystack[at..])
-            .map(|i| at + i)
+#[cfg(feature = "perf-literal")]
+impl PrefilterI for StartBytesThree {
+    fn find_in(&self, haystack: &[u8], span: Span) -> Candidate {
+        memchr::memchr3(self.byte1, self.byte2, self.byte3, &haystack[span])
+            .map(|i| span.start + i)
             .map_or(Candidate::None, Candidate::PossibleStartOfMatch)
     }
-
-    fn clone_prefilter(&self) -> Box<dyn Prefilter> {
-        Box::new(self.clone())
-    }
-
-    fn heap_bytes(&self) -> usize {
-        0
-    }
-}
-
-/// Return the next candidate reported by the given prefilter while
-/// simultaneously updating the given prestate.
-///
-/// The caller is responsible for checking the prestate before deciding whether
-/// to initiate a search.
-#[inline]
-pub fn next<P: Prefilter>(
-    prestate: &mut PrefilterState,
-    prefilter: P,
-    haystack: &[u8],
-    at: usize,
-) -> Candidate {
-    let cand = prefilter.next_candidate(prestate, haystack, at);
-    match cand {
-        Candidate::None => {
-            prestate.update_skipped_bytes(haystack.len() - at);
-        }
-        Candidate::Match(ref m) => {
-            prestate.update_skipped_bytes(m.start() - at);
-        }
-        Candidate::PossibleStartOfMatch(i) => {
-            prestate.update_skipped_bytes(i - at);
-        }
-    }
-    cand
 }
 
 /// If the given byte is an ASCII letter, then return it in the opposite case.
 /// e.g., Given `b'A'`, this returns `b'a'`, and given `b'a'`, this returns
 /// `b'A'`. If a non-ASCII letter is given, then the given byte is returned.
-pub fn opposite_ascii_case(b: u8) -> u8 {
+pub(crate) fn opposite_ascii_case(b: u8) -> u8 {
     if b'A' <= b && b <= b'Z' {
         b.to_ascii_lowercase()
     } else if b'a' <= b && b <= b'z' {
@@ -1034,6 +829,6 @@ pub fn opposite_ascii_case(b: u8) -> u8 {
 /// Return the frequency rank of the given byte. The higher the rank, the more
 /// common the byte (heuristically speaking).
 fn freq_rank(b: u8) -> u8 {
-    use crate::byte_frequencies::BYTE_FREQUENCIES;
+    use crate::util::byte_frequencies::BYTE_FREQUENCIES;
     BYTE_FREQUENCIES[b as usize]
 }

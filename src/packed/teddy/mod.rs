@@ -50,7 +50,7 @@ mod fallback {
             0
         }
 
-        pub fn heap_bytes(&self) -> usize {
+        pub fn memory_usage(&self) -> usize {
             0
         }
     }

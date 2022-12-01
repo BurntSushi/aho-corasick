@@ -14,9 +14,17 @@ name = "aho-corasick-debug"
 path = "main.rs"
 
 [dependencies]
-aho-corasick = { version = "*", path = ".." }
-memmap = "0.7.0"
+aho-corasick = { version = "*", path = "..", features = ["logging"] }
+anyhow = "1.0.68"
+memmap2 = "0.5.8"
+
+[dependencies.env_logger]
+version = "0.10.0"
+default-features = false
+# I am quite annoyed that 'auto-color' brings in a whole mess of dependencies,
+# so I am keeping it disabled.
+features = ["humantime"]
 
 [dependencies.clap]
-version = "2.32.0"
+version = "2.34.0"
 default-features = false

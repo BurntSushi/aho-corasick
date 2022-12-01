@@ -84,7 +84,8 @@ impl Patterns {
     ///
     /// If the kind is not set, then the default is leftmost-first.
     pub fn set_match_kind(&mut self, kind: MatchKind) {
-        match kind {
+        self.kind = kind;
+        match self.kind {
             MatchKind::LeftmostFirst => {
                 self.order.sort();
             }
@@ -97,7 +98,6 @@ impl Patterns {
                         .reverse()
                 });
             }
-            MatchKind::__Nonexhaustive => unreachable!(),
         }
     }
 
@@ -115,7 +115,7 @@ impl Patterns {
 
     /// Returns the approximate total amount of heap used by these patterns, in
     /// units of bytes.
-    pub fn heap_bytes(&self) -> usize {
+    pub fn memory_usage(&self) -> usize {
         self.order.len() * mem::size_of::<PatternID>()
             + self.by_id.len() * mem::size_of::<Vec<u8>>()
             + self.total_pattern_bytes
