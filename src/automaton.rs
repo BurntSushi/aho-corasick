@@ -457,6 +457,15 @@ pub trait Automaton {
     {
         let mut last_match = 0;
         for m in self.try_find_iter(Input::new(haystack))? {
+            // Since there are no restrictions on what kinds of patterns are
+            // in an Aho-Corasick automaton, we might get matches that split
+            // a codepoint, or even matches of a partial codepoint. When that
+            // happens, we just skip the match.
+            if !haystack.is_char_boundary(m.start())
+                || !haystack.is_char_boundary(m.end())
+            {
+                continue;
+            }
             dst.push_str(&haystack[last_match..m.start()]);
             last_match = m.end();
             if !replace_with(&m, &haystack[m.start()..m.end()], dst) {

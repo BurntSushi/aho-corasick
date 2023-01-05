@@ -687,6 +687,9 @@ impl AhoCorasick {
     /// (if any). If the closure returns `true`, then it continues to the next
     /// match. If the closure returns `false`, then searching is stopped.
     ///
+    /// Note that any matches with boundaries that don't fall on a valid UTF-8
+    /// boundary are silently skipped.
+    ///
     /// This is the infallible version of
     /// [`AhoCorasick::try_replace_all_with`].
     ///
@@ -1438,6 +1441,9 @@ impl AhoCorasick {
     /// (if any). If the closure returns `true`, then it continues to the next
     /// match. If the closure returns `false`, then searching is stopped.
     ///
+    /// Note that any matches with boundaries that don't fall on a valid UTF-8
+    /// boundary are silently skipped.
+    ///
     /// This is the fallible version of [`AhoCorasick::replace_all_with`].
     ///
     /// # Errors
@@ -2129,6 +2135,7 @@ impl AhoCorasickBuilder {
                     debug!("chose a DFA");
                     return Arc::new(dfa);
                 }
+                #[allow(unused_variables)] // unused when 'logging' is disabled
                 Err(err) => {
                     debug!(
                         "failed to build DFA, trying something else: {}",
@@ -2150,6 +2157,7 @@ impl AhoCorasickBuilder {
                 debug!("chose contiguous NFA");
                 return Arc::new(nfa);
             }
+            #[allow(unused_variables)] // unused when 'logging' is disabled
             Err(err) => {
                 debug!(
                     "failed to build contiguous NFA, \
