@@ -19,7 +19,7 @@ anyhow = "1.0.68"
 memmap2 = "0.5.8"
 
 [dependencies.env_logger]
-version = "0.10.0"
+version = "0.9.3"
 default-features = false
 # I am quite annoyed that 'auto-color' brings in a whole mess of dependencies,
 # so I am keeping it disabled.
