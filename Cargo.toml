@@ -13,9 +13,6 @@ autotests = false
 exclude = ["/aho-corasick-debug"]
 edition = "2021"
 
-[workspace]
-members = ["aho-corasick-debug", "bench"]
-
 [lib]
 name = "aho_corasick"
 
@@ -53,7 +50,6 @@ log = { version = "0.4.17", optional = true }
 memchr = { version = "2.4.0", default-features = false, optional = true }
 
 [dev-dependencies]
-bstr = { version = "1.1.0", default-features = false, features = ["alloc"] }
 doc-comment = "0.3.3"
 fst = "0.4.5"
 

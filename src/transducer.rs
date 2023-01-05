@@ -197,9 +197,8 @@ impl<A: Automaton> fst::Automaton for Anchored<A> {
 
 #[cfg(test)]
 mod tests {
-    use alloc::{vec, vec::Vec};
+    use alloc::{string::String, vec, vec::Vec};
 
-    use bstr::BString;
     use fst::{Automaton, IntoStreamer, Set, Streamer};
 
     use crate::{
@@ -213,11 +212,11 @@ mod tests {
     fn search<A: Automaton, D: AsRef<[u8]>>(
         set: &Set<D>,
         aut: A,
-    ) -> Vec<BString> {
+    ) -> Vec<String> {
         let mut stream = set.search(aut).into_stream();
         let mut results = vec![];
         while let Some(key) = stream.next() {
-            results.push(BString::from(key));
+            results.push(String::from(core::str::from_utf8(key).unwrap()));
         }
         results
     }
