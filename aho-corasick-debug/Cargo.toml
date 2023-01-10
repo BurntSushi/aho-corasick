@@ -28,3 +28,6 @@ features = ["humantime"]
 [dependencies.clap]
 version = "2.34.0"
 default-features = false
+
+[profile.release]
+debug = true
