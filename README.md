@@ -1,6 +1,6 @@
 **NOTE:** This README is currently for `aho-corasick 1.0`, which
 is not yet released. The timeline for a release should be within
-the next few months (as of 2022/01/05). [The README for the
+the next few months (as of 2023/01/05). [The README for the
 version currently on crates.io can be found via the `0.7.20`
 tag.](https://github.com/BurntSushi/aho-corasick/blob/0.7.20/README.md)
 
