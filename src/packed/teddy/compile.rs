@@ -251,6 +251,51 @@ impl Builder {
                     ),
                 })
             }
+            (4, false, _) => {
+                debug!("Teddy choice: 128-bit slim, 4 bytes");
+                Some(Teddy {
+                    buckets,
+                    max_pattern_id: patterns.max_pattern_id(),
+                    exec: runtime::Exec::TeddySlim4Mask128(
+                        runtime::TeddySlim4Mask128 {
+                            mask1: runtime::Mask128::new(masks[0]),
+                            mask2: runtime::Mask128::new(masks[1]),
+                            mask3: runtime::Mask128::new(masks[2]),
+                            mask4: runtime::Mask128::new(masks[3]),
+                        },
+                    ),
+                })
+            }
+            (4, true, false) => {
+                debug!("Teddy choice: 256-bit slim, 4 bytes");
+                Some(Teddy {
+                    buckets,
+                    max_pattern_id: patterns.max_pattern_id(),
+                    exec: runtime::Exec::TeddySlim4Mask256(
+                        runtime::TeddySlim4Mask256 {
+                            mask1: runtime::Mask256::new(masks[0]),
+                            mask2: runtime::Mask256::new(masks[1]),
+                            mask3: runtime::Mask256::new(masks[2]),
+                            mask4: runtime::Mask256::new(masks[3]),
+                        },
+                    ),
+                })
+            }
+            (4, true, true) => {
+                debug!("Teddy choice: 256-bit fat, 4 bytes");
+                Some(Teddy {
+                    buckets,
+                    max_pattern_id: patterns.max_pattern_id(),
+                    exec: runtime::Exec::TeddyFat4Mask256(
+                        runtime::TeddyFat4Mask256 {
+                            mask1: runtime::Mask256::new(masks[0]),
+                            mask2: runtime::Mask256::new(masks[1]),
+                            mask3: runtime::Mask256::new(masks[2]),
+                            mask4: runtime::Mask256::new(masks[3]),
+                        },
+                    ),
+                })
+            }
             _ => unreachable!(),
         }
     }
@@ -271,8 +316,8 @@ impl<'p> Compiler<'p> {
     ///
     /// This panics if any of the patterns given are empty.
     fn new(patterns: &'p Patterns, fat: bool) -> Compiler<'p> {
-        let mask_len = cmp::min(3, patterns.minimum_len());
-        assert!(1 <= mask_len && mask_len <= 3);
+        let mask_len = cmp::min(4, patterns.minimum_len());
+        assert!(1 <= mask_len && mask_len <= 4);
 
         Compiler {
             patterns,

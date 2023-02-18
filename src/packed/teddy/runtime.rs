@@ -166,6 +166,15 @@ impl Teddy {
                 Exec::TeddyFat3Mask256(ref e) => {
                     e.find_at(pats, self, haystack, at)
                 }
+                Exec::TeddySlim4Mask128(ref e) => {
+                    e.find_at(pats, self, haystack, at)
+                }
+                Exec::TeddySlim4Mask256(ref e) => {
+                    e.find_at(pats, self, haystack, at)
+                }
+                Exec::TeddyFat4Mask256(ref e) => {
+                    e.find_at(pats, self, haystack, at)
+                }
             }
         }
     }
@@ -186,7 +195,10 @@ impl Teddy {
             Exec::TeddyFat2Mask256(_) => 17,
             Exec::TeddySlim3Mask128(_) => 18,
             Exec::TeddySlim3Mask256(_) => 34,
-            Exec::TeddyFat3Mask256(_) => 34,
+            Exec::TeddyFat3Mask256(_) => 18,
+            Exec::TeddySlim4Mask128(_) => 19,
+            Exec::TeddySlim4Mask256(_) => 35,
+            Exec::TeddyFat4Mask256(_) => 19,
         }
     }
 
@@ -432,6 +444,9 @@ pub enum Exec {
     TeddySlim3Mask128(TeddySlim3Mask128),
     TeddySlim3Mask256(TeddySlim3Mask256),
     TeddyFat3Mask256(TeddyFat3Mask256),
+    TeddySlim4Mask128(TeddySlim4Mask128),
+    TeddySlim4Mask256(TeddySlim4Mask256),
+    TeddyFat4Mask256(TeddyFat4Mask256),
 }
 
 // Most of the code below remains undocumented because they are effectively
@@ -997,6 +1012,264 @@ impl TeddyFat3Mask256 {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct TeddySlim4Mask128 {
+    pub mask1: Mask128,
+    pub mask2: Mask128,
+    pub mask3: Mask128,
+    pub mask4: Mask128,
+}
+
+impl TeddySlim4Mask128 {
+    #[target_feature(enable = "ssse3")]
+    unsafe fn find_at(
+        &self,
+        pats: &Patterns,
+        teddy: &Teddy,
+        haystack: &[u8],
+        mut at: usize,
+    ) -> Option<Match> {
+        debug_assert!(haystack[at..].len() >= teddy.minimum_len());
+        // This assert helps eliminate bounds checks for bucket lookups in
+        // Teddy::verify_bucket, which has a small (3-4%) performance boost.
+        assert_eq!(8, teddy.buckets.len());
+
+        at += 3;
+        let len = haystack.len();
+        let mut prev0 = vector::ones128();
+        let mut prev1 = vector::ones128();
+        let mut prev2 = vector::ones128();
+        while at <= len - 16 {
+            let c = self
+                .candidate(haystack, at, &mut prev0, &mut prev1, &mut prev2);
+            if !vector::is_all_zeroes128(c) {
+                if let Some(m) = teddy.verify128(pats, haystack, at - 3, c) {
+                    return Some(m);
+                }
+            }
+            at += 16;
+        }
+        if at < len {
+            at = len - 16;
+            prev0 = vector::ones128();
+            prev1 = vector::ones128();
+            prev2 = vector::ones128();
+
+            let c = self
+                .candidate(haystack, at, &mut prev0, &mut prev1, &mut prev2);
+            if !vector::is_all_zeroes128(c) {
+                if let Some(m) = teddy.verify128(pats, haystack, at - 3, c) {
+                    return Some(m);
+                }
+            }
+        }
+        None
+    }
+
+    #[inline(always)]
+    unsafe fn candidate(
+        &self,
+        haystack: &[u8],
+        at: usize,
+        prev0: &mut __m128i,
+        prev1: &mut __m128i,
+        prev2: &mut __m128i,
+    ) -> __m128i {
+        debug_assert!(haystack[at..].len() >= 16);
+
+        let chunk = vector::loadu128(haystack, at);
+        let (res0, res1, res2, res3) = members4m128(
+            chunk, self.mask1, self.mask2, self.mask3, self.mask4,
+        );
+        let res0prev0 = _mm_alignr_epi8(res0, *prev0, 13);
+        let res1prev1 = _mm_alignr_epi8(res1, *prev1, 14);
+        let res2prev2 = _mm_alignr_epi8(res2, *prev2, 15);
+        let res = _mm_and_si128(
+            _mm_and_si128(_mm_and_si128(res0prev0, res1prev1), res2prev2),
+            res3,
+        );
+        *prev0 = res0;
+        *prev1 = res1;
+        *prev2 = res2;
+        res
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct TeddySlim4Mask256 {
+    pub mask1: Mask256,
+    pub mask2: Mask256,
+    pub mask3: Mask256,
+    pub mask4: Mask256,
+}
+
+impl TeddySlim4Mask256 {
+    #[target_feature(enable = "avx2")]
+    unsafe fn find_at(
+        &self,
+        pats: &Patterns,
+        teddy: &Teddy,
+        haystack: &[u8],
+        mut at: usize,
+    ) -> Option<Match> {
+        debug_assert!(haystack[at..].len() >= teddy.minimum_len());
+        // This assert helps eliminate bounds checks for bucket lookups in
+        // Teddy::verify_bucket, which has a small (3-4%) performance boost.
+        assert_eq!(8, teddy.buckets.len());
+
+        at += 3;
+        let len = haystack.len();
+        let mut prev0 = vector::ones256();
+        let mut prev1 = vector::ones256();
+        let mut prev2 = vector::ones256();
+        while at <= len - 32 {
+            let c = self
+                .candidate(haystack, at, &mut prev0, &mut prev1, &mut prev2);
+            if !vector::is_all_zeroes256(c) {
+                if let Some(m) = teddy.verify256(pats, haystack, at - 3, c) {
+                    return Some(m);
+                }
+            }
+            at += 32;
+        }
+        if at < len {
+            at = len - 32;
+            prev0 = vector::ones256();
+            prev1 = vector::ones256();
+            prev2 = vector::ones256();
+
+            let c = self
+                .candidate(haystack, at, &mut prev0, &mut prev1, &mut prev2);
+            if !vector::is_all_zeroes256(c) {
+                if let Some(m) = teddy.verify256(pats, haystack, at - 3, c) {
+                    return Some(m);
+                }
+            }
+        }
+        None
+    }
+
+    #[inline(always)]
+    unsafe fn candidate(
+        &self,
+        haystack: &[u8],
+        at: usize,
+        prev0: &mut __m256i,
+        prev1: &mut __m256i,
+        prev2: &mut __m256i,
+    ) -> __m256i {
+        debug_assert!(haystack[at..].len() >= 32);
+
+        let chunk = vector::loadu256(haystack, at);
+        let (res0, res1, res2, res3) = members4m256(
+            chunk, self.mask1, self.mask2, self.mask3, self.mask4,
+        );
+        let res0prev0 = vector::alignr256_13(res0, *prev0);
+        let res1prev1 = vector::alignr256_14(res1, *prev1);
+        let res2prev2 = vector::alignr256_15(res2, *prev2);
+        let res = _mm256_and_si256(
+            _mm256_and_si256(
+                _mm256_and_si256(res0prev0, res1prev1),
+                res2prev2,
+            ),
+            res3,
+        );
+        *prev0 = res0;
+        *prev1 = res1;
+        *prev2 = res2;
+        res
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct TeddyFat4Mask256 {
+    pub mask1: Mask256,
+    pub mask2: Mask256,
+    pub mask3: Mask256,
+    pub mask4: Mask256,
+}
+
+impl TeddyFat4Mask256 {
+    #[target_feature(enable = "avx2")]
+    unsafe fn find_at(
+        &self,
+        pats: &Patterns,
+        teddy: &Teddy,
+        haystack: &[u8],
+        mut at: usize,
+    ) -> Option<Match> {
+        debug_assert!(haystack[at..].len() >= teddy.minimum_len());
+        // This assert helps eliminate bounds checks for bucket lookups in
+        // Teddy::verify_bucket, which has a small (3-4%) performance boost.
+        assert_eq!(16, teddy.buckets.len());
+
+        at += 3;
+        let len = haystack.len();
+        let mut prev0 = vector::ones256();
+        let mut prev1 = vector::ones256();
+        let mut prev2 = vector::ones256();
+        while at <= len - 16 {
+            let c = self
+                .candidate(haystack, at, &mut prev0, &mut prev1, &mut prev2);
+            if !vector::is_all_zeroes256(c) {
+                if let Some(m) = teddy.verify_fat256(pats, haystack, at - 3, c)
+                {
+                    return Some(m);
+                }
+            }
+            at += 16;
+        }
+        if at < len {
+            at = len - 16;
+            prev0 = vector::ones256();
+            prev1 = vector::ones256();
+            prev2 = vector::ones256();
+
+            let c = self
+                .candidate(haystack, at, &mut prev0, &mut prev1, &mut prev2);
+            if !vector::is_all_zeroes256(c) {
+                if let Some(m) = teddy.verify_fat256(pats, haystack, at - 3, c)
+                {
+                    return Some(m);
+                }
+            }
+        }
+        None
+    }
+
+    #[inline(always)]
+    unsafe fn candidate(
+        &self,
+        haystack: &[u8],
+        at: usize,
+        prev0: &mut __m256i,
+        prev1: &mut __m256i,
+        prev2: &mut __m256i,
+    ) -> __m256i {
+        debug_assert!(haystack[at..].len() >= 16);
+
+        let chunk =
+            _mm256_broadcastsi128_si256(vector::loadu128(haystack, at));
+        let (res0, res1, res2, res3) = members4m256(
+            chunk, self.mask1, self.mask2, self.mask3, self.mask4,
+        );
+        let res0prev0 = _mm256_alignr_epi8(res0, *prev0, 13);
+        let res1prev1 = _mm256_alignr_epi8(res1, *prev1, 14);
+        let res2prev2 = _mm256_alignr_epi8(res2, *prev2, 15);
+        let res = _mm256_and_si256(
+            _mm256_and_si256(
+                _mm256_and_si256(res0prev0, res1prev1),
+                res2prev2,
+            ),
+            res3,
+        );
+        *prev0 = res0;
+        *prev1 = res1;
+        *prev2 = res2;
+        res
+    }
+}
+
 /// A 128-bit mask for the low and high nybbles in a set of patterns. Each
 /// lane `j` corresponds to a bitset where the `i`th bit is set if and only if
 /// the nybble `j` is in the bucket `i` at a particular position.
@@ -1219,4 +1492,82 @@ unsafe fn members3m256(
         _mm256_shuffle_epi8(mask3.hi, hhi),
     );
     (res0, res1, res2)
+}
+
+/// Return candidates for Slim 128-bit Teddy, where `chunk` corresponds
+/// to a 16-byte window of the haystack (where the least significant byte
+/// corresponds to the start of the window), and the masks correspond to a
+/// low/high mask for the first, second, third and fourth bytes of all patterns
+/// that are being searched. The vectors returned correspond to candidates for
+/// the first, second, third and fourth bytes in the patterns represented by
+/// the masks.
+#[target_feature(enable = "ssse3")]
+unsafe fn members4m128(
+    chunk: __m128i,
+    mask1: Mask128,
+    mask2: Mask128,
+    mask3: Mask128,
+    mask4: Mask128,
+) -> (__m128i, __m128i, __m128i, __m128i) {
+    let lomask = _mm_set1_epi8(0xF);
+    let hlo = _mm_and_si128(chunk, lomask);
+    let hhi = _mm_and_si128(_mm_srli_epi16(chunk, 4), lomask);
+    let res0 = _mm_and_si128(
+        _mm_shuffle_epi8(mask1.lo, hlo),
+        _mm_shuffle_epi8(mask1.hi, hhi),
+    );
+    let res1 = _mm_and_si128(
+        _mm_shuffle_epi8(mask2.lo, hlo),
+        _mm_shuffle_epi8(mask2.hi, hhi),
+    );
+    let res2 = _mm_and_si128(
+        _mm_shuffle_epi8(mask3.lo, hlo),
+        _mm_shuffle_epi8(mask3.hi, hhi),
+    );
+    let res3 = _mm_and_si128(
+        _mm_shuffle_epi8(mask4.lo, hlo),
+        _mm_shuffle_epi8(mask4.hi, hhi),
+    );
+    (res0, res1, res2, res3)
+}
+
+/// Return candidates for Slim 256-bit Teddy, where `chunk` corresponds
+/// to a 32-byte window of the haystack (where the least significant byte
+/// corresponds to the start of the window), and the masks correspond to a
+/// low/high mask for the first, second, third and fourth bytes of all patterns
+/// that are being searched. The vectors returned correspond to candidates for
+/// the first, second, third and fourth bytes in the patterns represented by
+/// the masks.
+///
+/// Note that this can also be used for Fat Teddy, where the high 128 bits in
+/// `chunk` is the same as the low 128 bits, which corresponds to a 16 byte
+/// window in the haystack.
+#[target_feature(enable = "avx2")]
+unsafe fn members4m256(
+    chunk: __m256i,
+    mask1: Mask256,
+    mask2: Mask256,
+    mask3: Mask256,
+    mask4: Mask256,
+) -> (__m256i, __m256i, __m256i, __m256i) {
+    let lomask = _mm256_set1_epi8(0xF);
+    let hlo = _mm256_and_si256(chunk, lomask);
+    let hhi = _mm256_and_si256(_mm256_srli_epi16(chunk, 4), lomask);
+    let res0 = _mm256_and_si256(
+        _mm256_shuffle_epi8(mask1.lo, hlo),
+        _mm256_shuffle_epi8(mask1.hi, hhi),
+    );
+    let res1 = _mm256_and_si256(
+        _mm256_shuffle_epi8(mask2.lo, hlo),
+        _mm256_shuffle_epi8(mask2.hi, hhi),
+    );
+    let res2 = _mm256_and_si256(
+        _mm256_shuffle_epi8(mask3.lo, hlo),
+        _mm256_shuffle_epi8(mask3.hi, hhi),
+    );
+    let res3 = _mm256_and_si256(
+        _mm256_shuffle_epi8(mask4.lo, hlo),
+        _mm256_shuffle_epi8(mask4.hi, hhi),
+    );
+    (res0, res1, res2, res3)
 }
