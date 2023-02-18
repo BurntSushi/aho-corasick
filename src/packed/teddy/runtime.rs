@@ -253,11 +253,21 @@ impl Teddy {
         // Convert the candidate into 64-bit chunks, and then verify each of
         // those chunks.
         let parts = vector::unpack64x256(cand);
-        for (i, &part) in parts.iter().enumerate() {
-            let pos = at + i * 8;
-            if let Some(m) = self.verify64(pats, 8, haystack, pos, part) {
-                return Some(m);
-            }
+        let mut pos = at;
+        if let Some(m) = self.verify64(pats, 8, haystack, pos, parts[0]) {
+            return Some(m);
+        }
+        pos += 8;
+        if let Some(m) = self.verify64(pats, 8, haystack, pos, parts[1]) {
+            return Some(m);
+        }
+        pos += 8;
+        if let Some(m) = self.verify64(pats, 8, haystack, pos, parts[2]) {
+            return Some(m);
+        }
+        pos += 8;
+        if let Some(m) = self.verify64(pats, 8, haystack, pos, parts[3]) {
+            return Some(m);
         }
         None
     }
