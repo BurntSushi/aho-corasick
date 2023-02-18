@@ -249,6 +249,7 @@ impl Builder {
         // is to force it using undocumented APIs (for tests/benchmarks).
         let (search_kind, minimum_len) = match self.config.force {
             None | Some(ForceAlgorithm::Teddy) => {
+                debug!("trying to build Teddy packed matcher");
                 let teddy = match self.build_teddy(&patterns) {
                     None => return None,
                     Some(teddy) => teddy,
@@ -256,7 +257,10 @@ impl Builder {
                 let minimum_len = teddy.minimum_len();
                 (SearchKind::Teddy(teddy), minimum_len)
             }
-            Some(ForceAlgorithm::RabinKarp) => (SearchKind::RabinKarp, 0),
+            Some(ForceAlgorithm::RabinKarp) => {
+                debug!("using Rabin-Karp packed matcher");
+                (SearchKind::RabinKarp, 0)
+            }
         };
         Some(Searcher { patterns, rabinkarp, search_kind, minimum_len })
     }
