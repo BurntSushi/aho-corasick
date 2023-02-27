@@ -80,6 +80,26 @@ pub use crate::util::{
 /// retrieved in one of two ways: calling `Automaton::start_state` or calling
 /// `Automaton::next_state` with a valid state ID.
 ///
+/// # Safety
+///
+/// This trait is not safe to implement so that code may rely on the
+/// correctness of implementations of this trait to avoid undefined behavior.
+/// The primary correctness guarantees are:
+///
+/// * `Automaton::start_state` always returns a valid state ID or an error or
+/// panics.
+/// * `Automaton::next_state`, when given a valid state ID, always returns
+/// a valid state ID for all values of `anchored` and `byte`, or otherwise
+/// panics.
+///
+/// In general, the rest of the methods on `Automaton` need to uphold their
+/// contracts as well. For example, `Automaton::is_dead` should only returns
+/// true if the given state ID is actually a dead state.
+///
+/// Note that currently this crate does not rely on the safety property defined
+/// here to avoid undefined behavior. Instead, this was done to make it
+/// _possible_ to do in the future.
+///
 /// # Example
 ///
 /// This example shows how one might implement a basic but correct search
@@ -153,7 +173,7 @@ pub use crate::util::{
 ///
 /// # Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
-pub trait Automaton {
+pub unsafe trait Automaton {
     /// Returns the starting state for the given search configuration.
     ///
     /// Upon success, the state ID returned is guaranteed to be valid for
@@ -591,7 +611,9 @@ pub trait Automaton {
     }
 }
 
-impl<'a, A: Automaton + ?Sized> Automaton for &'a A {
+// SAFETY: This just defers to the underlying 'AcAutomaton' and thus inherits
+// its safety properties.
+unsafe impl<'a, A: Automaton + ?Sized> Automaton for &'a A {
     #[inline(always)]
     fn start_state(&self, input: &Input<'_>) -> Result<StateID, MatchError> {
         (**self).start_state(input)
