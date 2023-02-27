@@ -26,14 +26,15 @@ use crate::{
 /// A DFA implementation of Aho-Corasick.
 ///
 /// When possible, prefer using [`AhoCorasick`](crate::AhoCorasick) instead of
-/// this type directly. Using an `DFA` directly is typically only necessary
-/// when one needs access to the [`Automaton`] trait implementation.
+/// this type directly. Using a `DFA` directly is typically only necessary when
+/// one needs access to the [`Automaton`] trait implementation.
 ///
 /// This DFA can only be built by first constructing a [`noncontiguous::NFA`].
 /// Both [`DFA::new`] and [`Builder::build`] do this for you automatically, but
 /// [`Builder::build_from_noncontiguous`] permits doing it explicitly.
 ///
-/// A DFA provides the best possible search performance via two mechanisms:
+/// A DFA provides the best possible search performance (in this crate) via two
+/// mechanisms:
 ///
 /// * All states use a dense representation for their transitions.
 /// * All failure transitions are pre-computed such that they are never

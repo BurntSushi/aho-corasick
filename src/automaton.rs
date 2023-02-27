@@ -134,7 +134,7 @@ pub use crate::util::{
 ///     if aut.is_match(sid) {
 ///         mat = Some(get_match(sid, at));
 ///         // Standard semantics require matches to be reported as soon as
-///         // they're seen. Otherwise, we continue until we need a dead state
+///         // they're seen. Otherwise, we continue until we see a dead state
 ///         // or the end of the haystack.
 ///         if matches!(aut.match_kind(), MatchKind::Standard) {
 ///             return Ok(mat);
@@ -147,7 +147,7 @@ pub use crate::util::{
 ///                 return Ok(mat);
 ///             } else if aut.is_match(sid) {
 ///                 mat = Some(get_match(sid, at + 1));
-///                 // As above, standard semnatics require that we return
+///                 // As above, standard semantics require that we return
 ///                 // immediately once a match is found.
 ///                 if matches!(aut.match_kind(), MatchKind::Standard) {
 ///                     return Ok(mat);
