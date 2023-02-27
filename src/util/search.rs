@@ -25,12 +25,26 @@ use crate::util::primitives::PatternID;
 /// while permitting tweaking parameters in more niche use cases while reusing
 /// the same search APIs.
 ///
-/// In particular, there is a `From<&T> for Input` implementation for all
-/// `T: AsRef<[u8]>`. Additionally, the [`AhoCorasick`](crate::AhoCorasick)
-/// search APIs accept a `Into<Input>`. These two things combined together
-/// mean you can provide things like `&str` and `&[u8]` to search APIs when
-/// the defaults are suitable, but also an `Input` when they're not. For
-/// example:
+/// # Valid bounds and search termination
+///
+/// An `Input` permits setting the bounds of a search via either
+/// [`Input::span`] or [`Input::range`]. The bounds set must be valid, or
+/// else a panic will occur. Bounds are valid if and only if:
+///
+/// * The bounds represent a valid range into the input's haystack.
+/// * **or** the end bound is a valid ending bound for the haystack *and*
+/// the start bound is exactly one greater than the start bound.
+///
+/// In the latter case, [`Input::is_done`] will return true and indicates any
+/// search receiving such an input should immediately return with no match.
+///
+/// # Example: `&str` and `&[u8]` automatically convert to an `Input`
+///
+/// There is a `From<&T> for Input` implementation for all `T: AsRef<[u8]>`.
+/// Additionally, the [`AhoCorasick`](crate::AhoCorasick) search APIs accept
+/// a `Into<Input>`. These two things combined together mean you can provide
+/// things like `&str` and `&[u8]` to search APIs when the defaults are
+/// suitable, but also an `Input` when they're not. For example:
 ///
 /// ```
 /// use aho_corasick::{AhoCorasick, Anchored, Input, Match, StartKind};
@@ -78,11 +92,6 @@ impl<'h> Input<'h> {
 
     /// Set the span for this search.
     ///
-    /// This routine does not panic if the span given is not a valid range for
-    /// this search's haystack. If this search is run with an invalid range,
-    /// then the most likely outcome is that the actual search execution will
-    /// panic.
-    ///
     /// This routine is generic over how a span is provided. While
     /// a [`Span`] may be given directly, one may also provide a
     /// `std::ops::Range<usize>`. To provide anything supported by range
@@ -91,6 +100,11 @@ impl<'h> Input<'h> {
     /// The default span is the entire haystack.
     ///
     /// Note that [`Input::range`] overrides this method and vice versa.
+    ///
+    /// # Panics
+    ///
+    /// This panics if the given span does not correspond to valid bounds in
+    /// the haystack or the termination of a search.
     ///
     /// # Example
     ///
@@ -123,11 +137,6 @@ impl<'h> Input<'h> {
 
     /// Like `Input::span`, but accepts any range instead.
     ///
-    /// This routine does not panic if the range given is not a valid range for
-    /// this search's haystack. If this search is run with an invalid range,
-    /// then the most likely outcome is that the actual search execution will
-    /// panic.
-    ///
     /// The default range is the entire haystack.
     ///
     /// Note that [`Input::span`] overrides this method and vice versa.
@@ -138,6 +147,9 @@ impl<'h> Input<'h> {
     /// to a valid [`Range`]. For example, this would panic when given
     /// `0..=usize::MAX` since it cannot be represented using a half-open
     /// interval in terms of `usize`.
+    ///
+    /// This routine also panics if the given range does not correspond to
+    /// valid bounds in the haystack or the termination of a search.
     ///
     /// # Example
     ///
@@ -292,10 +304,10 @@ impl<'h> Input<'h> {
     /// a [`Span`] may be given directly, one may also provide a
     /// `std::ops::Range<usize>`.
     ///
-    /// This routine does not panic if the range given is not a valid range for
-    /// this search's haystack. If this search is run with an invalid range,
-    /// then the most likely outcome is that the actual search execution will
-    /// panic.
+    /// # Panics
+    ///
+    /// This panics if the given span does not correspond to valid bounds in
+    /// the haystack or the termination of a search.
     ///
     /// # Example
     ///
@@ -309,7 +321,15 @@ impl<'h> Input<'h> {
     /// ```
     #[inline]
     pub fn set_span<S: Into<Span>>(&mut self, span: S) {
-        self.span = span.into();
+        let span = span.into();
+        assert!(
+            span.end <= self.haystack.len()
+                && span.start <= span.end.wrapping_add(1),
+            "invalid span {:?} for haystack of length {}",
+            span,
+            self.haystack.len(),
+        );
+        self.span = span;
     }
 
     /// Set the span for this search configuration given any range.
@@ -317,17 +337,15 @@ impl<'h> Input<'h> {
     /// This is like the [`Input::range`] method, except this mutates the
     /// span in place.
     ///
-    /// This routine does not panic if the range given is not a valid range for
-    /// this search's haystack. If this search is run with an invalid range,
-    /// then the most likely outcome is that the actual search execution will
-    /// panic.
-    ///
     /// # Panics
     ///
     /// This routine will panic if the given range could not be converted
     /// to a valid [`Range`]. For example, this would panic when given
     /// `0..=usize::MAX` since it cannot be represented using a half-open
     /// interval in terms of `usize`.
+    ///
+    /// This routine also panics if the given range does not correspond to
+    /// valid bounds in the haystack or the termination of a search.
     ///
     /// # Example
     ///
@@ -366,10 +384,10 @@ impl<'h> Input<'h> {
     /// This is a convenience routine for only mutating the start of a span
     /// without having to set the entire span.
     ///
-    /// This routine does not panic if the start offset given is not valid for
-    /// this search's haystack. If this search is run with an invalid range,
-    /// then the most likely outcome is that the actual search execution will
-    /// panic.
+    /// # Panics
+    ///
+    /// This panics if the given span does not correspond to valid bounds in
+    /// the haystack or the termination of a search.
     ///
     /// # Example
     ///
@@ -383,7 +401,7 @@ impl<'h> Input<'h> {
     /// ```
     #[inline]
     pub fn set_start(&mut self, start: usize) {
-        self.span.start = start;
+        self.set_span(Span { start, ..self.get_span() });
     }
 
     /// Set the ending offset for the span for this search configuration.
@@ -391,10 +409,10 @@ impl<'h> Input<'h> {
     /// This is a convenience routine for only mutating the end of a span
     /// without having to set the entire span.
     ///
-    /// This routine does not panic if the end offset given is not valid for
-    /// this search's haystack. If this search is run with an invalid range,
-    /// then the most likely outcome is that the actual search execution will
-    /// panic.
+    /// # Panics
+    ///
+    /// This panics if the given span does not correspond to valid bounds in
+    /// the haystack or the termination of a search.
     ///
     /// # Example
     ///
@@ -408,7 +426,7 @@ impl<'h> Input<'h> {
     /// ```
     #[inline]
     pub fn set_end(&mut self, end: usize) {
-        self.span.end = end;
+        self.set_span(Span { end, ..self.get_span() });
     }
 
     /// Set the anchor mode of a search.

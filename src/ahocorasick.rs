@@ -33,7 +33,7 @@ use crate::{
 /// `p` is the combined length of all patterns being searched. With that
 /// said, building an automaton can be fairly costly because of high constant
 /// factors, particularly when enabling the [DFA](AhoCorasickKind::DFA) option
-/// with [AhoCorasickBuilder::kind]. For this reason, it's generally a good
+/// with [`AhoCorasickBuilder::kind`]. For this reason, it's generally a good
 /// idea to build an automaton once and reuse it as much as possible.
 ///
 /// Aho-Corasick automatons can also use a fair bit of memory. To get
@@ -111,7 +111,13 @@ use crate::{
 /// all rooted in the automaton construction and search configurations. If
 /// those configurations are a static property of your program, then it is
 /// reasonable to call infallible routines since you know an error will never
-/// occur.
+/// occur. And if one _does_ occur, then it's a bug in your program.
+///
+/// To re-iterate, if the patterns, build or search configuration come from
+/// user or untrusted data, then you should handle errors at build or search
+/// time. If only the haystack comes from user or untrusted data, then there
+/// should be no need to handle errors anywhere and it is generally encouraged
+/// to `unwrap()` (or `expect()`) both build and search time calls.
 ///
 /// # Examples
 ///
@@ -256,9 +262,8 @@ impl AhoCorasick {
     /// Returns true if and only if this automaton matches the haystack at any
     /// position.
     ///
-    /// `haystack` may be any type that is cheaply convertible to a `&[u8]`.
-    /// This includes, but is not limited to, `String`, `&str`, `Vec<u8>`, and
-    /// `&[u8]` itself.
+    /// `input` may be any type that is cheaply convertible to an `Input`. This
+    /// includes, but is not limited to, `&str` and `&[u8]`.
     ///
     /// Aside from convenience, when `AhoCorasick` was built with
     /// leftmost-first or leftmost-longest semantics, this might result in a
@@ -284,9 +289,9 @@ impl AhoCorasick {
     /// assert!(ac.is_match("xxx bar xxx"));
     /// assert!(!ac.is_match("xxx qux xxx"));
     /// ```
-    pub fn is_match<B: AsRef<[u8]>>(&self, haystack: B) -> bool {
+    pub fn is_match<'h, I: Into<Input<'h>>>(&self, input: I) -> bool {
         self.aut
-            .try_find(&Input::new(haystack.as_ref()).earliest(true))
+            .try_find(&input.into().earliest(true))
             .expect("AhoCorasick::try_find is not expected to fail")
             .is_some()
     }
@@ -2042,7 +2047,7 @@ impl<'a, R: std::io::Read> Iterator for StreamFindIter<'a, R> {
 /// [`StartKind::Both`] to build a searcher that supports both unanchored and
 /// anchored searches _and_ you set [`AhoCorasickKind::DFA`], then the DFA will
 /// essentially be duplicated to support both simultaneously. This results in
-/// very bad memory usage.
+/// very high memory usage.
 /// * For all other options, their defaults are almost certainly what you want.
 #[derive(Clone, Debug, Default)]
 pub struct AhoCorasickBuilder {
