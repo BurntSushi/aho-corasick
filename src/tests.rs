@@ -1592,7 +1592,12 @@ fn regression_stream_rare_byte_prefilter() {
     }
 
     fn run() -> std::io::Result<()> {
-        let aut = AhoCorasick::builder().build(&[&MAGIC]).unwrap();
+        let aut = AhoCorasick::builder()
+            // Enable byte classes to make debugging the automaton easier. It
+            // should have no effect on the test result.
+            .byte_classes(false)
+            .build(&[&MAGIC])
+            .unwrap();
 
         // While reading from a vector, it works:
         let mut buf = alloc::vec![];
