@@ -87,7 +87,9 @@ jobs:
     - run: ${{ env.CARGO }} build --verbose
     - run: ${{ env.CARGO }} doc --verbose
     - run: ${{ env.CARGO }} test --verbose
+    - run: ${{ env.CARGO }} test --lib --verbose --no-default-features --features std,perf-literal
     - run: ${{ env.CARGO }} test --lib --verbose --no-default-features
+    - run: ${{ env.CARGO }} test --lib --verbose --no-default-features --features std
     - run: ${{ env.CARGO }} test --lib --verbose --no-default-features --features perf-literal
     - if: matrix.build == 'nightly'
       run: ${{ env.CARGO }} build --manifest-path aho-corasick-debug/Cargo.toml
