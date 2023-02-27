@@ -52,7 +52,7 @@ memchr = { version = "2.4.0", default-features = false, optional = true }
 
 [dev-dependencies]
 doc-comment = "0.3.3"
-fst = "0.4.5"
+# fst = "0.4.5"
 
 [package.metadata.docs.rs]
 # We want to document all features.
