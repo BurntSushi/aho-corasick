@@ -258,9 +258,12 @@ mod tests;
 // I wrote out the module for implementing fst::Automaton only to later realize
 // that this would make fst a public dependency and fst is not at 1.0 yet. I
 // decided to just keep the code in tree, but build it only during tests.
-#[cfg(test)]
-#[allow(dead_code)]
-mod transducer;
+//
+// TODO: I think I've changed my mind again. I'm considering pushing it out
+// into either a separate crate or into 'fst' directly as an optional feature.
+// #[cfg(test)]
+// #[allow(dead_code)]
+// mod transducer;
 pub(crate) mod util;
 
 #[cfg(test)]
