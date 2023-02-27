@@ -447,7 +447,7 @@ impl RareBytesBuilder {
 
     /// Build the rare bytes prefilter.
     ///
-    /// If there are more than 3 distinct starting bytes, or if heuristics
+    /// If there are more than 3 distinct rare bytes found, or if heuristics
     /// otherwise determine that this prefilter should not be used, then `None`
     /// is returned.
     fn build(&self) -> Option<Prefilter> {
