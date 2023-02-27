@@ -31,7 +31,7 @@ jobs:
         include:
         - build: pinned
           os: ubuntu-18.04
-          rust: 1.56.1
+          rust: 1.60.0
         - build: stable
           os: ubuntu-18.04
           rust: stable
@@ -87,6 +87,8 @@ jobs:
     - run: ${{ env.CARGO }} build --verbose
     - run: ${{ env.CARGO }} doc --verbose
     - run: ${{ env.CARGO }} test --verbose
+    - run: ${{ env.CARGO }} test --lib --verbose --no-default-features
+    - run: ${{ env.CARGO }} test --lib --verbose --no-default-features --features perf-literal
     - if: matrix.build == 'nightly'
       run: ${{ env.CARGO }} build --manifest-path aho-corasick-debug/Cargo.toml
     - if: matrix.build == 'nightly'
