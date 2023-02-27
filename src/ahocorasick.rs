@@ -2563,8 +2563,11 @@ impl<A> AcAutomaton for A where
 
 // I'm not sure why this trait impl shows up in the docs, as the AcAutomaton
 // trait is not exported. So we forcefully hide it.
+//
+// SAFETY: This just defers to the underlying 'AcAutomaton' and thus inherits
+// its safety properties.
 #[doc(hidden)]
-impl Automaton for Arc<dyn AcAutomaton> {
+unsafe impl Automaton for Arc<dyn AcAutomaton> {
     #[inline(always)]
     fn start_state(&self, input: &Input<'_>) -> Result<StateID, MatchError> {
         (**self).start_state(input)

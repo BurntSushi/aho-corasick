@@ -181,7 +181,10 @@ impl DFA {
     }
 }
 
-impl Automaton for DFA {
+// SAFETY: 'start_state' always returns a valid state ID, 'next_state' always
+// returns a valid state ID given a valid state ID. We otherwise claim that
+// all other methods are correct as well.
+unsafe impl Automaton for DFA {
     #[inline(always)]
     fn start_state(&self, input: &Input<'_>) -> Result<StateID, MatchError> {
         // Either of the start state IDs can be DEAD, in which case, support

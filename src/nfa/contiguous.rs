@@ -168,7 +168,10 @@ impl NFA {
     const FAIL: StateID = StateID::new_unchecked(1);
 }
 
-impl Automaton for NFA {
+// SAFETY: 'start_state' always returns a valid state ID, 'next_state' always
+// returns a valid state ID given a valid state ID. We otherwise claim that
+// all other methods are correct as well.
+unsafe impl Automaton for NFA {
     #[inline(always)]
     fn start_state(&self, input: &Input<'_>) -> Result<StateID, MatchError> {
         match input.get_anchored() {
