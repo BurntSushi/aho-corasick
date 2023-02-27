@@ -987,10 +987,7 @@ impl<'a, A: Automaton, R: std::io::Read> Iterator
 /// I wrote this many moons ago and I no longer grok it. It's likely that it
 /// is way too complicated. One wonders if it would be simpler to just write
 /// something that uses 'next_state' directly via the 'Automaton' trait instead
-/// of trying to use existing search routines. Note though that if one goes
-/// down that path, we'll likely want to deprecate the top-level AhoCorasick
-/// routine because it uses dynamic dispatch, which would make 'next_state'
-/// quite slow!
+/// of trying to use existing search routines.
 #[cfg(feature = "std")]
 #[derive(Debug)]
 struct StreamChunkIter<'a, A, R> {
@@ -1087,6 +1084,7 @@ impl<'a, A: Automaton, R: std::io::Read> StreamChunkIter<'a, A, R> {
                     self.absolute_pos +=
                         self.search_pos - self.buf.min_buffer_len();
                     self.search_pos = self.buf.min_buffer_len();
+                    self.state.at = self.search_pos;
                     self.buf.roll();
                 }
                 match self.buf.fill(&mut self.rdr) {
@@ -1118,11 +1116,43 @@ impl<'a, A: Automaton, R: std::io::Read> StreamChunkIter<'a, A, R> {
             input.set_start(self.search_pos);
             // Note that we use an overlapping search so that we can save the
             // progress of a search between calls. We don't actually report
-            // overlapping matches. (Which we achieve by always providing
+            // overlapping matches. (Which we achieve by always resetting to
             // OverlappingState::start() after a match is seen.)
-            self.aut
-                .try_find_overlapping(&input, &mut self.state)
-                .expect("already checked that no match error can occur here");
+            //
+            // FIXME: We currently call the overlapping impl directly here
+            // so that we can forcefully disable the use of prefilters.
+            // Unfortunately, prefilters don't work in a stream context
+            // currently. Consider, for example, the follow buffer, with a roll
+            // point at the indicating position:
+            //
+            //     bazquux
+            //      ^
+            //
+            // Now let's say we're looking for 'baz' and we have a memmem
+            // prefilter for it. It correctly says, "nope, no match" since all
+            // it sees is a 'b'. So we roll the buffer and get the rest of the
+            // contents. But our search position is now at 'a' *and* we're in a
+            // start state. Whoops. The prefilter runs again, finds nothing and
+            // reports no match.
+            //
+            // Basically, there is a state synchronization issue with a
+            // prefilter reporting "no match" and what the underlying state of
+            // the automaton *should* be by the time it reaches the end of the
+            // buffer. Clearly, we need to be more sophisticated here.
+            //
+            // We should probably roll our own stream searching implementation
+            // just for this.
+            //
+            // This whole bit of code is a mess anyway. I brought it over
+            // from an older version of the crate where we similarly disabled
+            // prefilter optimizations.
+            try_find_overlapping_fwd_imp(
+                self.aut,
+                &input,
+                None,
+                &mut self.state,
+            )
+            .expect("already checked that no match error can occur here");
             match self.state.get_match() {
                 None => {
                     self.search_pos = self.buf.len();
@@ -1370,6 +1400,8 @@ fn try_find_overlapping_fwd_imp<A: Automaton + ?Sized>(
             }
             state.at = input.start();
             state.id = Some(sid);
+            state.next_match_index = None;
+            state.mat = None;
             sid
         }
         Some(sid) => {
@@ -1383,10 +1415,12 @@ fn try_find_overlapping_fwd_imp<A: Automaton + ?Sized>(
                     state.mat = Some(get_match(aut, sid, i, state.at + 1));
                     return Ok(());
                 }
+                // Once we've reported all matches at a given position, we need
+                // to advance the search to the next position.
+                state.at += 1;
+                state.next_match_index = None;
+                state.mat = None;
             }
-            // Once we've reported all matches at a given position, we need to
-            // advance the search to the next position.
-            state.at += 1;
             sid
         }
     };
@@ -1424,7 +1458,12 @@ fn try_find_overlapping_fwd_imp<A: Automaton + ?Sized>(
                 // treated as special. That is, without a prefilter, is_special
                 // should only return true when the state is a dead or a match
                 // state.
-                debug_assert!(false, "unreachable");
+                //
+                // ... except for one special case: in stream searching, we
+                // currently call overlapping search with a 'None' prefilter,
+                // regardless of whether one exists or not, because stream
+                // searching can't currently deal with prefilters correctly in
+                // all cases.
             }
         }
         state.at += 1;
