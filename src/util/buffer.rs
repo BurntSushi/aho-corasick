@@ -23,8 +23,16 @@ const DEFAULT_BUFFER_CAPACITY: usize = 64 * (1 << 10); // 64 KB
 ///
 /// A lot of the logic for dealing with this is unfortunately split out between
 /// this roll buffer and the `StreamChunkIter`.
+///
+/// Note also that this buffer is not actually required to just report matches.
+/// Because a `Match` is just some offsets. But it *is* required for supporting
+/// things like `try_stream_replace_all` because that needs some mechanism for
+/// knowing which bytes in the stream correspond to a match and which don't. So
+/// when a match occurs across two `read` calls, *something* needs to retain
+/// the bytes from the previous `read` call because you don't know before the
+/// second read call whether a match exists or not.
 #[derive(Debug)]
-pub struct Buffer {
+pub(crate) struct Buffer {
     /// The raw buffer contents. This has a fixed size and never increases.
     buf: Vec<u8>,
     /// The minimum size of the buffer, which is equivalent to the maximum
@@ -38,7 +46,7 @@ pub struct Buffer {
 impl Buffer {
     /// Create a new buffer for stream searching. The minimum buffer length
     /// given should be the size of the maximum possible match length.
-    pub fn new(min_buffer_len: usize) -> Buffer {
+    pub(crate) fn new(min_buffer_len: usize) -> Buffer {
         let min = core::cmp::max(1, min_buffer_len);
         // The minimum buffer amount is also the amount that we roll our
         // buffer in order to support incremental searching. To this end,
@@ -57,7 +65,7 @@ impl Buffer {
 
     /// Return the contents of this buffer.
     #[inline]
-    pub fn buffer(&self) -> &[u8] {
+    pub(crate) fn buffer(&self) -> &[u8] {
         &self.buf[..self.end]
     }
 
@@ -65,14 +73,8 @@ impl Buffer {
     /// smaller than this is if the stream itself contains less than the
     /// minimum buffer amount.
     #[inline]
-    pub fn min_buffer_len(&self) -> usize {
+    pub(crate) fn min_buffer_len(&self) -> usize {
         self.min
-    }
-
-    /// Return the total length of the contents in the buffer.
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.end
     }
 
     /// Return all free capacity in this buffer.
@@ -84,7 +86,7 @@ impl Buffer {
     /// this buffer's free capacity. If no more bytes could be read, then this
     /// returns false. Otherwise, this reads until it has filled the buffer
     /// past the minimum amount.
-    pub fn fill<R: std::io::Read>(
+    pub(crate) fn fill<R: std::io::Read>(
         &mut self,
         mut rdr: R,
     ) -> std::io::Result<bool> {
@@ -96,7 +98,7 @@ impl Buffer {
             }
             readany = true;
             self.end += readlen;
-            if self.len() >= self.min {
+            if self.buffer().len() >= self.min {
                 return Ok(true);
             }
         }
@@ -108,7 +110,7 @@ impl Buffer {
     ///
     /// This should only be called when the entire contents of this buffer have
     /// been searched.
-    pub fn roll(&mut self) {
+    pub(crate) fn roll(&mut self) {
         let roll_start = self
             .end
             .checked_sub(self.min)

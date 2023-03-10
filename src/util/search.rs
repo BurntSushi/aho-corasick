@@ -930,6 +930,14 @@ impl Match {
         self.span().is_empty()
     }
 
+    /// Returns the length of this match.
+    ///
+    /// This returns `0` in precisely the cases that `is_empty` returns `true`.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.span().len()
+    }
+
     /// Returns a new match with `offset` added to its span's `start` and `end`
     /// values.
     #[inline]

@@ -686,7 +686,7 @@ macro_rules! testconfig {
     (stream, $name:ident, $collection:expr, $kind:ident, $with:expr) => {
         #[test]
         fn $name() {
-            run_search_tests($collection, |test| {
+            run_stream_search_tests($collection, |test| {
                 let buf = std::io::BufReader::with_capacity(
                     1,
                     test.haystack.as_bytes(),
@@ -1333,6 +1333,36 @@ fn run_search_tests<F: FnMut(&SearchTest) -> Vec<Match>>(
     }
 }
 
+// Like 'run_search_tests', but we skip any tests that contain the empty
+// pattern because stream searching doesn't support it.
+fn run_stream_search_tests<F: FnMut(&SearchTest) -> Vec<Match>>(
+    which: TestCollection,
+    mut f: F,
+) {
+    let get_match_triples =
+        |matches: Vec<Match>| -> Vec<(usize, usize, usize)> {
+            matches
+                .into_iter()
+                .map(|m| (m.pattern().as_usize(), m.start(), m.end()))
+                .collect()
+        };
+    for &tests in which {
+        for test in tests {
+            if test.patterns.iter().any(|p| p.is_empty()) {
+                continue;
+            }
+            assert_eq!(
+                test.matches,
+                get_match_triples(f(&test)).as_slice(),
+                "test: {}, patterns: {:?}, haystack: {:?}",
+                test.name,
+                test.patterns,
+                test.haystack
+            );
+        }
+    }
+}
+
 #[test]
 fn search_tests_have_unique_names() {
     let assert = |constname, tests: &[SearchTest]| {
@@ -1605,7 +1635,7 @@ fn regression_stream_rare_byte_prefilter() {
         let from_whole = aut.find_iter(&buf).next().unwrap().start();
 
         // But using stream_find_iter fails!
-        let mut file = R::default();
+        let mut file = std::io::BufReader::new(R::default());
         let begin = aut
             .stream_find_iter(&mut file)
             .next()

@@ -113,6 +113,10 @@ pub struct NFA {
     /// use this for building the DFA. We store it on the NFA since it's easy
     /// to compute while visiting the patterns.
     byte_classes: ByteClasses,
+    /// The length, in bytes, of the shortest pattern in this automaton. This
+    /// information is useful for detecting whether an automaton matches the
+    /// empty string or not.
+    min_pattern_len: usize,
     /// The length, in bytes, of the longest pattern in this automaton. This
     /// information is useful for keeping correct buffer sizes when searching
     /// on streams.
@@ -313,6 +317,11 @@ unsafe impl Automaton for NFA {
     #[inline(always)]
     fn pattern_len(&self, pid: PatternID) -> usize {
         self.pattern_lens[pid].as_usize()
+    }
+
+    #[inline(always)]
+    fn min_pattern_len(&self) -> usize {
+        self.min_pattern_len
     }
 
     #[inline(always)]
@@ -571,6 +580,7 @@ impl<'a> Compiler<'a> {
                 pattern_lens: vec![],
                 prefilter: None,
                 byte_classes: ByteClasses::singletons(),
+                min_pattern_len: usize::MAX,
                 max_pattern_len: 0,
                 special: Special::zero(),
                 memory_usage: 0,
@@ -669,6 +679,8 @@ impl<'a> Compiler<'a> {
             let pat = pat.as_ref();
             let patlen = SmallIndex::new(pat.len())
                 .map_err(|_| BuildError::pattern_too_long(pid, pat.len()))?;
+            self.nfa.min_pattern_len =
+                core::cmp::min(self.nfa.min_pattern_len, pat.len());
             self.nfa.max_pattern_len =
                 core::cmp::max(self.nfa.max_pattern_len, pat.len());
             assert_eq!(
@@ -1290,6 +1302,7 @@ impl core::fmt::Debug for NFA {
         writeln!(f, "prefilter: {:?}", self.prefilter.is_some())?;
         writeln!(f, "state length: {:?}", self.states.len())?;
         writeln!(f, "pattern length: {:?}", self.patterns_len())?;
+        writeln!(f, "shortest pattern length: {:?}", self.min_pattern_len)?;
         writeln!(f, "longest pattern length: {:?}", self.max_pattern_len)?;
         writeln!(f, "memory usage: {:?}", self.memory_usage())?;
         writeln!(f, ")")?;
