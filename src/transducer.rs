@@ -92,7 +92,7 @@ impl<A: Automaton> fst::Automaton for Unanchored<A> {
     }
 }
 
-/// Represents an unanchored Aho-Corasick search of a finite state transducer.
+/// Represents an anchored Aho-Corasick search of a finite state transducer.
 ///
 /// Wrapping an Aho-Corasick automaton in `Unanchored` will fail if the
 /// underlying automaton does not support unanchored searches.
