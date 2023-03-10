@@ -128,6 +128,8 @@ pub struct DFA {
     /// The equivalence classes for this DFA. All transitions are defined on
     /// equivalence classes and not on the 256 distinct byte values.
     byte_classes: ByteClasses,
+    /// The length of the shortest pattern in this automaton.
+    min_pattern_len: usize,
     /// The length of the longest pattern in this automaton.
     max_pattern_len: usize,
     /// The information required to deduce which states are "special" in this
@@ -260,18 +262,25 @@ unsafe impl Automaton for DFA {
     }
 
     #[inline(always)]
+    fn min_pattern_len(&self) -> usize {
+        self.min_pattern_len
+    }
+
+    #[inline(always)]
     fn max_pattern_len(&self) -> usize {
         self.max_pattern_len
     }
 
     #[inline(always)]
     fn match_len(&self, sid: StateID) -> usize {
+        debug_assert!(self.is_match(sid));
         let offset = (sid.as_usize() >> self.stride2) - 2;
         self.matches[offset].len()
     }
 
     #[inline(always)]
     fn match_pattern(&self, sid: StateID, index: usize) -> PatternID {
+        debug_assert!(self.is_match(sid));
         let offset = (sid.as_usize() >> self.stride2) - 2;
         self.matches[offset][index]
     }
@@ -360,6 +369,7 @@ impl core::fmt::Debug for DFA {
         writeln!(f, "prefilter: {:?}", self.prefilter.is_some())?;
         writeln!(f, "state length: {:?}", self.state_len)?;
         writeln!(f, "pattern length: {:?}", self.patterns_len())?;
+        writeln!(f, "shortest pattern length: {:?}", self.min_pattern_len)?;
         writeln!(f, "longest pattern length: {:?}", self.max_pattern_len)?;
         writeln!(f, "alphabet length: {:?}", self.alphabet_len)?;
         writeln!(f, "stride: {:?}", 1 << self.stride2)?;
@@ -490,6 +500,7 @@ impl Builder {
             alphabet_len: byte_classes.alphabet_len(),
             stride2: byte_classes.stride2(),
             byte_classes,
+            min_pattern_len: nnfa.min_pattern_len(),
             max_pattern_len: nnfa.max_pattern_len(),
             // The special state IDs are set later.
             special: Special::zero(),

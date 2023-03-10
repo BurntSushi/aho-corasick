@@ -182,6 +182,13 @@ impl MatchError {
     pub fn unsupported_overlapping(got: MatchKind) -> MatchError {
         MatchError::new(MatchErrorKind::UnsupportedOverlapping { got })
     }
+
+    /// Create a new "unsupported empty pattern" error. This occurs when the
+    /// caller requests a search for which matching an automaton that contains
+    /// an empty pattern string is not supported.
+    pub fn unsupported_empty() -> MatchError {
+        MatchError::new(MatchErrorKind::UnsupportedEmpty)
+    }
 }
 
 /// The underlying kind of a [`MatchError`].
@@ -209,6 +216,9 @@ pub enum MatchErrorKind {
         /// The match semantics for the automaton that was used.
         got: MatchKind,
     },
+    /// An error indicating that the operation requested doesn't support
+    /// automatons that contain an empty pattern string.
+    UnsupportedEmpty,
 }
 
 #[cfg(feature = "std")]
@@ -235,6 +245,13 @@ impl core::fmt::Display for MatchError {
                     f,
                     "match kind {:?} does not support overlapping searches",
                     got,
+                )
+            }
+            MatchErrorKind::UnsupportedEmpty => {
+                write!(
+                    f,
+                    "matching with an empty pattern string is not \
+                     supported for this operation",
                 )
             }
         }

@@ -6,6 +6,10 @@ Aho-Corasick automaton. It also provides access to lower level APIs that
 permit walking the state transitions of an Aho-Corasick automaton manually.
 */
 
+#![allow(warnings)]
+
+use core::ops::Range;
+
 use alloc::{string::String, vec::Vec};
 
 use crate::util::{
@@ -300,6 +304,10 @@ pub unsafe trait Automaton {
     /// ID. A pattern ID is valid if and only if it is less than
     /// `Automaton::patterns_len`.
     fn pattern_len(&self, pid: PatternID) -> usize;
+
+    /// Returns the length, in bytes, of the shortest pattern in this
+    /// automaton.
+    fn min_pattern_len(&self) -> usize;
 
     /// Returns the length, in bytes, of the longest pattern in this automaton.
     fn max_pattern_len(&self) -> usize;
@@ -674,6 +682,11 @@ unsafe impl<'a, A: Automaton + ?Sized> Automaton for &'a A {
     }
 
     #[inline(always)]
+    fn min_pattern_len(&self) -> usize {
+        (**self).min_pattern_len()
+    }
+
+    #[inline(always)]
     fn max_pattern_len(&self) -> usize {
         (**self).max_pattern_len()
     }
@@ -981,39 +994,233 @@ impl<'a, A: Automaton, R: std::io::Read> Iterator
     }
 }
 
-/// The internal implementation of stream searching.
+/// An iterator that reports matches in a stream.
 ///
-/// I wrote this many moons ago and I no longer grok it. It's likely that it
-/// is way too complicated. One wonders if it would be simpler to just write
-/// something that uses 'next_state' directly via the 'Automaton' trait instead
-/// of trying to use existing search routines.
+/// (This doesn't actually implement the `Iterator` trait because it returns
+/// something with a lifetime attached to a buffer it owns, but that's OK. It
+/// still has a `next` method and is iterator-like enough to be fine.)
+///
+/// This iterator yields elements of type `io::Result<StreamChunk>`, where
+/// an error is reported if there was a problem reading from the underlying
+/// stream. The iterator terminates only when the underlying stream reaches
+/// `EOF`.
+///
+/// The idea here is that each chunk represents either a match or a non-match,
+/// and if you concatenated all of the chunks together, you'd reproduce the
+/// entire contents of the stream, byte-for-byte.
+///
+/// This chunk machinery is a bit complicated and it isn't strictly required
+/// for a stream searcher that just reports matches. But we do need something
+/// like this to deal with the "replacement" API, which needs to know which
+/// chunks it can copy and which it needs to replace.
 #[cfg(feature = "std")]
 #[derive(Debug)]
-struct StreamChunkIter<'a, A, R> {
+pub struct StreamChunkIter<'a, A, R> {
+    /// The underlying automaton to do the search.
     aut: &'a A,
     /// The source of bytes we read from.
     rdr: R,
-    /// A fixed size buffer. This is what we actually search. There are some
-    /// invariants around the buffer's size, namely, it must be big enough to
-    /// contain the longest possible match.
+    /// A roll buffer for managing bytes from `rdr`. Basically, this is used
+    /// to handle the case of a match that is split by two different
+    /// calls to `rdr.read()`. This isn't strictly needed if all we needed to
+    /// do was report matches, but here we are reporting chunks of non-matches
+    /// and matches and in order to do that, we really just cannot treat our
+    /// stream as non-overlapping blocks of bytes. We need to permit some
+    /// overlap while we retain bytes from a previous `read` call in memory.
     buf: crate::util::buffer::Buffer,
+    /// The unanchored starting state of this automaton.
+    start: StateID,
     /// The state of the automaton.
-    state: OverlappingState,
-    /// The current position at which to start the next search in `buf`.
-    search_pos: usize,
-    /// The absolute position of `search_pos`, where `0` corresponds to the
-    /// position of the first byte read from `rdr`.
+    sid: StateID,
+    /// The absolute position over the entire stream.
     absolute_pos: usize,
-    /// The ending position of the last StreamChunk that was returned to the
-    /// caller. This position is used to determine whether we need to emit
-    /// non-matching bytes before emitting a match.
-    report_pos: usize,
-    /// A match that should be reported on the next call.
-    pending_match: Option<Match>,
-    /// Enabled only when the automaton can match the empty string. When
-    /// enabled, we need to execute one final search after consuming the
-    /// reader to find the trailing empty match.
-    has_empty_match_at_end: bool,
+    /// The position we're currently at within `buf`.
+    buffer_pos: usize,
+    /// The buffer position of the end of the bytes that we last returned
+    /// to the caller. Basically, whenever we find a match, we look to see if
+    /// there is a difference between where the match started and the position
+    /// of the last byte we returned to the caller. If there's a difference,
+    /// then we need to return a 'NonMatch' chunk.
+    buffer_reported_pos: usize,
+}
+
+#[cfg(feature = "std")]
+impl<'a, A: Automaton, R: std::io::Read> StreamChunkIter<'a, A, R> {
+    fn new(
+        aut: &'a A,
+        rdr: R,
+    ) -> Result<StreamChunkIter<'a, A, R>, MatchError> {
+        // This restriction is a carry-over from older versions of this crate.
+        // I didn't have the bandwidth to think through how to handle, say,
+        // leftmost-first or leftmost-longest matching, but... it should be
+        // possible? The main problem is that once you see a match state in
+        // leftmost-first semantics, you can't just stop at that point and
+        // report a match. You have to keep going until you either hit a dead
+        // state or EOF. So how do you know when you'll hit a dead state? Well,
+        // you don't. With Aho-Corasick, I believe you can put a bound on it
+        // and say, "once a match has been seen, you'll need to scan forward at
+        // most N bytes" where N=aut.max_pattern_len().
+        //
+        // Which is fine, but it does mean that state about whether we're still
+        // looking for a dead state or not needs to persist across buffer
+        // refills. Which this code doesn't really handle. It does preserve
+        // *some* state across buffer refills, basically ensuring that a match
+        // span is always in memory.
+        if !aut.match_kind().is_standard() {
+            return Err(MatchError::unsupported_stream(aut.match_kind()));
+        }
+        // This is kind of a cop-out, but empty matches are SUPER annoying.
+        // If we know they can't happen (which is what we enforce here), then
+        // it makes a lot of logic much simpler. With that said, I'm open to
+        // supporting this case, but we need to define proper semantics for it
+        // first. It wasn't totally clear to me what it should do at the time
+        // of writing, so I decided to just be conservative.
+        //
+        // It also seems like a very weird case to support anyway. Why search a
+        // stream if you're just going to get a match at every position?
+        //
+        // ¯\_(ツ)_/¯
+        if aut.min_pattern_len() == 0 {
+            return Err(MatchError::unsupported_empty());
+        }
+        let start = aut.start_state(Anchored::No)?;
+        Ok(StreamChunkIter {
+            aut,
+            rdr,
+            buf: crate::util::buffer::Buffer::new(aut.max_pattern_len()),
+            start,
+            sid: start,
+            absolute_pos: 0,
+            buffer_pos: 0,
+            buffer_reported_pos: 0,
+        })
+    }
+
+    fn next(&mut self) -> Option<std::io::Result<StreamChunk>> {
+        // This code is pretty gnarly. It IS simpler than the equivalent code
+        // in the previous aho-corasick release, in part because we inline
+        // automaton traversal here and also in part because we have abdicated
+        // support for automatons that contain an empty pattern.
+        //
+        // I suspect this code could be made a bit simpler by designing a
+        // better buffer abstraction.
+        //
+        // But in general, this code is basically write-only. So you'll need
+        // to go through it step-by-step to grok it. One of the key bits of
+        // complexity is tracking a few different offsets. 'buffer_pos' is
+        // where we are in the buffer for search. 'buffer_reported_pos' is the
+        // position immediately following the last byte in the buffer that
+        // we've returned to the caller. And 'absolute_pos' is the overall
+        // current absolute position of the search in the entire stream, and
+        // this is what match spans are reported in terms of.
+        loop {
+            if self.aut.is_match(self.sid) {
+                let mat = self.get_match();
+                if let Some(r) = self.get_non_match_chunk(mat) {
+                    self.buffer_reported_pos += r.len();
+                    let bytes = &self.buf.buffer()[r];
+                    return Some(Ok(StreamChunk::NonMatch { bytes }));
+                }
+                self.sid = self.start;
+                let r = self.get_match_chunk(mat);
+                self.buffer_reported_pos += r.len();
+                let bytes = &self.buf.buffer()[r];
+                return Some(Ok(StreamChunk::Match { bytes, mat }));
+            }
+            if self.buffer_pos >= self.buf.buffer().len() {
+                if let Some(r) = self.get_pre_roll_non_match_chunk() {
+                    self.buffer_reported_pos += r.len();
+                    let bytes = &self.buf.buffer()[r];
+                    return Some(Ok(StreamChunk::NonMatch { bytes }));
+                }
+                if self.buf.buffer().len() >= self.buf.min_buffer_len() {
+                    self.buffer_pos = self.buf.min_buffer_len();
+                    self.buffer_reported_pos -=
+                        self.buf.buffer().len() - self.buf.min_buffer_len();
+                    self.buf.roll();
+                }
+                match self.buf.fill(&mut self.rdr) {
+                    Err(err) => return Some(Err(err)),
+                    Ok(true) => {}
+                    Ok(false) => {
+                        // We've hit EOF, but if there are still some
+                        // unreported bytes remaining, return them now.
+                        if let Some(r) = self.get_eof_non_match_chunk() {
+                            self.buffer_reported_pos += r.len();
+                            let bytes = &self.buf.buffer()[r];
+                            return Some(Ok(StreamChunk::NonMatch { bytes }));
+                        }
+                        // We've reported everything!
+                        return None;
+                    }
+                }
+            }
+            let start = self.absolute_pos;
+            for &byte in self.buf.buffer()[self.buffer_pos..].iter() {
+                self.sid = self.aut.next_state(Anchored::No, self.sid, byte);
+                self.absolute_pos += 1;
+                if self.aut.is_match(self.sid) {
+                    break;
+                }
+            }
+            self.buffer_pos += self.absolute_pos - start;
+        }
+        None
+    }
+
+    /// Return a match chunk for the given match. It is assumed that the match
+    /// ends at the current `buffer_pos`.
+    fn get_match_chunk(&self, mat: Match) -> Range<usize> {
+        let start = self.buffer_pos - mat.len();
+        let end = self.buffer_pos;
+        start..end
+    }
+
+    /// Return a non-match chunk, if necessary, just before reporting a match.
+    /// This returns `None` if there is nothing to report. Otherwise, this
+    /// assumes that the given match ends at the current `buffer_pos`.
+    fn get_non_match_chunk(&self, mat: Match) -> Option<Range<usize>> {
+        let buffer_mat_start = self.buffer_pos - mat.len();
+        if buffer_mat_start > self.buffer_reported_pos {
+            let start = self.buffer_reported_pos;
+            let end = buffer_mat_start;
+            return Some(start..end);
+        }
+        None
+    }
+
+    /// Look for any bytes that should be reported as a non-match just before
+    /// rolling the buffer.
+    ///
+    /// Note that this only reports bytes up to `buffer.len() -
+    /// min_buffer_len`, as it's not possible to know whether the bytes
+    /// following that will participate in a match or not.
+    fn get_pre_roll_non_match_chunk(&self) -> Option<Range<usize>> {
+        let end =
+            self.buf.buffer().len().saturating_sub(self.buf.min_buffer_len());
+        if self.buffer_reported_pos < end {
+            return Some(self.buffer_reported_pos..end);
+        }
+        None
+    }
+
+    /// Return any unreported bytes as a non-match up to the end of the buffer.
+    ///
+    /// This should only be called when the entire contents of the buffer have
+    /// been searched and EOF has been hit when trying to fill the buffer.
+    fn get_eof_non_match_chunk(&self) -> Option<Range<usize>> {
+        if self.buffer_reported_pos < self.buf.buffer().len() {
+            return Some(self.buffer_reported_pos..self.buf.buffer().len());
+        }
+        None
+    }
+
+    /// Return the match at the current position for the current state.
+    ///
+    /// This panics if `self.aut.is_match(self.sid)` isn't true.
+    fn get_match(&self) -> Match {
+        get_match(self.aut, self.sid, 0, self.absolute_pos)
+    }
 }
 
 /// A single chunk yielded by the stream chunk iterator.
@@ -1029,163 +1236,11 @@ enum StreamChunk<'r> {
 }
 
 #[cfg(feature = "std")]
-impl<'a, A: Automaton, R: std::io::Read> StreamChunkIter<'a, A, R> {
-    fn new(
-        aut: &'a A,
-        rdr: R,
-    ) -> Result<StreamChunkIter<'a, A, R>, MatchError> {
-        if !aut.match_kind().is_standard() {
-            return Err(MatchError::unsupported_stream(aut.match_kind()));
-        }
-
-        let has_empty_match_at_end =
-            aut.is_match(aut.start_state(Anchored::No)?);
-        let buf = crate::util::buffer::Buffer::new(aut.max_pattern_len());
-        Ok(StreamChunkIter {
-            aut,
-            rdr,
-            buf,
-            state: OverlappingState::start(),
-            absolute_pos: 0,
-            report_pos: 0,
-            search_pos: 0,
-            pending_match: None,
-            has_empty_match_at_end,
-        })
-    }
-
-    fn next(&mut self) -> Option<std::io::Result<StreamChunk>> {
-        loop {
-            if let Some(mut mat) = self.pending_match.take() {
-                let bytes = &self.buf.buffer()[mat.start()..mat.end()];
-                self.report_pos = mat.end();
-                mat = Match::new(
-                    mat.pattern(),
-                    mat.span().offset(self.absolute_pos),
-                );
-                return Some(Ok(StreamChunk::Match { bytes, mat }));
-            }
-            if self.search_pos >= self.buf.len() {
-                if let Some(end) = self.unreported() {
-                    let bytes = &self.buf.buffer()[self.report_pos..end];
-                    self.report_pos = end;
-                    return Some(Ok(StreamChunk::NonMatch { bytes }));
-                }
-                if self.buf.len() >= self.buf.min_buffer_len() {
-                    // This is the point at which we roll our buffer, which we
-                    // only do if our buffer has at least the minimum amount of
-                    // bytes in it. Before rolling, we update our various
-                    // positions to be consistent with the buffer after it has
-                    // been rolled.
-
-                    self.report_pos -=
-                        self.buf.len() - self.buf.min_buffer_len();
-                    self.absolute_pos +=
-                        self.search_pos - self.buf.min_buffer_len();
-                    self.search_pos = self.buf.min_buffer_len();
-                    self.state.at = self.search_pos;
-                    self.buf.roll();
-                }
-                match self.buf.fill(&mut self.rdr) {
-                    Err(err) => return Some(Err(err)),
-                    Ok(false) => {
-                        // We've hit EOF, but if there are still some
-                        // unreported bytes remaining, return them now.
-                        if self.report_pos < self.buf.len() {
-                            let bytes = &self.buf.buffer()[self.report_pos..];
-                            self.report_pos = self.buf.len();
-
-                            let chunk = StreamChunk::NonMatch { bytes };
-                            return Some(Ok(chunk));
-                        } else {
-                            // We've reported everything, but there might still
-                            // be a match at the very last position.
-                            if !self.has_empty_match_at_end {
-                                return None;
-                            }
-                            // fallthrough for another search to get trailing
-                            // empty matches
-                            self.has_empty_match_at_end = false;
-                        }
-                    }
-                    Ok(true) => {}
-                }
-            }
-            let mut input = Input::new(self.buf.buffer());
-            input.set_start(self.search_pos);
-            // Note that we use an overlapping search so that we can save the
-            // progress of a search between calls. We don't actually report
-            // overlapping matches. (Which we achieve by always resetting to
-            // OverlappingState::start() after a match is seen.)
-            //
-            // FIXME: We currently call the overlapping impl directly here
-            // so that we can forcefully disable the use of prefilters.
-            // Unfortunately, prefilters don't work in a stream context
-            // currently. Consider, for example, the follow buffer, with a roll
-            // point at the indicating position:
-            //
-            //     bazquux
-            //      ^
-            //
-            // Now let's say we're looking for 'baz' and we have a memmem
-            // prefilter for it. It correctly says, "nope, no match" since all
-            // it sees is a 'b'. So we roll the buffer and get the rest of the
-            // contents. But our search position is now at 'a' *and* we're in a
-            // start state. Whoops. The prefilter runs again, finds nothing and
-            // reports no match.
-            //
-            // Basically, there is a state synchronization issue with a
-            // prefilter reporting "no match" and what the underlying state of
-            // the automaton *should* be by the time it reaches the end of the
-            // buffer. Clearly, we need to be more sophisticated here.
-            //
-            // We should probably roll our own stream searching implementation
-            // just for this.
-            //
-            // This whole bit of code is a mess anyway. I brought it over
-            // from an older version of the crate where we similarly disabled
-            // prefilter optimizations.
-            try_find_overlapping_fwd_imp(
-                self.aut,
-                &input,
-                None,
-                &mut self.state,
-            )
-            .expect("already checked that no match error can occur here");
-            match self.state.get_match() {
-                None => {
-                    self.search_pos = self.buf.len();
-                }
-                Some(mat) => {
-                    self.state = OverlappingState::start();
-                    if mat.end() == self.search_pos {
-                        // If the automaton can match the empty string and if
-                        // we found an empty match, then we need to forcefully
-                        // move the position.
-                        self.search_pos += 1;
-                    } else {
-                        self.search_pos = mat.end();
-                    }
-                    self.pending_match = Some(mat.clone());
-                    if self.report_pos < mat.start() {
-                        let bytes =
-                            &self.buf.buffer()[self.report_pos..mat.start()];
-                        self.report_pos = mat.start();
-
-                        let chunk = StreamChunk::NonMatch { bytes };
-                        return Some(Ok(chunk));
-                    }
-                }
-            }
-        }
-    }
-
-    fn unreported(&self) -> Option<usize> {
-        let end = self.search_pos.saturating_sub(self.buf.min_buffer_len());
-        if self.report_pos < end {
-            Some(end)
-        } else {
-            None
+impl<'r> StreamChunk<'r> {
+    fn as_bytes(&self) -> &'r [u8] {
+        match *self {
+            StreamChunk::NonMatch { bytes } => bytes,
+            StreamChunk::Match { bytes, .. } => bytes,
         }
     }
 }

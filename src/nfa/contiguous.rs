@@ -110,6 +110,8 @@ pub struct NFA {
     /// sparse, are defined on equivalence classes and not on the 256 distinct
     /// byte values.
     byte_classes: ByteClasses,
+    /// The length of the shortest pattern in this automaton.
+    min_pattern_len: usize,
     /// The length of the longest pattern in this automaton.
     max_pattern_len: usize,
     /// The information required to deduce which states are "special" in this
@@ -261,6 +263,11 @@ unsafe impl Automaton for NFA {
     }
 
     #[inline(always)]
+    fn min_pattern_len(&self) -> usize {
+        self.min_pattern_len
+    }
+
+    #[inline(always)]
     fn max_pattern_len(&self) -> usize {
         self.max_pattern_len
     }
@@ -341,6 +348,7 @@ impl core::fmt::Debug for NFA {
         writeln!(f, "prefilter: {:?}", self.prefilter.is_some())?;
         writeln!(f, "state length: {:?}", self.state_len)?;
         writeln!(f, "pattern length: {:?}", self.patterns_len())?;
+        writeln!(f, "shortest pattern length: {:?}", self.min_pattern_len)?;
         writeln!(f, "longest pattern length: {:?}", self.max_pattern_len)?;
         writeln!(f, "alphabet length: {:?}", self.alphabet_len)?;
         writeln!(f, "byte classes: {:?}", self.byte_classes)?;
@@ -866,6 +874,7 @@ impl Builder {
             match_kind: nnfa.match_kind(),
             alphabet_len: byte_classes.alphabet_len(),
             byte_classes,
+            min_pattern_len: nnfa.min_pattern_len(),
             max_pattern_len: nnfa.max_pattern_len(),
             // The special state IDs are set later.
             special: Special::zero(),
