@@ -18,7 +18,7 @@ use crate::{
         int::{Usize, U32},
         prefilter::Prefilter,
         primitives::{IteratorIndexExt, PatternID, SmallIndex, StateID},
-        search::{Anchored, Input, MatchKind, StartKind},
+        search::{Anchored, MatchKind, StartKind},
         special::Special,
     },
 };
@@ -187,12 +187,12 @@ impl DFA {
 // all other methods are correct as well.
 unsafe impl Automaton for DFA {
     #[inline(always)]
-    fn start_state(&self, input: &Input<'_>) -> Result<StateID, MatchError> {
+    fn start_state(&self, anchored: Anchored) -> Result<StateID, MatchError> {
         // Either of the start state IDs can be DEAD, in which case, support
         // for that type of search is not provided by this DFA. Which start
         // state IDs are inactive depends on the 'StartKind' configuration at
         // DFA construction time.
-        match input.get_anchored() {
+        match anchored {
             Anchored::No => {
                 let start = self.special.start_unanchored_id;
                 if start == DFA::DEAD {

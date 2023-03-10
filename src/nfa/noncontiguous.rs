@@ -21,7 +21,7 @@ use crate::{
         prefilter::{self, opposite_ascii_case, Prefilter},
         primitives::{IteratorIndexExt, PatternID, SmallIndex, StateID},
         remapper::Remapper,
-        search::{Anchored, Input, MatchKind},
+        search::{Anchored, MatchKind},
         special::Special,
     },
 };
@@ -239,8 +239,8 @@ impl NFA {
 // all other methods are correct as well.
 unsafe impl Automaton for NFA {
     #[inline(always)]
-    fn start_state(&self, input: &Input<'_>) -> Result<StateID, MatchError> {
-        match input.get_anchored() {
+    fn start_state(&self, anchored: Anchored) -> Result<StateID, MatchError> {
+        match anchored {
             Anchored::No => Ok(self.special.start_unanchored_id),
             Anchored::Yes => Ok(self.special.start_anchored_id),
         }

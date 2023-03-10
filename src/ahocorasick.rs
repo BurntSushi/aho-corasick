@@ -2574,8 +2574,8 @@ impl<A> AcAutomaton for A where
 #[doc(hidden)]
 unsafe impl Automaton for Arc<dyn AcAutomaton> {
     #[inline(always)]
-    fn start_state(&self, input: &Input<'_>) -> Result<StateID, MatchError> {
-        (**self).start_state(input)
+    fn start_state(&self, anchored: Anchored) -> Result<StateID, MatchError> {
+        (**self).start_state(anchored)
     }
 
     #[inline(always)]

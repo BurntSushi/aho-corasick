@@ -112,7 +112,7 @@ pub use crate::util::{
 /// use aho_corasick::{
 ///     automaton::Automaton,
 ///     nfa::noncontiguous::NFA,
-///     Anchored, Input, Match, MatchError, MatchKind,
+///     Anchored, Match, MatchError, MatchKind,
 /// };
 ///
 /// // Run an unanchored search for 'aut' in 'haystack'. Return the first match
@@ -122,7 +122,7 @@ pub use crate::util::{
 ///     aut: A,
 ///     haystack: &[u8],
 /// ) -> Result<Option<Match>, MatchError> {
-///     let mut sid = aut.start_state(&Input::new(haystack))?;
+///     let mut sid = aut.start_state(Anchored::No)?;
 ///     let mut at = 0;
 ///     let mut mat = None;
 ///     let get_match = |sid, at| {
@@ -174,7 +174,7 @@ pub use crate::util::{
 /// # Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
 pub unsafe trait Automaton {
-    /// Returns the starting state for the given search configuration.
+    /// Returns the starting state for the given anchor mode.
     ///
     /// Upon success, the state ID returned is guaranteed to be valid for
     /// this automaton.
@@ -184,9 +184,8 @@ pub unsafe trait Automaton {
     /// This returns an error when the given search configuration is not
     /// supported by the underlying automaton. For example, if the underlying
     /// automaton only supports unanchored searches but the given configuration
-    /// was set to an anchored search via [`Input::anchored`], then this must
-    /// return an error.
-    fn start_state(&self, input: &Input<'_>) -> Result<StateID, MatchError>;
+    /// was set to an anchored search, then this must return an error.
+    fn start_state(&self, anchored: Anchored) -> Result<StateID, MatchError>;
 
     /// Performs a state transition from `sid` for `byte` and returns the next
     /// state.
@@ -392,7 +391,7 @@ pub unsafe trait Automaton {
         if input.get_anchored().is_anchored() {
             return Err(MatchError::invalid_input_anchored());
         }
-        let _ = self.start_state(&input)?;
+        let _ = self.start_state(input.get_anchored())?;
         let state = OverlappingState::start();
         Ok(FindOverlappingIter { aut: self, input, state })
     }
@@ -615,8 +614,8 @@ pub unsafe trait Automaton {
 // its safety properties.
 unsafe impl<'a, A: Automaton + ?Sized> Automaton for &'a A {
     #[inline(always)]
-    fn start_state(&self, input: &Input<'_>) -> Result<StateID, MatchError> {
-        (**self).start_state(input)
+    fn start_state(&self, anchored: Anchored) -> Result<StateID, MatchError> {
+        (**self).start_state(anchored)
     }
 
     #[inline(always)]
@@ -835,7 +834,7 @@ impl<'a, 'h, A: Automaton> FindIter<'a, 'h, A> {
         // The only way this search can fail is if we cannot retrieve the start
         // state. e.g., Asking for an anchored search when only unanchored
         // searches are supported.
-        let _ = aut.start_state(&input)?;
+        let _ = aut.start_state(input.get_anchored())?;
         Ok(FindIter { aut, input, last_match_end: None })
     }
 
@@ -1040,7 +1039,7 @@ impl<'a, A: Automaton, R: std::io::Read> StreamChunkIter<'a, A, R> {
         }
 
         let has_empty_match_at_end =
-            aut.is_match(aut.start_state(&Input::new(""))?);
+            aut.is_match(aut.start_state(Anchored::No)?);
         let buf = crate::util::buffer::Buffer::new(aut.max_pattern_len());
         Ok(StreamChunkIter {
             aut,
@@ -1225,7 +1224,7 @@ fn try_find_fwd_imp<A: Automaton + ?Sized>(
     anchored: Anchored,
     earliest: bool,
 ) -> Result<Option<Match>, MatchError> {
-    let mut sid = aut.start_state(input)?;
+    let mut sid = aut.start_state(input.get_anchored())?;
     let mut at = input.start();
     let mut mat = None;
     if aut.is_match(sid) {
@@ -1384,7 +1383,7 @@ fn try_find_overlapping_fwd_imp<A: Automaton + ?Sized>(
 ) -> Result<(), MatchError> {
     let mut sid = match state.id {
         None => {
-            let sid = aut.start_state(input)?;
+            let sid = aut.start_state(input.get_anchored())?;
             // Handle the case where the start state is a match state. That is,
             // the empty string is in our automaton. We report every match we
             // can here before moving on and updating 'state.at' and 'state.id'
