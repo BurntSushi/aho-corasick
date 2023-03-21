@@ -1015,7 +1015,7 @@ impl<'a, A: Automaton, R: std::io::Read> Iterator
 /// chunks it can copy and which it needs to replace.
 #[cfg(feature = "std")]
 #[derive(Debug)]
-pub struct StreamChunkIter<'a, A, R> {
+struct StreamChunkIter<'a, A, R> {
     /// The underlying automaton to do the search.
     aut: &'a A,
     /// The source of bytes we read from.
