@@ -1,0 +1,6 @@
+{
+  "rust-analyzer.linkedProjects": [
+    "aho-corasick-debug/Cargo.toml",
+    "Cargo.toml"
+  ]
+}
