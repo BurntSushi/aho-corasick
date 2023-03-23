@@ -15,7 +15,7 @@ use crate::{
     util::{
         alphabet::ByteClasses,
         error::{BuildError, MatchError},
-        int::{Usize, U32},
+        int::{Usize, U16, U32},
         prefilter::Prefilter,
         primitives::{IteratorIndexExt, PatternID, SmallIndex, StateID},
         search::{Anchored, MatchKind},
@@ -189,31 +189,51 @@ unsafe impl Automaton for NFA {
         mut sid: StateID,
         byte: u8,
     ) -> StateID {
+        let repr = &self.repr;
         let class = self.byte_classes.get(byte);
+        let u32tosid = StateID::from_u32_unchecked;
         loop {
             let o = sid.as_usize();
-            let header = self.repr[o];
+            let kind = repr[o] & 0xFF;
             // I tried to encapsulate the "next transition" logic into its own
             // function, but it seemed to always result in sub-optimal codegen
             // that led to real and significant slowdowns. So we just inline
             // the logic here.
-            let next = if header & 0b1111_1111 == 0b1111_1111 {
-                StateID::from_u32_unchecked(
-                    self.repr[o + 1 + usize::from(class)],
-                )
+            //
+            // I've also tried a lot of different ways to speed up this
+            // routine, and most of them have failed.
+            if kind == State::KIND_DENSE {
+                let next = u32tosid(repr[o + 2 + usize::from(class)]);
+                if next != NFA::FAIL {
+                    return next;
+                }
+            } else if kind == State::KIND_ONE {
+                if class == repr[o].low_u16().high_u8() {
+                    return u32tosid(repr[o + 2]);
+                }
             } else {
-                let trans_len = (header & 0b1111_1111).as_usize();
-                for packed in self.repr[o + 1..][..trans_len].iter() {
-                    if packed.low_u8() == class {
-                        return StateID::from_u32_unchecked(
-                            packed.wrapping_shr(8),
-                        );
+                // NOTE: I tried a SWAR technique in the loop below, but found
+                // it slower. See the 'swar' test in the tests for this module.
+                let trans_len = kind.as_usize();
+                let classes_len = u32_len(trans_len);
+                let trans_offset = o + 2 + classes_len;
+                for (i, &chunk) in
+                    repr[o + 2..][..classes_len].iter().enumerate()
+                {
+                    let classes = chunk.to_ne_bytes();
+                    if classes[0] == class {
+                        return u32tosid(repr[trans_offset + i * 4]);
+                    }
+                    if classes[1] == class {
+                        return u32tosid(repr[trans_offset + i * 4 + 1]);
+                    }
+                    if classes[2] == class {
+                        return u32tosid(repr[trans_offset + i * 4 + 2]);
+                    }
+                    if classes[3] == class {
+                        return u32tosid(repr[trans_offset + i * 4 + 3]);
                     }
                 }
-                NFA::FAIL
-            };
-            if next != NFA::FAIL {
-                return next;
             }
             // For an anchored search, we never follow failure transitions
             // because failure transitions lead us down a path to matching
@@ -222,7 +242,7 @@ unsafe impl Automaton for NFA {
             if anchored.is_anchored() {
                 return NFA::DEAD;
             }
-            sid = StateID::from_u32_unchecked(header.wrapping_shr(8));
+            sid = u32tosid(repr[o + 1]);
         }
     }
 
@@ -388,6 +408,7 @@ enum StateTrans<'a> {
     /// A sparse representation of transitions for a state, where only non-FAIL
     /// transitions are explicitly represented.
     Sparse {
+        classes: &'a [u32],
         /// The transitions for this state, where each transition is packed
         /// into a u32. The low 8 bits correspond to the byte class for the
         /// transition, and the high 24 bits correspond to the next state ID.
@@ -395,6 +416,18 @@ enum StateTrans<'a> {
         /// This packing is why the max state ID allowed for a contiguous
         /// NFA is 2^24-1.
         nexts: &'a [u32],
+    },
+    /// A "one transition" state that is never a match state.
+    ///
+    /// These are by far the most common state, so we use a specialized and
+    /// very compact representation for them.
+    One {
+        /// The element of this NFA's alphabet that this transition is
+        /// defined for.
+        class: u8,
+        /// The state this should transition to if the current symbol is
+        /// equal to 'class'.
+        next: u32,
     },
     /// A dense representation of transitions for a state, where all
     /// transitions are explicitly represented, including transitions to the
@@ -413,12 +446,37 @@ enum StateTrans<'a> {
 }
 
 impl<'a> State<'a> {
-    /// The offset of where the "kind" (dense or sparse) is stored.
+    /// The offset of where the "kind" of a state is stored. If it isn't one
+    /// of the sentinel values below, then it's a sparse state and the kind
+    /// corresponds to the number of transitions in the state.
     const KIND: usize = 0;
-    /// The offset of where the failure transition is stored. Currently, KIND
-    /// and FAIL are in the same u32. The high bit on the fail ID is set for
-    /// dense states and unset for sparse states.
-    const FAIL: usize = 0;
+
+    /// A sentinel value indicating that the state uses a dense representation.
+    const KIND_DENSE: u32 = 0xFF;
+    /// A sentinel value indicating that the state uses a special "one
+    /// transition" encoding. In practice, non-match states with one transition
+    /// make up the overwhelming majority of all states in any given
+    /// Aho-Corasick automaton, so we can specialize them using a very compact
+    /// representation.
+    const KIND_ONE: u32 = 0xFE;
+
+    /// The maximum number of transitions to encode as a sparse state. Usually
+    /// states with a lot of transitions are either very rare, or occur near
+    /// the start state. In the latter case, they are probably dense already
+    /// anyway. In the former case, making them dense is fine because they're
+    /// rare.
+    ///
+    /// This needs to be small enough to permit each of the sentinel values for
+    /// 'KIND' above. Namely, a sparse state embeds the number of transitions
+    /// into the 'KIND'. Basically, "sparse" is a state kind too, but it's the
+    /// "else" branch.
+    ///
+    /// N.B. There isn't anything particularly magical about 127 here. I
+    /// just picked it because I figured any sparse state with this many
+    /// transitions is going to be exceptionally rare, and if it did have this
+    /// many transitions, then it would be quite slow to do a linear scan on
+    /// the transitions during a search anyway.
+    const MAX_SPARSE_TRANSITIONS: usize = 127;
 
     /// Remap state IDs in-place.
     ///
@@ -430,22 +488,21 @@ impl<'a> State<'a> {
         old_to_new: &[StateID],
         state: &mut [u32],
     ) -> Result<(), BuildError> {
-        let is_dense = State::is_dense(state);
-        let fail = State::fail(state);
-        let trans_len = State::sparse_trans_len(state);
-        let (packed, is_still_dense) =
-            State::pack_fail_id(old_to_new[fail], trans_len, is_dense)?;
-        assert_eq!(is_dense, is_still_dense, "density should not change");
-        state[State::FAIL] = packed;
-        if is_dense {
-            for next in state[1..][..alphabet_len].iter_mut() {
+        let kind = State::kind(state);
+        if kind == State::KIND_DENSE {
+            state[1] = old_to_new[state[1].as_usize()].as_u32();
+            for next in state[2..][..alphabet_len].iter_mut() {
                 *next = old_to_new[next.as_usize()].as_u32();
             }
+        } else if kind == State::KIND_ONE {
+            state[1] = old_to_new[state[1].as_usize()].as_u32();
+            state[2] = old_to_new[state[2].as_usize()].as_u32();
         } else {
-            for packed in state[1..][..trans_len].iter_mut() {
-                let (class, old) = State::unpack_sparse_transition(*packed);
-                let new = old_to_new[old];
-                *packed = State::pack_sparse_transition(class, new)?;
+            let trans_len = State::sparse_trans_len(state);
+            let classes_len = u32_len(trans_len);
+            state[1] = old_to_new[state[1].as_usize()].as_u32();
+            for next in state[2 + classes_len..][..trans_len].iter_mut() {
+                *next = old_to_new[next.as_usize()].as_u32();
             }
         }
         Ok(())
@@ -461,11 +518,17 @@ impl<'a> State<'a> {
     /// of the slice must correspond to the start of the state, but the slice
     /// may extend past the end of the encoding of the state.)
     fn len(alphabet_len: usize, is_match: bool, state: &[u32]) -> usize {
+        let kind_len = 1;
         let fail_len = 1;
-        let trans_len = if State::is_dense(state) {
-            alphabet_len
+        let kind = State::kind(state);
+        let (classes_len, trans_len) = if kind == State::KIND_DENSE {
+            (0, alphabet_len)
+        } else if kind == State::KIND_ONE {
+            (0, 1)
         } else {
-            State::sparse_trans_len(state)
+            let trans_len = State::sparse_trans_len(state);
+            let classes_len = u32_len(trans_len);
+            (classes_len, trans_len)
         };
         let match_len = if !is_match {
             0
@@ -479,41 +542,32 @@ impl<'a> State<'a> {
             // pattern IDs that follow.
             1 + State::match_len(alphabet_len, state)
         };
-        fail_len + trans_len + match_len
+        kind_len + fail_len + classes_len + trans_len + match_len
     }
 
-    /// Return whether this is a dense state or not.
+    /// Returns the kind of this state.
     ///
-    /// `state` should be the the raw binary encoding of a state. (The start
-    /// of the slice must correspond to the start of the state, but the slice
-    /// may extend past the end of the encoding of the state.)
+    /// This only includes the low byte.
     #[inline(always)]
-    fn is_dense(state: &[u32]) -> bool {
-        state[State::KIND] & 0b1111_1111 == 0b1111_1111
-    }
-
-    /// Get the state that should be transitioned to in the case of a failure
-    /// transition.
-    ///
-    /// `state` should be the the raw binary encoding of a state. (The start
-    /// of the slice must correspond to the start of the state, but the slice
-    /// may extend past the end of the encoding of the state.)
-    #[inline(always)]
-    fn fail(state: &[u32]) -> StateID {
-        StateID::from_u32_unchecked(state[State::FAIL].wrapping_shr(8))
+    fn kind(state: &[u32]) -> u32 {
+        state[State::KIND] & 0xFF
     }
 
     /// Get the number of sparse transitions in this state. This can never
-    /// be more than 254, as all states with 255 or 256 transitions are
-    /// automatically encoded as dense states.
+    /// be more than State::MAX_SPARSE_TRANSITIONS, as all states with more
+    /// transitions are encoded as dense states.
     ///
     /// `state` should be the the raw binary encoding of a sparse state. (The
     /// start of the slice must correspond to the start of the state, but the
     /// slice may extend past the end of the encoding of the state.) If this
     /// isn't a sparse state, then the return value is unspecified.
+    ///
+    /// Do note that this is only legal to call on a sparse state. So for
+    /// example, "one transition" state is not a sparse state, so it would not
+    /// be legal to call this method on such a state.
     #[inline(always)]
     fn sparse_trans_len(state: &[u32]) -> usize {
-        (state[State::FAIL] & 0b1111_1111).as_usize()
+        (state[State::KIND] & 0xFF).as_usize()
     }
 
     /// Returns the total number of matching pattern IDs in this state. Calling
@@ -525,12 +579,15 @@ impl<'a> State<'a> {
     /// may extend past the end of the encoding of the state.)
     #[inline(always)]
     fn match_len(alphabet_len: usize, state: &[u32]) -> usize {
-        let packed = if State::is_dense(state) {
-            let start = 1 + alphabet_len;
+        // We don't need to handle KIND_ONE here because it can never be a
+        // match state.
+        let packed = if State::kind(state) == State::KIND_DENSE {
+            let start = 2 + alphabet_len;
             state[start].as_usize()
         } else {
             let trans_len = State::sparse_trans_len(state);
-            let start = 1 + trans_len;
+            let classes_len = u32_len(trans_len);
+            let start = 2 + classes_len + trans_len;
             state[start].as_usize()
         };
         if packed & (1 << 31) == 0 {
@@ -556,11 +613,14 @@ impl<'a> State<'a> {
         state: &[u32],
         index: usize,
     ) -> PatternID {
-        let start = if State::is_dense(state) {
-            1 + alphabet_len
+        // We don't need to handle KIND_ONE here because it can never be a
+        // match state.
+        let start = if State::kind(state) == State::KIND_DENSE {
+            2 + alphabet_len
         } else {
             let trans_len = State::sparse_trans_len(state);
-            1 + trans_len
+            let classes_len = u32_len(trans_len);
+            2 + classes_len + trans_len
         };
         let packed = state[start];
         let pid = if packed & (1 << 31) == 0 {
@@ -588,16 +648,25 @@ impl<'a> State<'a> {
         is_match: bool,
         state: &'a [u32],
     ) -> State<'a> {
-        let fail = State::fail(state);
+        let kind = State::kind(state);
         let match_len =
             if !is_match { 0 } else { State::match_len(alphabet_len, state) };
-        let trans = if State::is_dense(state) {
-            let class_to_next = &state[1..][..alphabet_len];
-            StateTrans::Dense { class_to_next }
+        let (trans, fail) = if kind == State::KIND_DENSE {
+            let fail = StateID::from_u32_unchecked(state[1]);
+            let class_to_next = &state[2..][..alphabet_len];
+            (StateTrans::Dense { class_to_next }, fail)
+        } else if kind == State::KIND_ONE {
+            let fail = StateID::from_u32_unchecked(state[1]);
+            let class = state[State::KIND].low_u16().high_u8();
+            let next = state[2];
+            (StateTrans::One { class, next }, fail)
         } else {
+            let fail = StateID::from_u32_unchecked(state[1]);
             let trans_len = State::sparse_trans_len(state);
-            let nexts = &state[1..][..trans_len];
-            StateTrans::Sparse { nexts }
+            let classes_len = u32_len(trans_len);
+            let classes = &state[2..][..classes_len];
+            let nexts = &state[2 + classes_len..][..trans_len];
+            (StateTrans::Sparse { classes, nexts }, fail)
         };
         State { fail, match_len, trans }
     }
@@ -623,12 +692,33 @@ impl<'a> State<'a> {
         let sid = StateID::new(dst.len()).map_err(|e| {
             BuildError::state_id_overflow(StateID::MAX.as_u64(), e.attempted())
         })?;
-        let (fail_packed, is_dense) =
-            State::pack_fail_id(old.fail, old.trans.len(), force_dense)?;
-        dst.push(fail_packed);
-        if is_dense {
-            State::write_dense_trans(old, classes, dst)?;
+        // For states with a lot of transitions, we might as well just make
+        // them dense. These kinds of hot states tend to be very rare, so we're
+        // okay with it. This also gives us more sentinels in the state's
+        // 'kind', which lets us create different state kinds to save on
+        // space.
+        let kind = if force_dense
+            || old.trans.len() > State::MAX_SPARSE_TRANSITIONS
+        {
+            State::KIND_DENSE
+        } else if old.trans.len() == 1 && old.matches.is_empty() {
+            State::KIND_ONE
         } else {
+            // For a sparse state, the kind is just the number of transitions.
+            u32::try_from(old.trans.len()).unwrap()
+        };
+        if kind == State::KIND_DENSE {
+            dst.push(kind);
+            dst.push(old.fail.as_u32());
+            State::write_dense_trans(old, classes, dst)?;
+        } else if kind == State::KIND_ONE {
+            let class = u32::from(classes.get(old.trans[0].0));
+            dst.push(kind | (class << 8));
+            dst.push(old.fail.as_u32());
+            dst.push(old.trans[0].1.as_u32());
+        } else {
+            dst.push(kind);
+            dst.push(old.fail.as_u32());
             State::write_sparse_trans(old, classes, dst)?;
         }
         // Now finally write the number of matches and the matches themselves.
@@ -658,9 +748,33 @@ impl<'a> State<'a> {
         classes: &ByteClasses,
         dst: &mut Vec<u32>,
     ) -> Result<(), BuildError> {
-        for &(byte, next) in old.trans.iter() {
-            let class = classes.get(byte);
-            dst.push(State::pack_sparse_transition(class, next)?);
+        let (mut chunk, mut len) = ([0; 4], 0);
+        for &(byte, _) in old.trans.iter() {
+            chunk[len] = classes.get(byte);
+            len += 1;
+            if len == 4 {
+                dst.push(u32::from_ne_bytes(chunk));
+                chunk = [0; 4];
+                len = 0;
+            }
+        }
+        if len > 0 {
+            // In the case where the number of transitions isn't divisible
+            // by 4, the last u32 chunk will have some left over room. In
+            // this case, we "just" repeat the last equivalence class. By
+            // doing this, we know the leftover faux transitions will never
+            // be followed because if they were, it would have been followed
+            // prior to it in the last equivalence class. This saves us some
+            // branching in the search time state transition code.
+            let repeat = chunk[len - 1];
+            while len < 4 {
+                chunk[len] = repeat;
+                len += 1;
+            }
+            dst.push(u32::from_ne_bytes(chunk));
+        }
+        for &(_, next) in old.trans.iter() {
+            dst.push(next.as_u32());
         }
         Ok(())
     }
@@ -699,69 +813,28 @@ impl<'a> State<'a> {
         Ok(())
     }
 
-    /// Pack the given fail ID and number of transitions into a single u32. If
-    /// the ID is too big to fit, then this returns an error.
-    ///
-    /// When `dense` is true, then this returned a packed fail ID that always
-    /// indicates that the state is dense. Otherwise, this makes its own
-    /// determination of whether the state should be dense or not (and returns
-    /// a bool indicating as such).
-    fn pack_fail_id(
-        fail: StateID,
-        trans_len: usize,
-        dense: bool,
-    ) -> Result<(u32, bool), BuildError> {
-        const MAX: u32 = (1 << 24) - 1;
-        if fail.as_u32() > MAX {
-            return Err(BuildError::state_id_overflow(
-                u64::from(MAX),
-                fail.as_u64(),
-            ));
-        }
-        let tag = if dense || trans_len >= 255 {
-            0b1111_1111
-        } else {
-            u32::try_from(trans_len).unwrap()
-        };
-        Ok((fail.as_u32().checked_shl(8).unwrap() | tag, tag == 0b1111_1111))
-    }
-
-    /// Pack the given transition (a byte class leading to a state) into a
-    /// single u32. If the transition doesn't fit, then an error is returned.
-    fn pack_sparse_transition(
-        class: u8,
-        next: StateID,
-    ) -> Result<u32, BuildError> {
-        const MAX: u32 = (1 << 24) - 1;
-        if next.as_u32() > MAX {
-            return Err(BuildError::state_id_overflow(
-                u64::from(MAX),
-                next.as_u64(),
-            ));
-        }
-        Ok(next.as_u32().checked_shl(8).unwrap() | u32::from(class))
-    }
-
-    /// Unpack a sparse transition from the given u32 into a byte class and the
-    /// state ID that it transitions to.
-    fn unpack_sparse_transition(packed: u32) -> (u8, StateID) {
-        let class = packed.low_u8();
-        let sid = StateID::from_u32_unchecked(packed.wrapping_shr(8));
-        (class, sid)
-    }
-
     /// Return an iterator over every explicitly defined transition in this
     /// state.
     fn transitions<'b>(&'b self) -> impl Iterator<Item = (u8, StateID)> + 'b {
         let mut i = 0;
         core::iter::from_fn(move || match self.trans {
-            StateTrans::Sparse { nexts } => {
+            StateTrans::Sparse { classes, nexts } => {
                 if i >= nexts.len() {
                     return None;
                 }
-                let (class, next) = State::unpack_sparse_transition(nexts[i]);
+                let chunk = classes[i / 4];
+                let class = chunk.to_ne_bytes()[i % 4];
+                let next = StateID::from_u32_unchecked(nexts[i]);
                 i += 1;
                 Some((class, next))
+            }
+            StateTrans::One { class, next } => {
+                if i == 0 {
+                    i += 1;
+                    Some((class, StateID::from_u32_unchecked(next)))
+                } else {
+                    None
+                }
             }
             StateTrans::Dense { class_to_next } => {
                 if i >= class_to_next.len() {
@@ -986,5 +1059,66 @@ impl Builder {
     pub fn byte_classes(&mut self, yes: bool) -> &mut Builder {
         self.byte_classes = yes;
         self
+    }
+}
+
+/// Computes the number of u32 values needed to represent one byte per the
+/// number of transitions given.
+fn u32_len(ntrans: usize) -> usize {
+    if ntrans % 4 == 0 {
+        ntrans >> 2
+    } else {
+        (ntrans >> 2) + 1
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // This test demonstrates a SWAR technique I tried in the sparse transition
+    // code inside of 'next_state'. Namely, sparse transitions work by
+    // iterating over u32 chunks, with each chunk containing up to 4 classes
+    // corresponding to 4 transitions. This SWAR technique lets us find a
+    // matching transition without converting the u32 to a [u8; 4].
+    //
+    // It turned out to be a little slower unfortunately, which isn't too
+    // surprising, since this is likely a throughput oriented optimization.
+    // Loop unrolling doesn't really help us because the vast majority of
+    // states have very few transitions.
+    //
+    // Anyway, this code was a little tricky to write, so I converted it to a
+    // test in case someone figures out how to use it more effectively than
+    // I could.
+    #[test]
+    fn swar() {
+        fn has_zero_byte(x: u32) -> u32 {
+            const LO_U32: u32 = 0x01010101;
+            const HI_U32: u32 = 0x80808080;
+
+            x.wrapping_sub(LO_U32) & !x & HI_U32
+        }
+
+        fn broadcast(b: u8) -> u32 {
+            (u32::from(b)) * (u32::MAX / 255)
+        }
+
+        fn index_of(x: u32) -> usize {
+            let o =
+                (((x - 1) & 0x01010101).wrapping_mul(0x01010101) >> 24) - 1;
+            o.as_usize()
+        }
+
+        let bytes: [u8; 4] = [b'1', b'A', b'a', b'z'];
+        let chunk = u32::from_ne_bytes(bytes);
+
+        let needle = broadcast(b'1');
+        assert_eq!(0, index_of(has_zero_byte(needle ^ chunk)));
+        let needle = broadcast(b'A');
+        assert_eq!(1, index_of(has_zero_byte(needle ^ chunk)));
+        let needle = broadcast(b'a');
+        assert_eq!(2, index_of(has_zero_byte(needle ^ chunk)));
+        let needle = broadcast(b'z');
+        assert_eq!(3, index_of(has_zero_byte(needle ^ chunk)));
     }
 }
