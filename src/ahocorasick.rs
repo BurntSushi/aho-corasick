@@ -1947,7 +1947,7 @@ impl AhoCorasick {
     ///     .ascii_case_insensitive(true)
     ///     .build(&["foobar", "bruce", "triskaidekaphobia", "springsteen"])
     ///     .unwrap();
-    /// assert_eq!(2_308, ac.memory_usage());
+    /// assert_eq!(2_584, ac.memory_usage());
     ///
     /// let ac = AhoCorasick::builder()
     ///     .kind(AhoCorasickKind::DFA)
