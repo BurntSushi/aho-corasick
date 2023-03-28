@@ -2166,11 +2166,10 @@ impl AhoCorasickBuilder {
                     debug!("chose a DFA");
                     return Arc::new(dfa);
                 }
-                #[allow(unused_variables)] // unused when 'logging' is disabled
-                Err(err) => {
+                Err(_err) => {
                     debug!(
                         "failed to build DFA, trying something else: {}",
-                        err
+                        _err
                     );
                 }
             }
@@ -2189,11 +2188,11 @@ impl AhoCorasickBuilder {
                 return Arc::new(nfa);
             }
             #[allow(unused_variables)] // unused when 'logging' is disabled
-            Err(err) => {
+            Err(_err) => {
                 debug!(
                     "failed to build contiguous NFA, \
                      trying something else: {}",
-                    err
+                    _err
                 );
             }
         }

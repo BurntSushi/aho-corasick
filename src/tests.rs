@@ -1335,6 +1335,7 @@ fn run_search_tests<F: FnMut(&SearchTest) -> Vec<Match>>(
 
 // Like 'run_search_tests', but we skip any tests that contain the empty
 // pattern because stream searching doesn't support it.
+#[cfg(feature = "std")]
 fn run_stream_search_tests<F: FnMut(&SearchTest) -> Vec<Match>>(
     which: TestCollection,
     mut f: F,

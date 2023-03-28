@@ -6,10 +6,6 @@ Aho-Corasick automaton. It also provides access to lower level APIs that
 permit walking the state transitions of an Aho-Corasick automaton manually.
 */
 
-#![allow(warnings)]
-
-use core::ops::Range;
-
 use alloc::{string::String, vec::Vec};
 
 use crate::util::{
@@ -1165,12 +1161,11 @@ impl<'a, A: Automaton, R: std::io::Read> StreamChunkIter<'a, A, R> {
             }
             self.buffer_pos += self.absolute_pos - start;
         }
-        None
     }
 
     /// Return a match chunk for the given match. It is assumed that the match
     /// ends at the current `buffer_pos`.
-    fn get_match_chunk(&self, mat: Match) -> Range<usize> {
+    fn get_match_chunk(&self, mat: Match) -> core::ops::Range<usize> {
         let start = self.buffer_pos - mat.len();
         let end = self.buffer_pos;
         start..end
@@ -1179,7 +1174,10 @@ impl<'a, A: Automaton, R: std::io::Read> StreamChunkIter<'a, A, R> {
     /// Return a non-match chunk, if necessary, just before reporting a match.
     /// This returns `None` if there is nothing to report. Otherwise, this
     /// assumes that the given match ends at the current `buffer_pos`.
-    fn get_non_match_chunk(&self, mat: Match) -> Option<Range<usize>> {
+    fn get_non_match_chunk(
+        &self,
+        mat: Match,
+    ) -> Option<core::ops::Range<usize>> {
         let buffer_mat_start = self.buffer_pos - mat.len();
         if buffer_mat_start > self.buffer_reported_pos {
             let start = self.buffer_reported_pos;
@@ -1195,7 +1193,7 @@ impl<'a, A: Automaton, R: std::io::Read> StreamChunkIter<'a, A, R> {
     /// Note that this only reports bytes up to `buffer.len() -
     /// min_buffer_len`, as it's not possible to know whether the bytes
     /// following that will participate in a match or not.
-    fn get_pre_roll_non_match_chunk(&self) -> Option<Range<usize>> {
+    fn get_pre_roll_non_match_chunk(&self) -> Option<core::ops::Range<usize>> {
         let end =
             self.buf.buffer().len().saturating_sub(self.buf.min_buffer_len());
         if self.buffer_reported_pos < end {
@@ -1208,7 +1206,7 @@ impl<'a, A: Automaton, R: std::io::Read> StreamChunkIter<'a, A, R> {
     ///
     /// This should only be called when the entire contents of the buffer have
     /// been searched and EOF has been hit when trying to fill the buffer.
-    fn get_eof_non_match_chunk(&self) -> Option<Range<usize>> {
+    fn get_eof_non_match_chunk(&self) -> Option<core::ops::Range<usize>> {
         if self.buffer_reported_pos < self.buf.buffer().len() {
             return Some(self.buffer_reported_pos..self.buf.buffer().len());
         }
@@ -1233,16 +1231,6 @@ enum StreamChunk<'r> {
     NonMatch { bytes: &'r [u8] },
     /// A chunk that precisely contains a match.
     Match { bytes: &'r [u8], mat: Match },
-}
-
-#[cfg(feature = "std")]
-impl<'r> StreamChunk<'r> {
-    fn as_bytes(&self) -> &'r [u8] {
-        match *self {
-            StreamChunk::NonMatch { bytes } => bytes,
-            StreamChunk::Match { bytes, .. } => bytes,
-        }
-    }
 }
 
 #[inline(never)]
