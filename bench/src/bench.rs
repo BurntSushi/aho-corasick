@@ -54,6 +54,17 @@ fn define_aho_corasick<B: AsRef<[u8]>>(
     });
 
     let haystack = corpus.to_vec();
+    let name = format!("nfa/interleaved/{}", bench_name);
+    let aut = AhoCorasick::builder()
+        .match_kind(MatchKind::LeftmostFirst)
+        .kind(Some(AhoCorasickKind::InterleavedNFA))
+        .build(patterns.clone())
+        .unwrap();
+    define(c, group_name, &name, corpus, move |b| {
+        b.iter(|| assert_eq!(count, aut.find_iter(&haystack).count()));
+    });
+
+    let haystack = corpus.to_vec();
     let name = format!("dfa/{}", bench_name);
     let aut = AhoCorasick::builder()
         .match_kind(MatchKind::LeftmostFirst)

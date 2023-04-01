@@ -59,6 +59,7 @@ impl Args {
                         "auto",
                         "noncontiguous",
                         "contiguous",
+                        "interleaved",
                         "dfa",
                     ])
                     .default_value("auto"),
@@ -116,6 +117,7 @@ impl Args {
             "auto" => None,
             "noncontiguous" => Some(AhoCorasickKind::NoncontiguousNFA),
             "contiguous" => Some(AhoCorasickKind::ContiguousNFA),
+            "interleaved" => Some(AhoCorasickKind::InterleavedNFA),
             "dfa" => Some(AhoCorasickKind::DFA),
             _ => unreachable!(),
         };

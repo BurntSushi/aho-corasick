@@ -37,4 +37,5 @@ would likely need to have hundreds of thousands or even millions of patterns
 before you hit this limit.)
 */
 pub mod contiguous;
+pub mod interleaved;
 pub mod noncontiguous;

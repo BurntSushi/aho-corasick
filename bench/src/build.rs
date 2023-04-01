@@ -91,6 +91,32 @@ fn define_build<B: AsRef<[u8]>>(
     }
 
     let pats = patterns.clone();
+    let name = format!("nfa/interleaved/{}", bench_name);
+    if long {
+        define_long(c, "build", &name, &[], move |b| {
+            b.iter(|| {
+                black_box(
+                    AhoCorasick::builder()
+                        .kind(Some(AhoCorasickKind::InterleavedNFA))
+                        .build(&pats)
+                        .unwrap(),
+                )
+            })
+        });
+    } else {
+        define(c, "build", &name, &[], move |b| {
+            b.iter(|| {
+                black_box(
+                    AhoCorasick::builder()
+                        .kind(Some(AhoCorasickKind::InterleavedNFA))
+                        .build(&pats)
+                        .unwrap(),
+                )
+            })
+        });
+    }
+
+    let pats = patterns.clone();
     let name = format!("dfa/{}", bench_name);
     if long {
         define_long(c, "build", &name, &[], move |b| {

@@ -8,7 +8,7 @@ use alloc::{string::String, sync::Arc, vec::Vec};
 use crate::{
     automaton::{self, Automaton, OverlappingState},
     dfa,
-    nfa::{contiguous, noncontiguous},
+    nfa::{contiguous, interleaved, noncontiguous},
     util::{
         error::{BuildError, MatchError},
         prefilter::Prefilter,
@@ -2134,6 +2134,7 @@ impl<'a, R: std::io::Read> Iterator for StreamFindIter<'a, R> {
 pub struct AhoCorasickBuilder {
     nfa_noncontiguous: noncontiguous::Builder,
     nfa_contiguous: contiguous::Builder,
+    nfa_interleaved: interleaved::Builder,
     dfa: dfa::Builder,
     kind: Option<AhoCorasickKind>,
     start_kind: StartKind,
@@ -2195,6 +2196,12 @@ impl AhoCorasickBuilder {
                     let cnfa =
                         self.nfa_contiguous.build_from_noncontiguous(&nfa)?;
                     (Arc::new(cnfa), AhoCorasickKind::ContiguousNFA)
+                }
+                Some(AhoCorasickKind::InterleavedNFA) => {
+                    debug!("forcefully chose interleaved NFA");
+                    let cnfa =
+                        self.nfa_interleaved.build_from_noncontiguous(&nfa)?;
+                    (Arc::new(cnfa), AhoCorasickKind::InterleavedNFA)
                 }
                 Some(AhoCorasickKind::DFA) => {
                     debug!("forcefully chose DFA");
@@ -2341,6 +2348,7 @@ impl AhoCorasickBuilder {
     pub fn match_kind(&mut self, kind: MatchKind) -> &mut AhoCorasickBuilder {
         self.nfa_noncontiguous.match_kind(kind);
         self.nfa_contiguous.match_kind(kind);
+        self.nfa_interleaved.match_kind(kind);
         self.dfa.match_kind(kind);
         self
     }
@@ -2476,6 +2484,7 @@ impl AhoCorasickBuilder {
     ) -> &mut AhoCorasickBuilder {
         self.nfa_noncontiguous.ascii_case_insensitive(yes);
         self.nfa_contiguous.ascii_case_insensitive(yes);
+        self.nfa_interleaved.ascii_case_insensitive(yes);
         self.dfa.ascii_case_insensitive(yes);
         self
     }
@@ -2546,6 +2555,7 @@ impl AhoCorasickBuilder {
     pub fn prefilter(&mut self, yes: bool) -> &mut AhoCorasickBuilder {
         self.nfa_noncontiguous.prefilter(yes);
         self.nfa_contiguous.prefilter(yes);
+        self.nfa_interleaved.prefilter(yes);
         self.dfa.prefilter(yes);
         self
     }
@@ -2609,6 +2619,7 @@ impl AhoCorasickBuilder {
     /// bytes instead of the equivalence classes.
     pub fn byte_classes(&mut self, yes: bool) -> &mut AhoCorasickBuilder {
         self.nfa_contiguous.byte_classes(yes);
+        self.nfa_interleaved.byte_classes(yes);
         self.dfa.byte_classes(yes);
         self
     }
@@ -2627,6 +2638,8 @@ pub enum AhoCorasickKind {
     NoncontiguousNFA,
     /// Use a contiguous NFA.
     ContiguousNFA,
+    /// Use an interleaved NFA,
+    InterleavedNFA,
     /// Use a DFA. Warning: DFAs typically use a large amount of memory.
     DFA,
 }

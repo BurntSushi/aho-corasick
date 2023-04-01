@@ -806,6 +806,32 @@ macro_rules! testcombo {
                 }
             );
             testconfig!(
+                nfa_interl_default,
+                $collection,
+                $kind,
+                |b: &mut AhoCorasickBuilder| {
+                    b.kind(Some(AhoCorasickKind::InterleavedNFA));
+                }
+            );
+            testconfig!(
+                nfa_interl_no_prefilter,
+                $collection,
+                $kind,
+                |b: &mut AhoCorasickBuilder| {
+                    b.kind(Some(AhoCorasickKind::InterleavedNFA))
+                        .prefilter(false);
+                }
+            );
+            testconfig!(
+                nfa_interl_no_byte_class,
+                $collection,
+                $kind,
+                |b: &mut AhoCorasickBuilder| {
+                    b.kind(Some(AhoCorasickKind::InterleavedNFA))
+                        .byte_classes(false);
+                }
+            );
+            testconfig!(
                 dfa_default,
                 $collection,
                 $kind,
@@ -936,6 +962,33 @@ testconfig!(
 );
 testconfig!(
     overlapping,
+    search_standard_overlapping_nfa_interl_default,
+    AC_STANDARD_OVERLAPPING,
+    Standard,
+    |b: &mut AhoCorasickBuilder| {
+        b.kind(Some(AhoCorasickKind::InterleavedNFA));
+    }
+);
+testconfig!(
+    overlapping,
+    search_standard_overlapping_nfa_interl_no_prefilter,
+    AC_STANDARD_OVERLAPPING,
+    Standard,
+    |b: &mut AhoCorasickBuilder| {
+        b.kind(Some(AhoCorasickKind::InterleavedNFA)).prefilter(false);
+    }
+);
+testconfig!(
+    overlapping,
+    search_standard_overlapping_nfa_interl_no_byte_class,
+    AC_STANDARD_OVERLAPPING,
+    Standard,
+    |b: &mut AhoCorasickBuilder| {
+        b.kind(Some(AhoCorasickKind::InterleavedNFA)).byte_classes(false);
+    }
+);
+testconfig!(
+    overlapping,
     search_standard_overlapping_dfa_default,
     AC_STANDARD_OVERLAPPING,
     Standard,
@@ -1027,6 +1080,16 @@ testconfig!(
 #[cfg(feature = "std")]
 testconfig!(
     stream,
+    search_standard_stream_nfa_interl_default,
+    AC_STANDARD_NON_OVERLAPPING,
+    Standard,
+    |b: &mut AhoCorasickBuilder| {
+        b.kind(Some(AhoCorasickKind::InterleavedNFA));
+    }
+);
+#[cfg(feature = "std")]
+testconfig!(
+    stream,
     search_standard_stream_dfa_default,
     AC_STANDARD_NON_OVERLAPPING,
     Standard,
@@ -1063,6 +1126,16 @@ testconfig!(
     |b: &mut AhoCorasickBuilder| {
         b.start_kind(StartKind::Anchored)
             .kind(Some(AhoCorasickKind::ContiguousNFA));
+    }
+);
+testconfig!(
+    anchored,
+    search_standard_anchored_nfa_interl_default,
+    AC_STANDARD_ANCHORED_NON_OVERLAPPING,
+    Standard,
+    |b: &mut AhoCorasickBuilder| {
+        b.start_kind(StartKind::Anchored)
+            .kind(Some(AhoCorasickKind::InterleavedNFA));
     }
 );
 testconfig!(
@@ -1114,6 +1187,16 @@ testconfig!(
 );
 testconfig!(
     anchored,
+    search_leftmost_first_anchored_nfa_interl_default,
+    AC_LEFTMOST_FIRST_ANCHORED,
+    LeftmostFirst,
+    |b: &mut AhoCorasickBuilder| {
+        b.start_kind(StartKind::Anchored)
+            .kind(Some(AhoCorasickKind::InterleavedNFA));
+    }
+);
+testconfig!(
+    anchored,
     search_leftmost_first_anchored_dfa_default,
     AC_LEFTMOST_FIRST_ANCHORED,
     LeftmostFirst,
@@ -1157,6 +1240,16 @@ testconfig!(
     |b: &mut AhoCorasickBuilder| {
         b.start_kind(StartKind::Anchored)
             .kind(Some(AhoCorasickKind::ContiguousNFA));
+    }
+);
+testconfig!(
+    anchored,
+    search_leftmost_longest_anchored_nfa_interl_default,
+    AC_LEFTMOST_LONGEST_ANCHORED,
+    LeftmostLongest,
+    |b: &mut AhoCorasickBuilder| {
+        b.start_kind(StartKind::Anchored)
+            .kind(Some(AhoCorasickKind::InterleavedNFA));
     }
 );
 testconfig!(
@@ -1208,6 +1301,16 @@ testconfig!(
     }
 );
 testconfig!(
+    acasei_standard_nfa_interl_default,
+    &[ASCII_CASE_INSENSITIVE],
+    Standard,
+    |b: &mut AhoCorasickBuilder| {
+        b.kind(Some(AhoCorasickKind::InterleavedNFA))
+            .prefilter(false)
+            .ascii_case_insensitive(true);
+    }
+);
+testconfig!(
     acasei_standard_dfa_default,
     &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_NON_OVERLAPPING],
     Standard,
@@ -1241,6 +1344,16 @@ testconfig!(
     Standard,
     |b: &mut AhoCorasickBuilder| {
         b.kind(Some(AhoCorasickKind::ContiguousNFA))
+            .ascii_case_insensitive(true);
+    }
+);
+testconfig!(
+    overlapping,
+    acasei_standard_overlapping_nfa_interl_default,
+    &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_OVERLAPPING],
+    Standard,
+    |b: &mut AhoCorasickBuilder| {
+        b.kind(Some(AhoCorasickKind::InterleavedNFA))
             .ascii_case_insensitive(true);
     }
 );
@@ -1280,6 +1393,15 @@ testconfig!(
     }
 );
 testconfig!(
+    acasei_leftmost_first_nfa_interl_default,
+    &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_NON_OVERLAPPING],
+    LeftmostFirst,
+    |b: &mut AhoCorasickBuilder| {
+        b.kind(Some(AhoCorasickKind::InterleavedNFA))
+            .ascii_case_insensitive(true);
+    }
+);
+testconfig!(
     acasei_leftmost_first_dfa_default,
     &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_NON_OVERLAPPING],
     LeftmostFirst,
@@ -1310,6 +1432,15 @@ testconfig!(
     LeftmostLongest,
     |b: &mut AhoCorasickBuilder| {
         b.kind(Some(AhoCorasickKind::ContiguousNFA))
+            .ascii_case_insensitive(true);
+    }
+);
+testconfig!(
+    acasei_leftmost_longest_nfa_interl_default,
+    &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_NON_OVERLAPPING],
+    LeftmostLongest,
+    |b: &mut AhoCorasickBuilder| {
+        b.kind(Some(AhoCorasickKind::InterleavedNFA))
             .ascii_case_insensitive(true);
     }
 );
@@ -1472,6 +1603,13 @@ fn anchored_not_allowed_even_if_technically_available() {
         .unwrap();
     assert!(ac.try_find(Input::new("foo").anchored(Anchored::Yes)).is_err());
 
+    let ac = AhoCorasick::builder()
+        .kind(Some(AhoCorasickKind::InterleavedNFA))
+        .start_kind(StartKind::Unanchored)
+        .build(&["foo"])
+        .unwrap();
+    assert!(ac.try_find(Input::new("foo").anchored(Anchored::Yes)).is_err());
+
     // For completeness, check that the DFA returns an error too.
     let ac = AhoCorasick::builder()
         .kind(Some(AhoCorasickKind::DFA))
@@ -1496,6 +1634,13 @@ fn unanchored_not_allowed_even_if_technically_available() {
 
     let ac = AhoCorasick::builder()
         .kind(Some(AhoCorasickKind::ContiguousNFA))
+        .start_kind(StartKind::Anchored)
+        .build(&["foo"])
+        .unwrap();
+    assert!(ac.try_find(Input::new("foo").anchored(Anchored::No)).is_err());
+
+    let ac = AhoCorasick::builder()
+        .kind(Some(AhoCorasickKind::InterleavedNFA))
         .start_kind(StartKind::Anchored)
         .build(&["foo"])
         .unwrap();
