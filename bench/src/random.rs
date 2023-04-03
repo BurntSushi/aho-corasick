@@ -72,6 +72,28 @@ fn misc(c: &mut Criterion) {
             "ghijkl", "hijklm", "ijklmn", "jklmno",
         ],
     );
+
+    // Test on patterns that fills up the alphabet.
+    // - The root state is dense
+    // - The children of the root states are dense
+    // - The grandchildren all have only one valid transition.
+
+    // Build [
+    //      "\x00\x00\x00\x00", "\x00\x01\x01\x01", ..., "\x00\xFF\xFF\xFF",
+    //      "\x01\x00\x00\x00", "\x01\x01\x01\x01", ..., "\x01\xFF\xFF\xFF",
+    //      ..,
+    //      "\xFF\x00\x00\x00", "\xFF\x01\x01\x01", ..., "\xFF\xFF\xFF\xFF",
+    // ]
+    let pats: Vec<Vec<u8>> = (0_u8..255)
+        .flat_map(|b| {
+            (0_u8..255).map(move |c| {
+                std::iter::once(c)
+                    .chain(std::iter::repeat(b).take(3))
+                    .collect::<Vec<_>>()
+            })
+        })
+        .collect();
+    define_random(c, "dense-root", 16, pats);
 }
 
 /// Various benchmarks using a large pattern set.
