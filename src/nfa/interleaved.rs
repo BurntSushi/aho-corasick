@@ -641,6 +641,13 @@ fn interleave(
     // Indicates which indexes in the table are free.
     let mut available_indexes = AvailableIndexes::default();
 
+    // First index to search at for a given offset.
+    // That is, if needing to add in the table a transition with a given offset, the
+    // search should start at first_available[offset] or later.
+    // This is only used to speed up the algorithm, which could otherwise take
+    // quite long when the number of states grows.
+    let mut offset_to_search_index = [0_usize; 257];
+
     // Iterate of states in breadth-first iteration. This improves cache locality
     // especially around the start state.
     let mut states_to_add = VecDeque::new();
@@ -661,18 +668,29 @@ fn interleave(
     while let Some(sid) = states_to_add.pop_front() {
         let state = &nnfa.states()[sid];
 
-        // Search for an available place for this state.
-        let mut start_idx = available_indexes.first_available;
+        // Start the search at the max of all search indexes for the offsets to push in.
+        let mut max_offset = 0;
+        let mut search_index = offset_to_search_index[0];
+        for (byte, _) in &state.trans {
+            let offset = *byte as usize + 1;
+            let new_search_index = offset_to_search_index[offset];
+            if new_search_index > search_index {
+                search_index = new_search_index;
+                max_offset = offset;
+            }
+        }
+
+        // Search for a place in the table for the state + its transitions.
         'OUTER: loop {
-            while available_indexes.used(start_idx) {
-                start_idx += 1;
+            while available_indexes.used(search_index) {
+                search_index += 1;
                 continue;
             }
 
             for (byte, _) in &state.trans {
-                let class = byte_classes.get(*byte);
-                if available_indexes.used(start_idx + (class as usize) + 1) {
-                    start_idx += 1;
+                let offset = (byte_classes.get(*byte) as usize) + 1;
+                if available_indexes.used(search_index + offset) {
+                    search_index += 1;
                     continue 'OUTER;
                 }
             }
@@ -680,7 +698,7 @@ fn interleave(
         }
 
         // An index to place this state has been found, save the new state id.
-        let new_sid = StateID::new(start_idx).map_err(|e| {
+        let new_sid = StateID::new(search_index).map_err(|e| {
             BuildError::state_id_overflow(StateID::MAX.as_u64(), e.attempted())
         })?;
         index_to_state_id[sid] = new_sid;
@@ -696,6 +714,17 @@ fn interleave(
                 states_to_add.push_back(*target_sid);
             }
         }
+
+        // Advance the search index for the offset that was the max.
+        // This is a completely arbitrary heuristic to advance it,
+        // and does not represent the "first available" index for
+        // this offset. This strives to strike a balance between
+        // speeding up the algorithm (so avoiding starting searches
+        // too early in the table) and keeping a good compression
+        // ratio thanks to interleaving.
+        let v = &mut offset_to_search_index;
+        v[max_offset] +=
+            (search_index - v[max_offset]) / (state.trans.len() + 1);
     }
 
     Ok(InterleaveState { index_to_state_id, max_state_id })
@@ -705,8 +734,6 @@ fn interleave(
 #[derive(Debug, Default)]
 struct AvailableIndexes {
     used: Vec<bool>,
-    /// First index that is not used.
-    pub first_available: usize,
 }
 
 impl AvailableIndexes {
@@ -720,12 +747,5 @@ impl AvailableIndexes {
             self.used.resize(idx + 1, false);
         }
         self.used[idx] = true;
-        if idx == self.first_available {
-            self.first_available = self.used[idx..]
-                .iter()
-                .position(|v| !*v)
-                .map(|v| v + idx)
-                .unwrap_or_else(|| self.used.len());
-        }
     }
 }
