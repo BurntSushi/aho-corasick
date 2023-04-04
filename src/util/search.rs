@@ -33,10 +33,19 @@ use crate::util::primitives::PatternID;
 ///
 /// * The bounds represent a valid range into the input's haystack.
 /// * **or** the end bound is a valid ending bound for the haystack *and*
-/// the start bound is exactly one greater than the start bound.
+/// the start bound is exactly one greater than the end bound.
 ///
 /// In the latter case, [`Input::is_done`] will return true and indicates any
 /// search receiving such an input should immediately return with no match.
+///
+/// Other than representing "search is complete," the `Input::span` and
+/// `Input::range` APIs are never necessary. Instead, callers can slice the
+/// haystack instead, e.g., with `&haystack[start..end]`. With that said, they
+/// can be more convenient than slicing because the match positions reported
+/// when using `Input::span` or `Input::range` are in terms of the original
+/// haystack. If you instead use `&haystack[start..end]`, then you'll need to
+/// add `start` to any match position returned in order for it to be a correct
+/// index into `haystack`.
 ///
 /// # Example: `&str` and `&[u8]` automatically convert to an `Input`
 ///
@@ -653,9 +662,10 @@ impl<'h, H: ?Sized + AsRef<[u8]>> From<&'h H> for Input<'h> {
 ///
 /// This is basically equivalent to a `std::ops::Range<usize>`, except this
 /// type implements `Copy` which makes it more ergonomic to use in the context
-/// of this crate. Like a range, this implements `Index` for `[u8]` and `str`,
-/// and `IndexMut` for `[u8]`. For convenience, this also impls `From<Range>`,
-/// which means things like `Span::from(5..10)` work.
+/// of this crate. Indeed, `Span` exists only because `Range<usize>` does
+/// not implement `Copy`. Like a range, this implements `Index` for `[u8]`
+/// and `str`, and `IndexMut` for `[u8]`. For convenience, this also impls
+/// `From<Range>`, which means things like `Span::from(5..10)` work.
 ///
 /// There are no constraints on the values of a span. It is, for example, legal
 /// to create a span where `start > end`.
@@ -769,6 +779,7 @@ impl PartialEq<Span> for Range<usize> {
 /// If an Aho-Corasick searcher does not support the anchored mode selected,
 /// then the search will return an error or panic, depending on whether a
 /// fallible or an infallible routine was called.
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Anchored {
     /// Run an unanchored search. This means a match may occur anywhere at or
