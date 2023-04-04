@@ -35,7 +35,7 @@ fn define_aho_corasick<B: AsRef<[u8]>>(
     let name = format!("nfa/noncontiguous/{}", bench_name);
     let aut = AhoCorasick::builder()
         .match_kind(MatchKind::LeftmostFirst)
-        .kind(AhoCorasickKind::NoncontiguousNFA)
+        .kind(Some(AhoCorasickKind::NoncontiguousNFA))
         .build(patterns.clone())
         .unwrap();
     define(c, group_name, &name, corpus, move |b| {
@@ -46,7 +46,7 @@ fn define_aho_corasick<B: AsRef<[u8]>>(
     let name = format!("nfa/contiguous/{}", bench_name);
     let aut = AhoCorasick::builder()
         .match_kind(MatchKind::LeftmostFirst)
-        .kind(AhoCorasickKind::ContiguousNFA)
+        .kind(Some(AhoCorasickKind::ContiguousNFA))
         .build(patterns.clone())
         .unwrap();
     define(c, group_name, &name, corpus, move |b| {
@@ -57,7 +57,7 @@ fn define_aho_corasick<B: AsRef<[u8]>>(
     let name = format!("dfa/{}", bench_name);
     let aut = AhoCorasick::builder()
         .match_kind(MatchKind::LeftmostFirst)
-        .kind(AhoCorasickKind::DFA)
+        .kind(Some(AhoCorasickKind::DFA))
         .build(patterns.clone())
         .unwrap();
     define(c, group_name, &name, corpus, move |b| {

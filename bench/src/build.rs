@@ -45,7 +45,7 @@ fn define_build<B: AsRef<[u8]>>(
             b.iter(|| {
                 black_box(
                     AhoCorasick::builder()
-                        .kind(AhoCorasickKind::NoncontiguousNFA)
+                        .kind(Some(AhoCorasickKind::NoncontiguousNFA))
                         .build(&pats)
                         .unwrap(),
                 )
@@ -56,7 +56,7 @@ fn define_build<B: AsRef<[u8]>>(
             b.iter(|| {
                 black_box(
                     AhoCorasick::builder()
-                        .kind(AhoCorasickKind::NoncontiguousNFA)
+                        .kind(Some(AhoCorasickKind::NoncontiguousNFA))
                         .build(&pats)
                         .unwrap(),
                 )
@@ -71,7 +71,7 @@ fn define_build<B: AsRef<[u8]>>(
             b.iter(|| {
                 black_box(
                     AhoCorasick::builder()
-                        .kind(AhoCorasickKind::ContiguousNFA)
+                        .kind(Some(AhoCorasickKind::ContiguousNFA))
                         .build(&pats)
                         .unwrap(),
                 )
@@ -82,7 +82,7 @@ fn define_build<B: AsRef<[u8]>>(
             b.iter(|| {
                 black_box(
                     AhoCorasick::builder()
-                        .kind(AhoCorasickKind::ContiguousNFA)
+                        .kind(Some(AhoCorasickKind::ContiguousNFA))
                         .build(&pats)
                         .unwrap(),
                 )
@@ -97,7 +97,7 @@ fn define_build<B: AsRef<[u8]>>(
             b.iter(|| {
                 black_box(
                     AhoCorasick::builder()
-                        .kind(AhoCorasickKind::DFA)
+                        .kind(Some(AhoCorasickKind::DFA))
                         .build(&pats)
                         .unwrap(),
                 )
@@ -108,7 +108,7 @@ fn define_build<B: AsRef<[u8]>>(
             b.iter(|| {
                 black_box(
                     AhoCorasick::builder()
-                        .kind(AhoCorasickKind::DFA)
+                        .kind(Some(AhoCorasickKind::DFA))
                         .build(&pats)
                         .unwrap(),
                 )
