@@ -205,12 +205,14 @@ This crate exposes a few features for controlling dependency usage and whether
 this crate can be used without the standard library.
 
 * **std** -
-  Enables support for the standard library. This feature is enabled by default.
-  When disabled, only `core` and `alloc` are used. At an API level, enabling
-  `std` generally just enables `std::error::Error` trait impls for the various
-  error types. But the `std` feature is also required to enable vectorized
-  prefilters. Prefilters can greatly accelerate searches, but generally only
-  apply when the number of patterns is small (less than ~100).
+  Enables support for the standard library. This feature is enabled by
+  default. When disabled, only `core` and `alloc` are used. At an API
+  level, enabling `std` enables `std::error::Error` trait impls for the
+  various error types, and higher level stream search routines such as
+  [`AhoCorasick::try_stream_find_iter`]. But the `std` feature is also required
+  to enable vectorized prefilters. Prefilters can greatly accelerate searches,
+  but generally only apply when the number of patterns is small (less than
+  ~100).
 * **perf-literal** -
   Enables support for prefilters that use vectorized routines from external
   crates. This feature is enabled by default. If you're only using Aho-Corasick
