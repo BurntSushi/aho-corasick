@@ -46,8 +46,13 @@ use crate::{
 /// randomly selected titles from Wikipedia:
 ///
 /// * 99MB for a [`noncontiguous::NFA`] in 240ms.
-/// * 15MB for a [`contiguous::NFA`] in 275ms.
+/// * 21MB for a [`contiguous::NFA`] in 275ms.
 /// * 1.6GB for a [`dfa::DFA`] in 1.88s.
+///
+/// (Note that the memory usage above reflects the size of each automaton and
+/// not peak memory usage. For example, building a contiguous NFA requires
+/// first building a noncontiguous NFA. Once the contiguous NFA is built, the
+/// noncontiguous NFA is freed.)
 ///
 /// This experiment very strongly argues that a contiguous NFA is often the
 /// best balance in terms of resource usage. It takes a little longer to build,
@@ -55,6 +60,14 @@ use crate::{
 /// also often faster than a noncontiguous NFA, but a little slower than a
 /// DFA. Indeed, when no specific [`AhoCorasickKind`] is used (which is the
 /// default), a contiguous NFA is used in most cases.
+///
+/// The only "catch" to using a contiguous NFA is that, because of its variety
+/// of compression tricks, it may not be able to support automatons as large as
+/// what the noncontiguous NFA supports. In which case, building a contiguous
+/// NFA will fail and (by default) `AhoCorasick` will automatically fall
+/// back to a noncontiguous NFA. (This typically only happens when building
+/// automatons from millions of patterns.) Otherwise, the small additional time
+/// for building a contiguous NFA is almost certainly worth it.
 ///
 /// # Cloning
 ///
@@ -70,8 +83,9 @@ use crate::{
 ///
 /// It is generally possible for building an Aho-Corasick automaton to fail.
 /// Construction can fail in generally one way: when the inputs provided are
-/// too big. Whether that's a pattern that is too long, too many patterns or
-/// some combination of both.
+/// too big. Whether that's a pattern that is too long, too many patterns
+/// or some combination of both. A first approximation for the scale at which
+/// construction can fail is somewhere around "millions of patterns."
 ///
 /// For that reason, if you're building an Aho-Corasick automaton from
 /// untrusted input (or input that doesn't have any reasonable bounds on its
@@ -2568,8 +2582,8 @@ impl AhoCorasickBuilder {
         self
     }
 
-    /// Whether to attempt to shrink the size of the automaton's alphabet or
-    /// not.
+    /// A debug settting for whether to attempt to shrink the size of the
+    /// automaton's alphabet or not.
     ///
     /// This option is enabled by default and should never be disabled unless
     /// one is debugging the underlying automaton.
@@ -2580,11 +2594,11 @@ impl AhoCorasickBuilder {
     /// between a match and a non-match in the automaton.
     ///
     /// The advantage of this map is that the size of the transition table can
-    /// be reduced drastically from `#states * 256 * sizeof(u32)` to `#states
-    /// * k * sizeof(u32)` where `k` is the number of equivalence classes
-    /// (rounded up to the nearest power of 2). As a result, total space usage
-    /// can decrease substantially. Moreover, since a smaller alphabet is used,
-    /// automaton compilation becomes faster as well.
+    /// be reduced drastically from `#states * 256 * sizeof(u32)` to
+    /// `#states * k * sizeof(u32)` where `k` is the number of equivalence
+    /// classes (rounded up to the nearest power of 2). As a result, total
+    /// space usage can decrease substantially. Moreover, since a smaller
+    /// alphabet is used, automaton compilation becomes faster as well.
     ///
     /// **WARNING:** This is only useful for debugging automatons. Disabling
     /// this does not yield any speed advantages. Namely, even when this is

@@ -736,8 +736,8 @@ impl Builder {
         self
     }
 
-    /// Whether to attempt to shrink the size of the automaton's alphabet or
-    /// not.
+    /// A debug setting for whether to attempt to shrink the size of the
+    /// automaton's alphabet or not.
     ///
     /// This should never be enabled unless you're debugging an automaton.
     /// Namely, disabling byte classes makes transitions easier to reason

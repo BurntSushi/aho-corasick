@@ -196,7 +196,7 @@ impl SmallIndex {
     /// Returns one more than this small index as a usize.
     ///
     /// Since a small index has constraints on its maximum value, adding `1` to
-    /// it will always fit in a `usize`, `u32` and a `i32`.
+    /// it will always fit in a `usize`, `isize`, `u32` and a `i32`.
     #[inline]
     pub fn one_more(&self) -> usize {
         self.as_usize() + 1
@@ -466,7 +466,7 @@ macro_rules! index_type_impls {
                 self.0.as_u32()
             }
 
-            /// Return the internal value as a i32`. This is guaranteed to
+            /// Return the internal value as a `i32`. This is guaranteed to
             /// never overflow an `i32`.
             #[inline]
             pub const fn as_i32(&self) -> i32 {
