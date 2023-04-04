@@ -29,10 +29,10 @@ fuzz_target!(|input: Inputs| {
         .byte_classes(input.byte_classes);
     match input.kind % 5 {
         0 => &mut acb,
-        1 => acb.kind(AhoCorasickKind::Auto),
-        2 => acb.kind(AhoCorasickKind::NoncontiguousNFA),
-        3 => acb.kind(AhoCorasickKind::ContiguousNFA),
-        4 => acb.kind(AhoCorasickKind::DFA),
+        1 => acb.kind(None),
+        2 => acb.kind(Some(AhoCorasickKind::NoncontiguousNFA)),
+        3 => acb.kind(Some(AhoCorasickKind::ContiguousNFA)),
+        4 => acb.kind(Some(AhoCorasickKind::DFA)),
         _ => unreachable!(),
     };
     match input.match_kind % 4 {

@@ -33,7 +33,7 @@ struct Args {
     haystack: PathBuf,
     match_kind: MatchKind,
     start_kind: StartKind,
-    kind: AhoCorasickKind,
+    kind: Option<AhoCorasickKind>,
     ascii_casei: bool,
     dense_depth: usize,
     no_prefilter: bool,
@@ -113,10 +113,10 @@ impl Args {
             _ => unreachable!(),
         };
         let kind = match parsed.value_of("kind").unwrap() {
-            "auto" => AhoCorasickKind::Auto,
-            "noncontiguous" => AhoCorasickKind::NoncontiguousNFA,
-            "contiguous" => AhoCorasickKind::ContiguousNFA,
-            "dfa" => AhoCorasickKind::DFA,
+            "auto" => None,
+            "noncontiguous" => Some(AhoCorasickKind::NoncontiguousNFA),
+            "contiguous" => Some(AhoCorasickKind::ContiguousNFA),
+            "dfa" => Some(AhoCorasickKind::DFA),
             _ => unreachable!(),
         };
         let dense_depth = parsed.value_of("dense-depth").unwrap().parse()?;

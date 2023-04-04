@@ -731,7 +731,7 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
-                    b.kind(AhoCorasickKind::NoncontiguousNFA);
+                    b.kind(Some(AhoCorasickKind::NoncontiguousNFA));
                 }
             );
             testconfig!(
@@ -739,7 +739,8 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
-                    b.kind(AhoCorasickKind::NoncontiguousNFA).prefilter(false);
+                    b.kind(Some(AhoCorasickKind::NoncontiguousNFA))
+                        .prefilter(false);
                 }
             );
             testconfig!(
@@ -747,7 +748,8 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
-                    b.kind(AhoCorasickKind::NoncontiguousNFA).dense_depth(0);
+                    b.kind(Some(AhoCorasickKind::NoncontiguousNFA))
+                        .dense_depth(0);
                 }
             );
             testconfig!(
@@ -755,7 +757,7 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
-                    b.kind(AhoCorasickKind::NoncontiguousNFA)
+                    b.kind(Some(AhoCorasickKind::NoncontiguousNFA))
                         .dense_depth(usize::MAX);
                 }
             );
@@ -764,8 +766,7 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
-                    b.kind(AhoCorasickKind::NoncontiguousNFA)
-                        .kind(AhoCorasickKind::ContiguousNFA);
+                    b.kind(Some(AhoCorasickKind::ContiguousNFA));
                 }
             );
             testconfig!(
@@ -773,7 +774,8 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
-                    b.kind(AhoCorasickKind::ContiguousNFA).prefilter(false);
+                    b.kind(Some(AhoCorasickKind::ContiguousNFA))
+                        .prefilter(false);
                 }
             );
             testconfig!(
@@ -781,7 +783,8 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
-                    b.kind(AhoCorasickKind::ContiguousNFA).dense_depth(0);
+                    b.kind(Some(AhoCorasickKind::ContiguousNFA))
+                        .dense_depth(0);
                 }
             );
             testconfig!(
@@ -789,7 +792,7 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
-                    b.kind(AhoCorasickKind::ContiguousNFA)
+                    b.kind(Some(AhoCorasickKind::ContiguousNFA))
                         .dense_depth(usize::MAX);
                 }
             );
@@ -798,7 +801,8 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
-                    b.kind(AhoCorasickKind::ContiguousNFA).byte_classes(false);
+                    b.kind(Some(AhoCorasickKind::ContiguousNFA))
+                        .byte_classes(false);
                 }
             );
             testconfig!(
@@ -806,7 +810,7 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
-                    b.kind(AhoCorasickKind::DFA);
+                    b.kind(Some(AhoCorasickKind::DFA));
                 }
             );
             testconfig!(
@@ -814,7 +818,8 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
-                    b.kind(AhoCorasickKind::DFA).start_kind(StartKind::Both);
+                    b.kind(Some(AhoCorasickKind::DFA))
+                        .start_kind(StartKind::Both);
                 }
             );
             testconfig!(
@@ -822,7 +827,7 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
-                    b.kind(AhoCorasickKind::DFA).prefilter(false);
+                    b.kind(Some(AhoCorasickKind::DFA)).prefilter(false);
                 }
             );
             testconfig!(
@@ -830,7 +835,7 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
-                    b.kind(AhoCorasickKind::DFA)
+                    b.kind(Some(AhoCorasickKind::DFA))
                         .start_kind(StartKind::Both)
                         .prefilter(false);
                 }
@@ -840,7 +845,7 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
-                    b.kind(AhoCorasickKind::DFA).byte_classes(false);
+                    b.kind(Some(AhoCorasickKind::DFA)).byte_classes(false);
                 }
             );
             testconfig!(
@@ -848,7 +853,7 @@ macro_rules! testcombo {
                 $collection,
                 $kind,
                 |b: &mut AhoCorasickBuilder| {
-                    b.kind(AhoCorasickKind::DFA)
+                    b.kind(Some(AhoCorasickKind::DFA))
                         .start_kind(StartKind::Both)
                         .byte_classes(false);
                 }
@@ -881,7 +886,7 @@ testconfig!(
     AC_STANDARD_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::NoncontiguousNFA);
+        b.kind(Some(AhoCorasickKind::NoncontiguousNFA));
     }
 );
 testconfig!(
@@ -890,7 +895,7 @@ testconfig!(
     AC_STANDARD_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::NoncontiguousNFA).prefilter(false);
+        b.kind(Some(AhoCorasickKind::NoncontiguousNFA)).prefilter(false);
     }
 );
 testconfig!(
@@ -899,7 +904,7 @@ testconfig!(
     AC_STANDARD_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::ContiguousNFA);
+        b.kind(Some(AhoCorasickKind::ContiguousNFA));
     }
 );
 testconfig!(
@@ -908,7 +913,7 @@ testconfig!(
     AC_STANDARD_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::ContiguousNFA).prefilter(false);
+        b.kind(Some(AhoCorasickKind::ContiguousNFA)).prefilter(false);
     }
 );
 testconfig!(
@@ -917,7 +922,7 @@ testconfig!(
     AC_STANDARD_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::ContiguousNFA).dense_depth(0);
+        b.kind(Some(AhoCorasickKind::ContiguousNFA)).dense_depth(0);
     }
 );
 testconfig!(
@@ -926,7 +931,7 @@ testconfig!(
     AC_STANDARD_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::ContiguousNFA).dense_depth(usize::MAX);
+        b.kind(Some(AhoCorasickKind::ContiguousNFA)).dense_depth(usize::MAX);
     }
 );
 testconfig!(
@@ -935,7 +940,7 @@ testconfig!(
     AC_STANDARD_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::DFA);
+        b.kind(Some(AhoCorasickKind::DFA));
     }
 );
 testconfig!(
@@ -944,7 +949,7 @@ testconfig!(
     AC_STANDARD_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::DFA).start_kind(StartKind::Both);
+        b.kind(Some(AhoCorasickKind::DFA)).start_kind(StartKind::Both);
     }
 );
 testconfig!(
@@ -953,7 +958,7 @@ testconfig!(
     AC_STANDARD_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::DFA).prefilter(false);
+        b.kind(Some(AhoCorasickKind::DFA)).prefilter(false);
     }
 );
 testconfig!(
@@ -962,7 +967,7 @@ testconfig!(
     AC_STANDARD_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::DFA)
+        b.kind(Some(AhoCorasickKind::DFA))
             .start_kind(StartKind::Both)
             .prefilter(false);
     }
@@ -973,7 +978,7 @@ testconfig!(
     AC_STANDARD_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::DFA).byte_classes(false);
+        b.kind(Some(AhoCorasickKind::DFA)).byte_classes(false);
     }
 );
 testconfig!(
@@ -982,7 +987,7 @@ testconfig!(
     AC_STANDARD_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::DFA)
+        b.kind(Some(AhoCorasickKind::DFA))
             .start_kind(StartKind::Both)
             .byte_classes(false);
     }
@@ -1006,7 +1011,7 @@ testconfig!(
     AC_STANDARD_NON_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::NoncontiguousNFA);
+        b.kind(Some(AhoCorasickKind::NoncontiguousNFA));
     }
 );
 #[cfg(feature = "std")]
@@ -1016,7 +1021,7 @@ testconfig!(
     AC_STANDARD_NON_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::ContiguousNFA);
+        b.kind(Some(AhoCorasickKind::ContiguousNFA));
     }
 );
 #[cfg(feature = "std")]
@@ -1026,7 +1031,7 @@ testconfig!(
     AC_STANDARD_NON_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::DFA);
+        b.kind(Some(AhoCorasickKind::DFA));
     }
 );
 
@@ -1047,7 +1052,7 @@ testconfig!(
     Standard,
     |b: &mut AhoCorasickBuilder| {
         b.start_kind(StartKind::Anchored)
-            .kind(AhoCorasickKind::NoncontiguousNFA);
+            .kind(Some(AhoCorasickKind::NoncontiguousNFA));
     }
 );
 testconfig!(
@@ -1056,7 +1061,8 @@ testconfig!(
     AC_STANDARD_ANCHORED_NON_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.start_kind(StartKind::Anchored).kind(AhoCorasickKind::ContiguousNFA);
+        b.start_kind(StartKind::Anchored)
+            .kind(Some(AhoCorasickKind::ContiguousNFA));
     }
 );
 testconfig!(
@@ -1065,7 +1071,7 @@ testconfig!(
     AC_STANDARD_ANCHORED_NON_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.start_kind(StartKind::Anchored).kind(AhoCorasickKind::DFA);
+        b.start_kind(StartKind::Anchored).kind(Some(AhoCorasickKind::DFA));
     }
 );
 testconfig!(
@@ -1074,7 +1080,7 @@ testconfig!(
     AC_STANDARD_ANCHORED_NON_OVERLAPPING,
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.start_kind(StartKind::Both).kind(AhoCorasickKind::DFA);
+        b.start_kind(StartKind::Both).kind(Some(AhoCorasickKind::DFA));
     }
 );
 testconfig!(
@@ -1093,7 +1099,7 @@ testconfig!(
     LeftmostFirst,
     |b: &mut AhoCorasickBuilder| {
         b.start_kind(StartKind::Anchored)
-            .kind(AhoCorasickKind::NoncontiguousNFA);
+            .kind(Some(AhoCorasickKind::NoncontiguousNFA));
     }
 );
 testconfig!(
@@ -1102,7 +1108,8 @@ testconfig!(
     AC_LEFTMOST_FIRST_ANCHORED,
     LeftmostFirst,
     |b: &mut AhoCorasickBuilder| {
-        b.start_kind(StartKind::Anchored).kind(AhoCorasickKind::ContiguousNFA);
+        b.start_kind(StartKind::Anchored)
+            .kind(Some(AhoCorasickKind::ContiguousNFA));
     }
 );
 testconfig!(
@@ -1111,7 +1118,7 @@ testconfig!(
     AC_LEFTMOST_FIRST_ANCHORED,
     LeftmostFirst,
     |b: &mut AhoCorasickBuilder| {
-        b.start_kind(StartKind::Anchored).kind(AhoCorasickKind::DFA);
+        b.start_kind(StartKind::Anchored).kind(Some(AhoCorasickKind::DFA));
     }
 );
 testconfig!(
@@ -1120,7 +1127,7 @@ testconfig!(
     AC_LEFTMOST_FIRST_ANCHORED,
     LeftmostFirst,
     |b: &mut AhoCorasickBuilder| {
-        b.start_kind(StartKind::Both).kind(AhoCorasickKind::DFA);
+        b.start_kind(StartKind::Both).kind(Some(AhoCorasickKind::DFA));
     }
 );
 testconfig!(
@@ -1139,7 +1146,7 @@ testconfig!(
     LeftmostLongest,
     |b: &mut AhoCorasickBuilder| {
         b.start_kind(StartKind::Anchored)
-            .kind(AhoCorasickKind::NoncontiguousNFA);
+            .kind(Some(AhoCorasickKind::NoncontiguousNFA));
     }
 );
 testconfig!(
@@ -1148,7 +1155,8 @@ testconfig!(
     AC_LEFTMOST_LONGEST_ANCHORED,
     LeftmostLongest,
     |b: &mut AhoCorasickBuilder| {
-        b.start_kind(StartKind::Anchored).kind(AhoCorasickKind::ContiguousNFA);
+        b.start_kind(StartKind::Anchored)
+            .kind(Some(AhoCorasickKind::ContiguousNFA));
     }
 );
 testconfig!(
@@ -1157,7 +1165,7 @@ testconfig!(
     AC_LEFTMOST_LONGEST_ANCHORED,
     LeftmostLongest,
     |b: &mut AhoCorasickBuilder| {
-        b.start_kind(StartKind::Anchored).kind(AhoCorasickKind::DFA);
+        b.start_kind(StartKind::Anchored).kind(Some(AhoCorasickKind::DFA));
     }
 );
 testconfig!(
@@ -1166,7 +1174,7 @@ testconfig!(
     AC_LEFTMOST_LONGEST_ANCHORED,
     LeftmostLongest,
     |b: &mut AhoCorasickBuilder| {
-        b.start_kind(StartKind::Both).kind(AhoCorasickKind::DFA);
+        b.start_kind(StartKind::Both).kind(Some(AhoCorasickKind::DFA));
     }
 );
 
@@ -1184,7 +1192,7 @@ testconfig!(
     &[ASCII_CASE_INSENSITIVE],
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::NoncontiguousNFA)
+        b.kind(Some(AhoCorasickKind::NoncontiguousNFA))
             .prefilter(false)
             .ascii_case_insensitive(true);
     }
@@ -1194,7 +1202,7 @@ testconfig!(
     &[ASCII_CASE_INSENSITIVE],
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::ContiguousNFA)
+        b.kind(Some(AhoCorasickKind::ContiguousNFA))
             .prefilter(false)
             .ascii_case_insensitive(true);
     }
@@ -1204,7 +1212,7 @@ testconfig!(
     &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_NON_OVERLAPPING],
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::DFA).ascii_case_insensitive(true);
+        b.kind(Some(AhoCorasickKind::DFA)).ascii_case_insensitive(true);
     }
 );
 testconfig!(
@@ -1222,7 +1230,8 @@ testconfig!(
     &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_OVERLAPPING],
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::NoncontiguousNFA).ascii_case_insensitive(true);
+        b.kind(Some(AhoCorasickKind::NoncontiguousNFA))
+            .ascii_case_insensitive(true);
     }
 );
 testconfig!(
@@ -1231,7 +1240,8 @@ testconfig!(
     &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_OVERLAPPING],
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::ContiguousNFA).ascii_case_insensitive(true);
+        b.kind(Some(AhoCorasickKind::ContiguousNFA))
+            .ascii_case_insensitive(true);
     }
 );
 testconfig!(
@@ -1240,7 +1250,7 @@ testconfig!(
     &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_OVERLAPPING],
     Standard,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::DFA).ascii_case_insensitive(true);
+        b.kind(Some(AhoCorasickKind::DFA)).ascii_case_insensitive(true);
     }
 );
 testconfig!(
@@ -1256,7 +1266,8 @@ testconfig!(
     &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_NON_OVERLAPPING],
     LeftmostFirst,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::NoncontiguousNFA).ascii_case_insensitive(true);
+        b.kind(Some(AhoCorasickKind::NoncontiguousNFA))
+            .ascii_case_insensitive(true);
     }
 );
 testconfig!(
@@ -1264,7 +1275,8 @@ testconfig!(
     &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_NON_OVERLAPPING],
     LeftmostFirst,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::ContiguousNFA).ascii_case_insensitive(true);
+        b.kind(Some(AhoCorasickKind::ContiguousNFA))
+            .ascii_case_insensitive(true);
     }
 );
 testconfig!(
@@ -1272,7 +1284,7 @@ testconfig!(
     &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_NON_OVERLAPPING],
     LeftmostFirst,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::DFA).ascii_case_insensitive(true);
+        b.kind(Some(AhoCorasickKind::DFA)).ascii_case_insensitive(true);
     }
 );
 testconfig!(
@@ -1288,7 +1300,8 @@ testconfig!(
     &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_NON_OVERLAPPING],
     LeftmostLongest,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::NoncontiguousNFA).ascii_case_insensitive(true);
+        b.kind(Some(AhoCorasickKind::NoncontiguousNFA))
+            .ascii_case_insensitive(true);
     }
 );
 testconfig!(
@@ -1296,7 +1309,8 @@ testconfig!(
     &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_NON_OVERLAPPING],
     LeftmostLongest,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::ContiguousNFA).ascii_case_insensitive(true);
+        b.kind(Some(AhoCorasickKind::ContiguousNFA))
+            .ascii_case_insensitive(true);
     }
 );
 testconfig!(
@@ -1304,7 +1318,7 @@ testconfig!(
     &[ASCII_CASE_INSENSITIVE, ASCII_CASE_INSENSITIVE_NON_OVERLAPPING],
     LeftmostLongest,
     |b: &mut AhoCorasickBuilder| {
-        b.kind(AhoCorasickKind::DFA).ascii_case_insensitive(true);
+        b.kind(Some(AhoCorasickKind::DFA)).ascii_case_insensitive(true);
     }
 );
 
@@ -1445,14 +1459,14 @@ fn overlapping_not_allowed_leftmost_longest() {
 #[test]
 fn anchored_not_allowed_even_if_technically_available() {
     let ac = AhoCorasick::builder()
-        .kind(AhoCorasickKind::NoncontiguousNFA)
+        .kind(Some(AhoCorasickKind::NoncontiguousNFA))
         .start_kind(StartKind::Unanchored)
         .build(&["foo"])
         .unwrap();
     assert!(ac.try_find(Input::new("foo").anchored(Anchored::Yes)).is_err());
 
     let ac = AhoCorasick::builder()
-        .kind(AhoCorasickKind::ContiguousNFA)
+        .kind(Some(AhoCorasickKind::ContiguousNFA))
         .start_kind(StartKind::Unanchored)
         .build(&["foo"])
         .unwrap();
@@ -1460,7 +1474,7 @@ fn anchored_not_allowed_even_if_technically_available() {
 
     // For completeness, check that the DFA returns an error too.
     let ac = AhoCorasick::builder()
-        .kind(AhoCorasickKind::DFA)
+        .kind(Some(AhoCorasickKind::DFA))
         .start_kind(StartKind::Unanchored)
         .build(&["foo"])
         .unwrap();
@@ -1474,14 +1488,14 @@ fn anchored_not_allowed_even_if_technically_available() {
 #[test]
 fn unanchored_not_allowed_even_if_technically_available() {
     let ac = AhoCorasick::builder()
-        .kind(AhoCorasickKind::NoncontiguousNFA)
+        .kind(Some(AhoCorasickKind::NoncontiguousNFA))
         .start_kind(StartKind::Anchored)
         .build(&["foo"])
         .unwrap();
     assert!(ac.try_find(Input::new("foo").anchored(Anchored::No)).is_err());
 
     let ac = AhoCorasick::builder()
-        .kind(AhoCorasickKind::ContiguousNFA)
+        .kind(Some(AhoCorasickKind::ContiguousNFA))
         .start_kind(StartKind::Anchored)
         .build(&["foo"])
         .unwrap();
@@ -1489,7 +1503,7 @@ fn unanchored_not_allowed_even_if_technically_available() {
 
     // For completeness, check that the DFA returns an error too.
     let ac = AhoCorasick::builder()
-        .kind(AhoCorasickKind::DFA)
+        .kind(Some(AhoCorasickKind::DFA))
         .start_kind(StartKind::Anchored)
         .build(&["foo"])
         .unwrap();
