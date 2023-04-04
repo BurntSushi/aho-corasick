@@ -214,11 +214,11 @@ this crate can be used without the standard library.
   but generally only apply when the number of patterns is small (less than
   ~100).
 * **perf-literal** -
-  Enables support for prefilters that use vectorized routines from external
-  crates. This feature is enabled by default. If you're only using Aho-Corasick
-  for large numbers of patterns or otherwise can abide lower throughput when
-  searching with a small number of patterns, then it is reasonable to disable
-  this feature.
+  Enables support for literal prefilters that use vectorized routines from
+  external crates. This feature is enabled by default. If you're only using
+  Aho-Corasick for large numbers of patterns or otherwise can abide lower
+  throughput when searching with a small number of patterns, then it is
+  reasonable to disable this feature.
 * **logging** -
   Enables a dependency on the `log` crate and emits messages to aide in
   diagnostics. This feature is disabled by default.
