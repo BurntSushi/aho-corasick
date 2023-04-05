@@ -21,8 +21,11 @@ use crate::{
         prefilter::Prefilter,
         primitives::{PatternID, SmallIndex, StateID},
         search::{Anchored, MatchKind},
+        special::Special,
     },
 };
+
+use super::noncontiguous::State;
 
 /// An interleaved NFA implementation of Aho-Corasick.
 ///
@@ -141,10 +144,10 @@ pub struct NFA {
     min_pattern_len: usize,
     /// The length of the longest pattern in this automaton.
     max_pattern_len: usize,
-    /// The State ID for the start node, in the unanchored version.
-    start_unanchored_id: StateID,
-    /// The State ID for the start node, in the anchored version.
-    start_anchored_id: StateID,
+    /// The information required to deduce which states are "special" in this
+    /// NFA.
+    special: Special,
+    fail_state: StateID,
 }
 
 impl NFA {
@@ -172,11 +175,9 @@ impl NFA {
     fn build_table(
         &mut self,
         nnfa: &noncontiguous::NFA,
-        interleave_state: &InterleaveState,
+        index_to_state_id: &[StateID],
+        max_state_id: StateID,
     ) -> Result<(), BuildError> {
-        let InterleaveState { index_to_state_id, max_state_id } =
-            interleave_state;
-
         // Grow the table to max_state_id + 1 + alphabet_len, to ensure the next_state_id
         // implementation can always index into this array. Unfilled elements have
         // offset == 0, which will always be invalid outside of state indexes.
@@ -222,8 +223,8 @@ unsafe impl Automaton for NFA {
     #[inline(always)]
     fn start_state(&self, anchored: Anchored) -> Result<StateID, MatchError> {
         match anchored {
-            Anchored::No => Ok(self.start_unanchored_id),
-            Anchored::Yes => Ok(self.start_anchored_id),
+            Anchored::No => Ok(self.special.start_unanchored_id),
+            Anchored::Yes => Ok(self.special.start_anchored_id),
         }
     }
 
@@ -243,7 +244,10 @@ unsafe impl Automaton for NFA {
 
             if trans.offset() == class + 1 {
                 // Transition is valid
-                return trans.target_state();
+                let dest = trans.target_state();
+                if dest != self.fail_state {
+                    return dest;
+                }
             }
 
             // For an anchored search, we never follow failure transitions
@@ -261,9 +265,7 @@ unsafe impl Automaton for NFA {
 
     #[inline(always)]
     fn is_special(&self, sid: StateID) -> bool {
-        self.is_dead(sid)
-            || self.is_match(sid)
-            || (self.prefilter.is_some() && self.is_start(sid))
+        sid <= self.special.max_special_id
     }
 
     #[inline(always)]
@@ -273,12 +275,13 @@ unsafe impl Automaton for NFA {
 
     #[inline(always)]
     fn is_match(&self, sid: StateID) -> bool {
-        !self.matches[sid.as_usize()].is_empty()
+        !self.is_dead(sid) && sid <= self.special.max_match_id
     }
 
     #[inline(always)]
     fn is_start(&self, sid: StateID) -> bool {
-        sid == self.start_unanchored_id || sid == self.start_anchored_id
+        sid == self.special.start_unanchored_id
+            || sid == self.special.start_anchored_id
     }
 
     #[inline(always)]
@@ -308,11 +311,13 @@ unsafe impl Automaton for NFA {
 
     #[inline(always)]
     fn match_len(&self, sid: StateID) -> usize {
+        debug_assert!(self.is_match(sid));
         self.matches[sid].len()
     }
 
     #[inline(always)]
     fn match_pattern(&self, sid: StateID, index: usize) -> PatternID {
+        debug_assert!(self.is_match(sid));
         self.matches[sid][index]
     }
 
@@ -356,8 +361,8 @@ impl core::fmt::Debug for NFA {
                     target_sid.as_usize()
                 )?;
 
-                let patterns = &self.matches[source_sid];
-                if !patterns.is_empty() {
+                if self.is_match(source_sid) {
+                    let patterns = &self.matches[source_sid];
                     write!(f, "         matches: ")?;
                     for (i, pid) in patterns.iter().enumerate() {
                         if i > 0 {
@@ -520,20 +525,27 @@ impl Builder {
             byte_classes,
             min_pattern_len: nnfa.min_pattern_len(),
             max_pattern_len: nnfa.max_pattern_len(),
-            // This is set at the end.
-            start_unanchored_id: StateID::ZERO,
-            start_anchored_id: StateID::ZERO,
+            // The special state IDs are set later.
+            special: Special::zero(),
+            fail_state: StateID::ZERO,
         };
         // Meat of the implementation: remap the state ids to interleave them in a much shorter
         // vec.
         let interleave_state = interleave(nnfa, &nfa.byte_classes)?;
         // Create the table with these interleaved state ids.
-        nfa.build_table(nnfa, &interleave_state)?;
+        nfa.build_table(
+            nnfa,
+            &interleave_state.index_to_state_id,
+            interleave_state.max_state_id,
+        )?;
 
         // Save matches details with the new state ids.
         let remap = &interleave_state.index_to_state_id;
-        nfa.matches =
-            vec![Vec::new(); interleave_state.max_state_id.as_usize() + 1];
+        nfa.matches = vec![
+            Vec::new();
+            interleave_state.max_matching_state_id.as_usize()
+                + 1
+        ];
         for (old_sid, state) in nnfa.states().iter().enumerate() {
             if !state.matches.is_empty() {
                 nfa.matches[remap[old_sid]] = state.matches.clone();
@@ -547,8 +559,16 @@ impl Builder {
         // Since this NFA version does not use ordering on states, we only really
         // need the start ids, so just save thoses.
         let old = nnfa.special();
-        nfa.start_unanchored_id = remap[old.start_unanchored_id];
-        nfa.start_anchored_id = remap[old.start_anchored_id];
+        let mut new = &mut nfa.special;
+        new.start_unanchored_id = remap[old.start_unanchored_id];
+        new.start_anchored_id = remap[old.start_anchored_id];
+        nfa.fail_state = remap[1];
+        new.max_match_id = interleave_state.max_matching_state_id;
+        new.max_special_id = if old.max_special_id == old.max_match_id {
+            interleave_state.max_matching_state_id
+        } else {
+            interleave_state.max_starting_state_id
+        };
 
         debug!(
             "interleaved NFA built, <states: {:?}, size: {:?}, \
@@ -617,13 +637,29 @@ impl Builder {
 }
 
 /// Result of interleaving states
-struct InterleaveState {
+struct Interleave {
     /// Mapping from the old state ids to the new ones.
     index_to_state_id: Vec<StateID>,
 
     /// Largest new state id. Useful to allocate the right size
     /// for the final table.
     max_state_id: StateID,
+
+    /// Indicates which indexes in the table are free.
+    available_indexes: AvailableIndexes,
+
+    /// First index to search at for a given offset.
+    /// That is, if needing to add in the table a transition with a given offset, the
+    /// search should start at first_available[offset] or later.
+    /// This is only used to speed up the algorithm, which could otherwise take
+    /// quite long when the number of states grows.
+    offset_to_search_index: [usize; 257],
+
+    /// Max state id for matching state.
+    max_matching_state_id: StateID,
+
+    /// Max state id for starting state.
+    max_starting_state_id: StateID,
 }
 
 /// Interleave states to reduce the size of the mapping and improve
@@ -633,47 +669,123 @@ struct InterleaveState {
 fn interleave(
     nnfa: &noncontiguous::NFA,
     byte_classes: &ByteClasses,
-) -> Result<InterleaveState, BuildError> {
-    // Map old state ids (indexes) to new ones
-    let mut index_to_state_id = vec![NFA::DEAD; nnfa.states().len()];
-    let mut max_state_id = NFA::DEAD;
+) -> Result<Interleave, BuildError> {
+    let mut interleave = Interleave {
+        index_to_state_id: vec![NFA::DEAD; nnfa.states().len()],
+        max_state_id: NFA::DEAD,
+        available_indexes: AvailableIndexes::default(),
+        offset_to_search_index: [0_usize; 257],
+        max_matching_state_id: StateID::ZERO,
+        max_starting_state_id: StateID::ZERO,
+    };
 
-    // Indicates which indexes in the table are free.
-    let mut available_indexes = AvailableIndexes::default();
-
-    // First index to search at for a given offset.
-    // That is, if needing to add in the table a transition with a given offset, the
-    // search should start at first_available[offset] or later.
-    // This is only used to speed up the algorithm, which could otherwise take
-    // quite long when the number of states grows.
-    let mut offset_to_search_index = [0_usize; 257];
-
-    // Iterate of states in breadth-first iteration. This improves cache locality
-    // especially around the start state.
-    let mut states_to_add = VecDeque::new();
+    let states = nnfa.states();
+    let mut states_to_visit = VecDeque::new();
     let mut visited = HashSet::with_capacity(nnfa.states().len());
 
-    // Dead state
-    states_to_add.push_back(StateID::from_u32_unchecked(0));
-    visited.insert(StateID::from_u32_unchecked(0));
-    // Fail state
-    states_to_add.push_back(StateID::from_u32_unchecked(1));
-    visited.insert(StateID::from_u32_unchecked(1));
-    // Starting states
-    states_to_add.push_back(nnfa.special().start_unanchored_id);
-    visited.insert(nnfa.special().start_unanchored_id);
-    states_to_add.push_back(nnfa.special().start_anchored_id);
-    visited.insert(nnfa.special().start_anchored_id);
+    // Add dead & fail state first
+    visited.insert(0);
+    interleave.add_state(
+        StateID::from_u32_unchecked(0),
+        &states[0],
+        byte_classes,
+        &mut visited,
+        &mut states_to_visit,
+    )?;
+    visited.insert(1);
+    interleave.add_state(
+        StateID::from_u32_unchecked(1),
+        &states[1],
+        byte_classes,
+        &mut visited,
+        &mut states_to_visit,
+    )?;
 
-    while let Some(sid) = states_to_add.pop_front() {
-        let state = &nnfa.states()[sid];
+    // Then, add all matching states
+    for i in 2..=nnfa.special().max_match_id.as_u32() {
+        visited.insert(i);
+        interleave.add_state(
+            StateID::from_u32_unchecked(i),
+            &states[i as usize],
+            byte_classes,
+            &mut visited,
+            &mut states_to_visit,
+        )?;
+    }
+
+    // Modify the offset_to_search_index to force all future states to be greater than
+    // the matching states. This allows making sure that the max_matching_id can still be used.
+    interleave.max_matching_state_id = interleave.max_state_id;
+    for offset in &mut interleave.offset_to_search_index {
+        *offset = interleave.max_state_id.as_usize();
+    }
+
+    // Then, add start states.
+    let sid = nnfa.special().start_unanchored_id;
+    if visited.insert(sid.as_u32()) {
+        interleave.add_state(
+            sid,
+            &states[sid],
+            byte_classes,
+            &mut visited,
+            &mut states_to_visit,
+        )?;
+    }
+    let sid = nnfa.special().start_anchored_id;
+    if visited.insert(sid.as_u32()) {
+        interleave.add_state(
+            sid,
+            &states[sid],
+            byte_classes,
+            &mut visited,
+            &mut states_to_visit,
+        )?;
+    }
+
+    // Modify the offset_to_search_index to force all future states to be greater than
+    // the starting states. This allows making sure that the max_special_id can be used,
+    // if it depends on the starting states.
+    interleave.max_starting_state_id = interleave.max_state_id;
+    for offset in &mut interleave.offset_to_search_index {
+        *offset = interleave.max_state_id.as_usize();
+    }
+
+    // Finally, go through the rest of the states in breadth-first fashion
+    while let Some(sid) = states_to_visit.pop_front() {
+        interleave.add_state(
+            sid,
+            &states[sid],
+            byte_classes,
+            &mut visited,
+            &mut states_to_visit,
+        )?;
+    }
+
+    Ok(interleave)
+}
+
+impl Interleave {
+    fn add_state(
+        &mut self,
+        sid: StateID,
+        state: &State,
+        byte_classes: &ByteClasses,
+        visited: &mut HashSet<u32>,
+        states_to_visit: &mut VecDeque<StateID>,
+    ) -> Result<(), BuildError> {
+        // If a matching state has a child that is also a matching state, we will visit the state
+        // when building the max_matching_state_id value, but also add the state in the queue.
+        // This check is thus needed to avoid visiting the state twice.
+        if self.index_to_state_id[sid] != NFA::DEAD {
+            return Ok(());
+        }
 
         // Start the search at the max of all search indexes for the offsets to push in.
         let mut max_offset = 0;
-        let mut search_index = offset_to_search_index[0];
+        let mut search_index = self.offset_to_search_index[0];
         for (byte, _) in &state.trans {
             let offset = *byte as usize + 1;
-            let new_search_index = offset_to_search_index[offset];
+            let new_search_index = self.offset_to_search_index[offset];
             if new_search_index > search_index {
                 search_index = new_search_index;
                 max_offset = offset;
@@ -682,14 +794,14 @@ fn interleave(
 
         // Search for a place in the table for the state + its transitions.
         'OUTER: loop {
-            while available_indexes.used(search_index) {
+            while self.available_indexes.used(search_index) {
                 search_index += 1;
                 continue;
             }
 
             for (byte, _) in &state.trans {
                 let offset = (byte_classes.get(*byte) as usize) + 1;
-                if available_indexes.used(search_index + offset) {
+                if self.available_indexes.used(search_index + offset) {
                     search_index += 1;
                     continue 'OUTER;
                 }
@@ -701,17 +813,18 @@ fn interleave(
         let new_sid = StateID::new(search_index).map_err(|e| {
             BuildError::state_id_overflow(StateID::MAX.as_u64(), e.attempted())
         })?;
-        index_to_state_id[sid] = new_sid;
-        max_state_id = std::cmp::max(max_state_id, new_sid);
+        self.index_to_state_id[sid] = new_sid;
+        self.max_state_id = std::cmp::max(self.max_state_id, new_sid);
 
         // Mark indexes that are now used.
-        available_indexes.mark_used(new_sid.as_usize());
+        self.available_indexes.mark_used(search_index);
         for (byte, target_sid) in &state.trans {
             let class = byte_classes.get(*byte);
-            let idx = new_sid.as_usize() + (class as usize) + 1;
-            available_indexes.mark_used(idx);
-            if visited.insert(*target_sid) {
-                states_to_add.push_back(*target_sid);
+            let idx = search_index + (class as usize) + 1;
+            self.available_indexes.mark_used(idx);
+
+            if visited.insert(target_sid.as_u32()) {
+                states_to_visit.push_back(*target_sid);
             }
         }
 
@@ -722,12 +835,12 @@ fn interleave(
         // speeding up the algorithm (so avoiding starting searches
         // too early in the table) and keeping a good compression
         // ratio thanks to interleaving.
-        let v = &mut offset_to_search_index;
+        let v = &mut self.offset_to_search_index;
         v[max_offset] +=
             (search_index - v[max_offset]) / (state.trans.len() + 1);
-    }
 
-    Ok(InterleaveState { index_to_state_id, max_state_id })
+        Ok(())
+    }
 }
 
 /// Helper to memorize which indexes in the final table are used.
