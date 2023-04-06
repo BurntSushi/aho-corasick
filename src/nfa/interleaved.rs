@@ -7,8 +7,6 @@ instead of an interleaved NFA directly. Using an `NFA` directly is typically
 only necessary when one needs access to the [`Automaton`] trait implementation.
 */
 
-use std::collections::HashSet;
-
 use alloc::{collections::VecDeque, vec, vec::Vec};
 
 use crate::{
@@ -681,10 +679,10 @@ fn interleave(
 
     let states = nnfa.states();
     let mut states_to_visit = VecDeque::new();
-    let mut visited = HashSet::with_capacity(nnfa.states().len());
+    let mut visited = vec![false; nnfa.states().len()];
 
     // Add dead & fail state first
-    visited.insert(0);
+    visited[0] = true;
     interleave.add_state(
         StateID::from_u32_unchecked(0),
         &states[0],
@@ -692,7 +690,7 @@ fn interleave(
         &mut visited,
         &mut states_to_visit,
     )?;
-    visited.insert(1);
+    visited[1] = true;
     interleave.add_state(
         StateID::from_u32_unchecked(1),
         &states[1],
@@ -703,7 +701,7 @@ fn interleave(
 
     // Then, add all matching states
     for i in 2..=nnfa.special().max_match_id.as_u32() {
-        visited.insert(i);
+        visited[i as usize] = true;
         interleave.add_state(
             StateID::from_u32_unchecked(i),
             &states[i as usize],
@@ -722,7 +720,9 @@ fn interleave(
 
     // Then, add start states.
     let sid = nnfa.special().start_unanchored_id;
-    if visited.insert(sid.as_u32()) {
+    // Check if the starting state has been visited before. This can happen if it is a matching
+    // state.
+    if !std::mem::replace(&mut visited[sid.as_usize()], true) {
         interleave.add_state(
             sid,
             &states[sid],
@@ -732,7 +732,7 @@ fn interleave(
         )?;
     }
     let sid = nnfa.special().start_anchored_id;
-    if visited.insert(sid.as_u32()) {
+    if !std::mem::replace(&mut visited[sid.as_usize()], true) {
         interleave.add_state(
             sid,
             &states[sid],
@@ -770,7 +770,7 @@ impl Interleave {
         sid: StateID,
         state: &State,
         byte_classes: &ByteClasses,
-        visited: &mut HashSet<u32>,
+        visited: &mut [bool],
         states_to_visit: &mut VecDeque<StateID>,
     ) -> Result<(), BuildError> {
         // If a matching state has a child that is also a matching state, we will visit the state
@@ -823,7 +823,7 @@ impl Interleave {
             let idx = search_index + (class as usize) + 1;
             self.available_indexes.mark_used(idx);
 
-            if visited.insert(target_sid.as_u32()) {
+            if !std::mem::replace(&mut visited[target_sid.as_usize()], true) {
                 states_to_visit.push_back(*target_sid);
             }
         }
