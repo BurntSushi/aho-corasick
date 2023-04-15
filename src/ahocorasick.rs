@@ -2648,6 +2648,8 @@ impl<A> AcAutomaton for A where
 {
 }
 
+impl crate::automaton::private::Sealed for Arc<dyn AcAutomaton> {}
+
 // I'm not sure why this trait impl shows up in the docs, as the AcAutomaton
 // trait is not exported. So we forcefully hide it.
 //

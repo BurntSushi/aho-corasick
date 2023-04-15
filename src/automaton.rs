@@ -19,6 +19,21 @@ pub use crate::util::{
     primitives::{StateID, StateIDError},
 };
 
+/// We seal the `Automaton` trait for now. It's a big trait, and it's
+/// conceivable that I might want to add new required methods, and sealing the
+/// trait permits doing that in a backwards compatible fashion. On other the
+/// hand, if you have a solid use case for implementing the trait yourself,
+/// please file an issue and we can discuss it. This was *mostly* done as a
+/// conservative step.
+pub(crate) mod private {
+    pub trait Sealed {}
+}
+impl private::Sealed for crate::nfa::noncontiguous::NFA {}
+impl private::Sealed for crate::nfa::contiguous::NFA {}
+impl private::Sealed for crate::dfa::DFA {}
+
+impl<'a, T: private::Sealed + ?Sized> private::Sealed for &'a T {}
+
 /// A trait that abstracts over Aho-Corasick automata.
 ///
 /// This trait primarily exists for niche use cases such as:
@@ -40,6 +55,13 @@ pub use crate::util::{
 /// Note that this trait defines a number of default methods, such as
 /// [`Automaton::try_find`] and [`Automaton::try_find_iter`], which implement
 /// higher level search routines in terms of the lower level automata API.
+///
+/// # Sealed
+///
+/// Currently, this trait is sealed. That means users of this crate can write
+/// generic routines over this trait but cannot implement it themselves. This
+/// restriction may be lifted in the future, but sealing the trait permits
+/// adding new required methods in a backwards compatible fashion.
 ///
 /// # Special states
 ///
@@ -173,7 +195,7 @@ pub use crate::util::{
 ///
 /// # Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
-pub unsafe trait Automaton {
+pub unsafe trait Automaton: private::Sealed {
     /// Returns the starting state for the given anchor mode.
     ///
     /// Upon success, the state ID returned is guaranteed to be valid for
