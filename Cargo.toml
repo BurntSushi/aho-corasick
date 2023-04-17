@@ -41,6 +41,10 @@ logging = ["dep:log"]
 # you can copy the (very small) src/transducer.rs file to your tree. It
 # specifically does not use any private APIs and should work after replacing
 # 'crate::' with 'aho_corasick::'.
+#
+# NOTE: I think my current plan is to flip this around an add an optional
+# dependency on 'aho-corasick' to the 'fst' crate and move the trait impls
+# there. But I haven't gotten around to it yet.
 # transducer = ["fst"]
 
 [dependencies]
