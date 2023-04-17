@@ -1,9 +1,3 @@
-**NOTE:** This README is currently for `aho-corasick 1.0`, which
-is not yet released. The timeline for a release should be within
-the next few months (as of 2023/01/05). [The README for the
-version currently on crates.io can be found via the `0.7.20`
-tag.](https://github.com/BurntSushi/aho-corasick/blob/0.7.20/README.md)
-
 aho-corasick
 ============
 A library for finding occurrences of many patterns at once with SIMD
@@ -27,12 +21,8 @@ https://docs.rs/aho-corasick
 
 ### Usage
 
-Add this to your `Cargo.toml`:
-
-```toml
-[dependencies]
-aho-corasick = "1"
-```
+Run `cargo add aho-corasick` to automatically add this crate as a dependency
+in your `Cargo.toml` file.
 
 
 ### Example: basic searching
