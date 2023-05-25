@@ -569,7 +569,7 @@ impl Builder {
         // Now that we've remapped all the IDs in our states, all that's left
         // is remapping the special state IDs.
         let old = nnfa.special();
-        let mut new = &mut dfa.special;
+        let new = &mut dfa.special;
         new.max_special_id = old2new(old.max_special_id);
         new.max_match_id = old2new(old.max_match_id);
         if anchored.is_anchored() {
@@ -680,7 +680,7 @@ impl Builder {
         // Now that we've remapped all the IDs in our states, all that's left
         // is remapping the special state IDs.
         let old = nnfa.special();
-        let mut new = &mut dfa.special;
+        let new = &mut dfa.special;
         new.max_special_id = remap_anchored[old.max_special_id];
         new.max_match_id = remap_anchored[old.max_match_id];
         new.start_unanchored_id = remap_unanchored[old.start_unanchored_id];

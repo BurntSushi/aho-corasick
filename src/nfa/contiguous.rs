@@ -980,7 +980,7 @@ impl Builder {
         // is remapping the special state IDs.
         let remap = &index_to_state_id;
         let old = nnfa.special();
-        let mut new = &mut nfa.special;
+        let new = &mut nfa.special;
         new.max_special_id = remap[old.max_special_id];
         new.max_match_id = remap[old.max_match_id];
         new.start_unanchored_id = remap[old.start_unanchored_id];
