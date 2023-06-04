@@ -60,9 +60,7 @@ jobs:
           rust: stable-x86_64-gnu
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v1
-      with:
-        fetch-depth: 1
+      uses: actions/checkout@v3
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
       with:
@@ -102,9 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v1
-      with:
-        fetch-depth: 1
+      uses: actions/checkout@v3
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
       with:
