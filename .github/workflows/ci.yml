@@ -95,16 +95,16 @@ jobs:
     - name: Show CPU info for debugging
       if: matrix.os == 'ubuntu-latest'
       run: lscpu
-    - run: ${{ env.CARGO }} build --verbose
-    - run: ${{ env.CARGO }} doc --verbose
-    - run: ${{ env.CARGO }} test --verbose
-    - run: ${{ env.CARGO }} test --lib --verbose --no-default-features --features std,perf-literal
-    - run: ${{ env.CARGO }} test --lib --verbose --no-default-features
-    - run: ${{ env.CARGO }} test --lib --verbose --no-default-features --features std
-    - run: ${{ env.CARGO }} test --lib --verbose --no-default-features --features perf-literal
-    - run: ${{ env.CARGO }} test --lib --verbose --no-default-features --features std,perf-literal,logging
+    - run: ${{ env.CARGO }} build --verbose $TARGET
+    - run: ${{ env.CARGO }} doc --verbose $TARGET
+    - run: ${{ env.CARGO }} test --verbose $TARGET
+    - run: ${{ env.CARGO }} test --lib --verbose --no-default-features --features std,perf-literal $TARGET
+    - run: ${{ env.CARGO }} test --lib --verbose --no-default-features $TARGET
+    - run: ${{ env.CARGO }} test --lib --verbose --no-default-features --features std $TARGET
+    - run: ${{ env.CARGO }} test --lib --verbose --no-default-features --features perf-literal $TARGET
+    - run: ${{ env.CARGO }} test --lib --verbose --no-default-features --features std,perf-literal,logging $TARGET
     - if: matrix.build == 'nightly'
-      run: ${{ env.CARGO }} build --manifest-path aho-corasick-debug/Cargo.toml
+      run: ${{ env.CARGO }} build --manifest-path aho-corasick-debug/Cargo.toml $TARGET
     - if: matrix.build == 'nightly'
       run: ${{ env.CARGO }} bench --verbose --manifest-path bench/Cargo.toml -- --test
 
