@@ -65,7 +65,7 @@ all-features = true
 # To test this locally, run:
 #
 #     RUSTDOCFLAGS="--cfg docsrs" cargo +nightly doc --all-features
-rustdoc-args = ["--cfg", "docsrs"]
+rustdoc-args = ["--cfg", "docsrs", "--generate-link-to-definition"]
 
 [profile.release]
 debug = true
