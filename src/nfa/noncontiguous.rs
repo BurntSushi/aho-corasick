@@ -342,6 +342,7 @@ unsafe impl Automaton for NFA {
     #[inline(always)]
     fn memory_usage(&self) -> usize {
         self.memory_usage
+            + self.pattern_lens.len() * SmallIndex::SIZE
             + self.prefilter.as_ref().map_or(0, |p| p.memory_usage())
     }
 
