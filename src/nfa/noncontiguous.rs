@@ -1219,7 +1219,8 @@ impl<'a> Compiler<'a> {
     fn calculate_memory_usage(&mut self) {
         use core::mem::size_of;
 
-        for state in self.nfa.states.iter() {
+        self.nfa.states.shrink_to_fit();
+        for state in self.nfa.states.iter_mut() {
             self.nfa.memory_usage += size_of::<State>() + state.memory_usage();
         }
     }

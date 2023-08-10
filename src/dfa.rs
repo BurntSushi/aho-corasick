@@ -518,6 +518,18 @@ impl Builder {
             dfa.byte_classes.alphabet_len(),
             dfa.byte_classes.stride(),
         );
+        // The vectors can grow ~twice as big during construction because a
+        // Vec amortizes growth. But here, let's shrink things back down to
+        // what we actually need since we're never going to add more to it.
+        dfa.trans.shrink_to_fit();
+        dfa.pattern_lens.shrink_to_fit();
+        dfa.matches.shrink_to_fit();
+        // TODO: We might also want to shrink each Vec inside of `dfa.matches`,
+        // or even better, convert it to one contiguous allocation. But I think
+        // I went with nested allocs for good reason (can't remember), so this
+        // may be tricky to do. I decided not to shrink them here because it
+        // might require a fair bit of work to do. It's unclear whether it's
+        // worth it.
         Ok(dfa)
     }
 
