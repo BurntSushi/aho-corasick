@@ -224,6 +224,7 @@ this crate can be used without the standard library.
   diagnostics. This feature is disabled by default.
 */
 
+#![allow(warnings)]
 #![no_std]
 #![deny(missing_docs)]
 #![deny(rustdoc::broken_intra_doc_links)]
