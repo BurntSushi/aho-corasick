@@ -992,6 +992,11 @@ impl Builder {
             nfa.memory_usage(),
             nfa.byte_classes.alphabet_len(),
         );
+        // The vectors can grow ~twice as big during construction because a
+        // Vec amortizes growth. But here, let's shrink things back down to
+        // what we actually need since we're never going to add more to it.
+        nfa.repr.shrink_to_fit();
+        nfa.pattern_lens.shrink_to_fit();
         Ok(nfa)
     }
 
