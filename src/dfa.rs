@@ -93,15 +93,9 @@ pub struct DFA {
     /// instead of the IDs being 0, 1, 2, 3, ..., they are 0*stride, 1*stride,
     /// 2*stride, 3*stride, ...
     trans: Vec<StateID>,
-    /// The matches for every match state in this DFA. This is indexed by order
-    /// of match states in the DFA. Namely, as constructed, match states are
-    /// always laid out sequentially and contiguously in memory. Thus, after
-    /// converting a match state ID to a match state index, the indices are
-    /// all adjacent.
-    ///
-    /// More concretely, when a search enters a match state with id 'sid', then
-    /// the matching patterns are at 'matches[(sid >> stride2) - 2]'. The '- 2'
-    /// is to offset the first two states of a DFA: the dead and fail states.
+    /// The matches for every match state in this DFA. This is first indexed by
+    /// state index (so that's `sid >> stride2`) and then by order in which the
+    /// matches are meant to occur.
     matches: Vec<Vec<PatternID>>,
     /// The amount of heap memory used, in bytes, by the inner Vecs of
     /// 'matches'.
