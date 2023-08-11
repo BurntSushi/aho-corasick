@@ -1996,7 +1996,7 @@ impl AhoCorasick {
     ///     .ascii_case_insensitive(true)
     ///     .build(&["foobar", "bruce", "triskaidekaphobia", "springsteen"])
     ///     .unwrap();
-    /// assert_eq!(9_144, ac.memory_usage());
+    /// assert_eq!(6_630, ac.memory_usage());
     ///
     /// let ac = AhoCorasick::builder()
     ///     .kind(Some(AhoCorasickKind::ContiguousNFA))

@@ -508,6 +508,7 @@ impl State {
 
 /// A single transition in a non-contiguous NFA.
 #[derive(Clone, Copy, Debug)]
+#[repr(packed)]
 pub(crate) struct Transition {
     byte: u8,
     next: StateID,
