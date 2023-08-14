@@ -87,7 +87,7 @@ impl Args {
             .arg(
                 Arg::with_name("dense-depth")
                     .long("dense-depth")
-                    .default_value("2"),
+                    .default_value("3"),
             )
             .arg(
                 Arg::with_name("no-prefilter").long("no-prefilter").short("f"),
