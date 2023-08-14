@@ -100,6 +100,38 @@ pub struct NFA {
     /// The third state (index 2) is generally intended to be the starting or
     /// "root" state.
     states: Vec<State>,
+    /// Transitions stored in a sparse representation via a linked list.
+    ///
+    /// Each transition contains three pieces of information: the byte it
+    /// is defined for, the state it transitions to and a link to the next
+    /// transition in the same state (or `StateID::ZERO` if it is the last
+    /// transition).
+    ///
+    /// The first transition for each state is determined by `State::sparse`.
+    ///
+    /// Note that this contains a complete set of all transitions in this NFA,
+    /// including states that have a dense representation for transitions.
+    /// (Adding dense transitions for a state doesn't remove its sparse
+    /// transitions, since deleting transitions from this particular sparse
+    /// representation would be fairly expensive.)
+    sparse: Vec<Transition>,
+    /// Transitions stored in a dense representation.
+    ///
+    /// A state has a row in this table if and only if `State::dense` is
+    /// not equal to `StateID::ZERO`. When not zero, there are precisely
+    /// `NFA::byte_classes::alphabet_len()` entries beginning at `State::dense`
+    /// in this table.
+    ///
+    /// Generally a very small minority of states have a dense representation
+    /// since it uses so much memory.
+    dense: Vec<StateID>,
+    /// Matches stored in linked list for each state.
+    ///
+    /// Like sparse transitions, each match has a link to the next match in the
+    /// state.
+    ///
+    /// The first match for each state is determined by `State::matches`.
+    matches: Vec<Match>,
     /// The length, in bytes, of each pattern in this NFA. This slice is
     /// indexed by `PatternID`.
     ///
@@ -140,8 +172,6 @@ pub struct NFA {
     /// states have been added, the states are shuffled such that the above
     /// predicates hold.
     special: Special,
-    /// The number of bytes of heap used by this sparse NFA.
-    memory_usage: usize,
 }
 
 impl NFA {
@@ -229,11 +259,20 @@ impl NFA {
     /// Re-maps all state IDs in this NFA according to the `map` function
     /// given.
     pub(crate) fn remap(&mut self, map: impl Fn(StateID) -> StateID) {
+        let alphabet_len = self.byte_classes.alphabet_len();
         for state in self.states.iter_mut() {
             state.fail = map(state.fail);
-            // TODO: This might need bespoke iteration to sidestep borrowck.
-            for t in state.trans.iter_mut() {
+            let mut link = state.sparse;
+            while link != StateID::ZERO {
+                let t = &mut self.sparse[link];
                 t.next = map(t.next);
+                link = t.link;
+            }
+            if state.dense != StateID::ZERO {
+                let start = state.dense.as_usize();
+                for next in self.dense[start..][..alphabet_len].iter_mut() {
+                    *next = map(*next);
+                }
             }
         }
     }
@@ -243,30 +282,15 @@ impl NFA {
         &self,
         sid: StateID,
     ) -> impl Iterator<Item = Transition> + '_ {
-        self.states[sid].trans.iter().copied()
-    }
-
-    /// Iterate over all of the transitions for the given state ID, but provide
-    /// a mutable borrow to each state ID.
-    pub(crate) fn iter_trans_mut(
-        &mut self,
-        sid: StateID,
-    ) -> impl Iterator<Item = &mut Transition> + '_ {
-        self.states[sid].trans.iter_mut()
-    }
-
-    /// Return the transition following the one given. If the one given is the
-    /// last transition for the given state, then return `None`.
-    ///
-    /// If no previous transition is given, then this returns the first
-    /// transition in the state, if one exists.
-    fn next_transition(
-        &self,
-        sid: StateID,
-        prev: Option<Transition>,
-        index: usize,
-    ) -> Option<Transition> {
-        self.states[sid].trans.get(index).copied()
+        let mut link = self.states[sid].sparse;
+        core::iter::from_fn(move || {
+            if link == StateID::ZERO {
+                return None;
+            }
+            let t = self.sparse[link];
+            link = t.link;
+            Some(t)
+        })
     }
 
     /// Iterate over all of the matches for the given state ID.
@@ -274,44 +298,77 @@ impl NFA {
         &self,
         sid: StateID,
     ) -> impl Iterator<Item = PatternID> + '_ {
-        self.states[sid].matches.iter().copied()
+        let mut link = self.states[sid].matches;
+        core::iter::from_fn(move || {
+            if link == StateID::ZERO {
+                return None;
+            }
+            let m = self.matches[link];
+            link = m.link;
+            Some(m.pid)
+        })
+    }
+
+    /// Return the transition following the one given. If the one given is the
+    /// last transition for the given state, then return `None`.
+    ///
+    /// If no previous transition is given, then this returns the first
+    /// transition in the state, if one exists.
+    ///
+    /// This is useful for manually iterating over the transitions in a single
+    /// state without borrowing the NFA. This permits mutating other parts of
+    /// the NFA during iteration.
+    fn next_transition(
+        &self,
+        sid: StateID,
+        prev: Option<Transition>,
+    ) -> Option<Transition> {
+        let link = prev.map_or(self.states[sid].sparse, |t| t.link);
+        if link == StateID::ZERO {
+            None
+        } else {
+            Some(self.sparse[link])
+        }
     }
 
     /// Follow the transition for the given byte in the given state. If no such
     /// transition exists, then the FAIL state ID is returned.
     #[inline(always)]
-    fn follow(&self, sid: StateID, byte: u8) -> StateID {
-        // This is a special case that targets the unanchored starting state.
-        // By construction, the unanchored starting state is actually a dense
-        // state, because every possible transition is defined on it. Any
-        // transitions that weren't added as part of initial trie construction
-        // get explicitly added as a self-transition back to itself. Thus, we
-        // can treat it as if it were dense and do a constant time lookup.
+    fn follow_transition(&self, sid: StateID, byte: u8) -> StateID {
+        let s = &self.states[sid];
+        // This is a special case that targets starting states and states
+        // near a start state. Namely, after the initial trie is constructed,
+        // we look for states close to the start state to convert to a dense
+        // representation for their transitions. This winds up using a lot more
+        // memory per state in exchange for faster transition lookups. But
+        // since we only do this for a small number of states (by default), the
+        // memory usage is usually minimal.
         //
         // This has *massive* benefit when executing searches because the
         // unanchored starting state is by far the hottest state and is
         // frequently visited. Moreover, the 'for' loop below that works
         // decently on an actually sparse state is disastrous on a state that
         // is nearly or completely dense.
-        //
-        // This optimization also works in general, including for non-starting
-        // states that happen to have every transition defined. Namely, it
-        // is impossible for 'self.trans' to have duplicate transitions (by
-        // construction) and transitions are always in sorted ascending order.
-        // So if a state has 256 transitions, it is, by construction, dense and
-        // amenable to constant time indexing.
-        //
-        // TODO: Add back this optimization.
-        if self.states[sid].trans.len() == 256 {
-            self.states[sid].trans[usize::from(byte)].next
+        if s.dense == StateID::ZERO {
+            self.follow_transition_sparse(sid, byte)
         } else {
-            for t in self.states[sid].trans.iter() {
+            let class = usize::from(self.byte_classes.get(byte));
+            self.dense[s.dense.as_usize() + class]
+        }
+    }
+
+    /// Like `follow_transition`, but always uses the sparse representation.
+    #[inline(always)]
+    fn follow_transition_sparse(&self, sid: StateID, byte: u8) -> StateID {
+        for t in self.iter_trans(sid) {
+            if byte <= t.byte {
                 if byte == t.byte {
                     return t.next;
                 }
+                break;
             }
-            NFA::FAIL
         }
+        NFA::FAIL
     }
 
     /// Set the transition for the given byte to the state ID given.
@@ -319,13 +376,176 @@ impl NFA {
     /// Note that one should not set transitions to the FAIL state. It is not
     /// technically incorrect, but it wastes space. If a transition is not
     /// defined, then it is automatically assumed to lead to the FAIL state.
-    fn set_follow(&mut self, prev: StateID, byte: u8, next: StateID) {
-        let t = Transition { byte, next };
-        let mut s = &mut self.states[prev];
-        match s.trans.binary_search_by_key(&byte, |&t| t.byte) {
-            Ok(i) => s.trans[i] = t,
-            Err(i) => s.trans.insert(i, t),
+    fn add_transition(
+        &mut self,
+        prev: StateID,
+        byte: u8,
+        next: StateID,
+    ) -> Result<(), BuildError> {
+        if self.states[prev].dense != StateID::ZERO {
+            let dense = self.states[prev].dense;
+            let class = usize::from(self.byte_classes.get(byte));
+            self.dense[dense.as_usize() + class] = next;
         }
+
+        let head = self.states[prev].sparse;
+        if head == StateID::ZERO || byte < self.sparse[head].byte {
+            let new_link = self.alloc_transition()?;
+            self.sparse[new_link] = Transition { byte, next, link: head };
+            self.states[prev].sparse = new_link;
+            return Ok(());
+        } else if byte == self.sparse[head].byte {
+            self.sparse[head].next = next;
+            return Ok(());
+        }
+
+        // We handled the only cases where the beginning of the transition
+        // chain needs to change. At this point, we now know that there is
+        // at least one entry in the transition chain and the byte for that
+        // transition is less than the byte for the transition we're adding.
+        let (mut link_prev, mut link_next) = (head, self.sparse[head].link);
+        while link_next != StateID::ZERO && byte > self.sparse[link_next].byte
+        {
+            link_prev = link_next;
+            link_next = self.sparse[link_next].link;
+        }
+        if link_next == StateID::ZERO || byte < self.sparse[link_next].byte {
+            let link = self.alloc_transition()?;
+            self.sparse[link] = Transition { byte, next, link: link_next };
+            self.sparse[link_prev].link = link;
+        } else {
+            assert_eq!(byte, self.sparse[link_next].byte);
+            self.sparse[link_next].next = next;
+        }
+        Ok(())
+    }
+
+    /// Add a match for the given pattern ID to the state for the given ID.
+    fn add_match(
+        &mut self,
+        sid: StateID,
+        pid: PatternID,
+    ) -> Result<(), BuildError> {
+        let head = self.states[sid].matches;
+        let mut link = head;
+        while self.matches[link].link != StateID::ZERO {
+            link = self.matches[link].link;
+        }
+        let new_match_link =
+            StateID::new(self.matches.len()).map_err(|e| {
+                BuildError::state_id_overflow(
+                    StateID::MAX.as_u64(),
+                    e.attempted(),
+                )
+            })?;
+        self.matches.push(Match { pid, link: StateID::ZERO });
+        if link == StateID::ZERO {
+            self.states[sid].matches = new_match_link;
+        } else {
+            self.matches[link].link = new_match_link;
+        }
+        Ok(())
+    }
+
+    /// Copy matches from the `src` state to the `dst` state. This is useful
+    /// when a match state can be reached via a failure transition. In which
+    /// case, you'll want to copy the matches (if any) from the state reached
+    /// by the failure transition to the original state you were at.
+    fn copy_matches(
+        &mut self,
+        src: StateID,
+        dst: StateID,
+    ) -> Result<(), BuildError> {
+        let head_dst = self.states[dst].matches;
+        let mut link_dst = head_dst;
+        while self.matches[link_dst].link != StateID::ZERO {
+            link_dst = self.matches[link_dst].link;
+        }
+        let mut link_src = self.states[src].matches;
+        while link_src != StateID::ZERO {
+            let new_match_link =
+                StateID::new(self.matches.len()).map_err(|e| {
+                    BuildError::state_id_overflow(
+                        StateID::MAX.as_u64(),
+                        e.attempted(),
+                    )
+                })?;
+            self.matches.push(Match {
+                pid: self.matches[link_src].pid,
+                link: StateID::ZERO,
+            });
+            if link_dst == StateID::ZERO {
+                self.states[dst].matches = new_match_link;
+            } else {
+                self.matches[link_dst].link = new_match_link;
+            }
+
+            link_dst = new_match_link;
+            link_src = self.matches[link_src].link;
+        }
+        Ok(())
+    }
+
+    /// Create a new entry in `NFA::trans`, if there's room, and return that
+    /// entry's ID. If there's no room, then an error is returned.
+    fn alloc_transition(&mut self) -> Result<StateID, BuildError> {
+        let id = StateID::new(self.sparse.len()).map_err(|e| {
+            BuildError::state_id_overflow(StateID::MAX.as_u64(), e.attempted())
+        })?;
+        self.sparse.push(Transition::default());
+        Ok(id)
+    }
+
+    /// Create a new entry in `NFA::matches`, if there's room, and return that
+    /// entry's ID. If there's no room, then an error is returned.
+    fn alloc_match(&mut self) -> Result<StateID, BuildError> {
+        let id = StateID::new(self.matches.len()).map_err(|e| {
+            BuildError::state_id_overflow(StateID::MAX.as_u64(), e.attempted())
+        })?;
+        self.matches.push(Match::default());
+        Ok(id)
+    }
+
+    /// Create a new set of `N` transitions in this NFA's dense transition
+    /// table. The ID return corresponds to the index at which the `N`
+    /// transitions begin. So `id+0` is the first transition and `id+(N-1)` is
+    /// the last.
+    ///
+    /// `N` is determined via `NFA::byte_classes::alphabet_len`.
+    fn alloc_dense_state(&mut self) -> Result<StateID, BuildError> {
+        let id = StateID::new(self.dense.len()).map_err(|e| {
+            BuildError::state_id_overflow(StateID::MAX.as_u64(), e.attempted())
+        })?;
+        // We use FAIL because it's the correct default. If a state doesn't
+        // have a transition defined for every possible byte value, then the
+        // transition function should return NFA::FAIL.
+        self.dense.extend(
+            core::iter::repeat(NFA::FAIL)
+                .take(self.byte_classes.alphabet_len()),
+        );
+        Ok(id)
+    }
+
+    /// Allocate and add a fresh state to the underlying NFA and return its
+    /// ID (guaranteed to be one more than the ID of the previously allocated
+    /// state). If the ID would overflow `StateID`, then this returns an error.
+    fn alloc_state(&mut self, depth: usize) -> Result<StateID, BuildError> {
+        // This is OK because we error when building the trie if we see a
+        // pattern whose length cannot fit into a 'SmallIndex', and the longest
+        // possible depth corresponds to the length of the longest pattern.
+        let depth = SmallIndex::new(depth)
+            .expect("patterns longer than SmallIndex::MAX are not allowed");
+        let id = StateID::new(self.states.len()).map_err(|e| {
+            BuildError::state_id_overflow(StateID::MAX.as_u64(), e.attempted())
+        })?;
+        self.states.push(State {
+            sparse: StateID::ZERO,
+            dense: StateID::ZERO,
+            matches: StateID::ZERO,
+            fail: self.special.start_unanchored_id,
+            depth,
+        });
+        Ok(id)
     }
 }
 
@@ -354,7 +574,7 @@ unsafe impl Automaton for NFA {
         // 2. All state.fail values point to a state closer to the start state.
         // 3. The start state has no transitions to the FAIL state.
         loop {
-            let next = self.follow(sid, byte);
+            let next = self.follow_transition(sid, byte);
             if next != NFA::FAIL {
                 return next;
             }
@@ -421,17 +641,22 @@ unsafe impl Automaton for NFA {
 
     #[inline(always)]
     fn match_len(&self, sid: StateID) -> usize {
-        self.states[sid].matches.len()
+        self.iter_matches(sid).count()
     }
 
     #[inline(always)]
     fn match_pattern(&self, sid: StateID, index: usize) -> PatternID {
-        self.states[sid].matches[index]
+        self.iter_matches(sid).nth(index).unwrap()
     }
 
     #[inline(always)]
     fn memory_usage(&self) -> usize {
-        self.memory_usage
+        use core::mem::size_of;
+
+        self.states.len() * core::mem::size_of::<State>()
+            + self.sparse.len() * core::mem::size_of::<Transition>()
+            + self.matches.len() * core::mem::size_of::<Match>()
+            + self.dense.len() * StateID::SIZE
             + self.pattern_lens.len() * SmallIndex::SIZE
             + self.prefilter.as_ref().map_or(0, |p| p.memory_usage())
     }
@@ -442,6 +667,9 @@ unsafe impl Automaton for NFA {
     }
 }
 
+// BREADCRUMBS: Add `dense` field below that is non-zero when the state's
+// transitions are defined in a dense table.
+
 /// A representation of a sparse NFA state for an Aho-Corasick automaton.
 ///
 /// It contains the transitions to the next state, a failure transition for
@@ -449,16 +677,26 @@ unsafe impl Automaton for NFA {
 /// and the matches implied by visiting this state (if any).
 #[derive(Clone, Debug)]
 pub(crate) struct State {
-    /// The set of defined transitions for this state sorted by `u8`. In an
-    /// unanchored search, if a byte is not in this set of transitions, then
-    /// it should transition to `fail`. In an anchored search, it should
-    /// transition to the special DEAD state.
-    trans: Vec<Transition>,
-    /// The patterns that match once this state is entered. Note that order
-    /// is important in the leftmost case. For example, if one adds 'foo' and
-    /// 'foo' (duplicate patterns are not disallowed), then in a leftmost-first
-    /// search, only the first 'foo' will ever match.
-    matches: Vec<PatternID>,
+    /// A pointer to `NFA::trans` corresponding to the head of a linked list
+    /// containing all of the transitions for this state.
+    ///
+    /// This is `StateID::ZERO` if and only if this state has zero transitions.
+    sparse: StateID,
+    /// A pointer to a row of `N` transitions in `NFA::dense`. These
+    /// transitions correspond precisely to what is obtained by traversing
+    /// `sparse`, but permits constant time lookup.
+    ///
+    /// When this is zero (which is true for most states in the default
+    /// configuration), then this state has no dense representation.
+    ///
+    /// Note that `N` is equal to `NFA::byte_classes::alphabet_len()`. This is
+    /// typically much less than 256 (the maximum value).
+    dense: StateID,
+    /// A pointer to `NFA::matches` corresponding to the head of a linked list
+    /// containing all of the matches for this state.
+    ///
+    /// This is `StateID::ZERO` if and only if this state is not a match state.
+    matches: StateID,
     /// The state that should be transitioned to if the current byte in the
     /// haystack does not have a corresponding transition defined in this
     /// state.
@@ -479,19 +717,9 @@ pub(crate) struct State {
 }
 
 impl State {
-    /// Return the heap memory used by this state. Note that if `State` is
-    /// itself on the heap, then callers need to call this in addition to
-    /// `size_of::<State>()` to get the full heap memory used.
-    fn memory_usage(&self) -> usize {
-        use core::mem::size_of;
-
-        (self.trans.len() * size_of::<Transition>())
-            + (self.matches.len() * size_of::<PatternID>())
-    }
-
     /// Return true if and only if this state is a match state.
     pub(crate) fn is_match(&self) -> bool {
-        !self.matches.is_empty()
+        self.matches != StateID::ZERO
     }
 
     /// Returns the failure transition for this state.
@@ -507,11 +735,12 @@ impl State {
 }
 
 /// A single transition in a non-contiguous NFA.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Default)]
 #[repr(packed)]
 pub(crate) struct Transition {
     byte: u8,
     next: StateID,
+    link: StateID,
 }
 
 impl Transition {
@@ -523,6 +752,53 @@ impl Transition {
     /// Return the ID of the state that this transition points to.
     pub(crate) fn next(&self) -> StateID {
         self.next
+    }
+
+    /// Return the ID of the next transition.
+    fn link(&self) -> StateID {
+        self.link
+    }
+}
+
+impl core::fmt::Debug for Transition {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(
+            f,
+            "Transition(byte: {:X?}, next: {:?}, link: {:?})",
+            self.byte,
+            self.next().as_usize(),
+            self.link().as_usize()
+        )
+    }
+}
+
+/// A single match in a non-contiguous NFA.
+#[derive(Clone, Copy, Default)]
+struct Match {
+    pid: PatternID,
+    link: StateID,
+}
+
+impl Match {
+    /// Return the pattern ID for this match.
+    pub(crate) fn pattern(&self) -> PatternID {
+        self.pid
+    }
+
+    /// Return the ID of the next match.
+    fn link(&self) -> StateID {
+        self.link
+    }
+}
+
+impl core::fmt::Debug for Match {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(
+            f,
+            "Match(pid: {:?}, link: {:?})",
+            self.pattern().as_usize(),
+            self.link().as_usize()
+        )
     }
 }
 
@@ -536,6 +812,7 @@ pub struct Builder {
     match_kind: MatchKind,
     prefilter: bool,
     ascii_case_insensitive: bool,
+    dense_depth: usize,
 }
 
 impl Default for Builder {
@@ -544,6 +821,7 @@ impl Default for Builder {
             match_kind: MatchKind::default(),
             prefilter: true,
             ascii_case_insensitive: false,
+            dense_depth: 3,
         }
     }
 }
@@ -593,6 +871,17 @@ impl Builder {
         self
     }
 
+    /// Set the limit on how many states use a dense representation for their
+    /// transitions. Other states will generally use a sparse representation.
+    ///
+    /// See
+    /// [`AhoCorasickBuilder::dense_depth`](crate::AhoCorasickBuilder::dense_depth)
+    /// for more documentation and examples.
+    pub fn dense_depth(&mut self, depth: usize) -> &mut Builder {
+        self.dense_depth = depth;
+        self
+    }
+
     /// Enable heuristic prefilter optimizations.
     ///
     /// See
@@ -626,13 +915,15 @@ impl<'a> Compiler<'a> {
             nfa: NFA {
                 match_kind: builder.match_kind,
                 states: vec![],
+                sparse: vec![],
+                dense: vec![],
+                matches: vec![],
                 pattern_lens: vec![],
                 prefilter: None,
                 byte_classes: ByteClasses::singletons(),
                 min_pattern_len: usize::MAX,
                 max_pattern_len: 0,
                 special: Special::zero(),
-                memory_usage: 0,
             },
             byteset: ByteClassSet::empty(),
         })
@@ -643,27 +934,41 @@ impl<'a> Compiler<'a> {
         I: IntoIterator<Item = P>,
         P: AsRef<[u8]>,
     {
+        // Add dummy transition/match links, so that no valid link will point
+        // to another link at index 0.
+        self.nfa.sparse.push(Transition::default());
+        self.nfa.matches.push(Match::default());
+        // Add a dummy dense transition so that no states can have dense==0
+        // represent a valid pointer to dense transitions. This permits
+        // dense==0 to be a sentinel indicating "no dense transitions."
+        self.nfa.dense.push(NFA::DEAD);
         // the dead state, only used for leftmost and fixed to id==0
-        self.add_state(0)?;
+        self.nfa.alloc_state(0)?;
         // the fail state, which is never entered and fixed to id==1
-        self.add_state(0)?;
+        self.nfa.alloc_state(0)?;
         // unanchored start state, initially fixed to id==2 but later shuffled
         // to appear after all non-start match states.
-        self.nfa.special.start_unanchored_id = self.add_state(0)?;
+        self.nfa.special.start_unanchored_id = self.nfa.alloc_state(0)?;
         // anchored start state, initially fixed to id==3 but later shuffled
         // to appear after unanchored start state.
-        self.nfa.special.start_anchored_id = self.add_state(0)?;
+        self.nfa.special.start_anchored_id = self.nfa.alloc_state(0)?;
         // Initialize the unanchored starting state in order to make it dense,
         // and thus make transition lookups on this state faster.
         self.init_unanchored_start_state();
         // Build the base trie from the given patterns.
         self.build_trie(patterns)?;
+        self.nfa.states.shrink_to_fit();
+        // Turn our set of bytes into equivalent classes. This NFA
+        // implementation uses byte classes only for states that use a dense
+        // representation of transitions. (And that's why this comes before
+        // `self.densify()`, as the byte classes need to be set first.)
+        self.nfa.byte_classes = self.byteset.byte_classes();
         // Add transitions (and maybe matches) to the anchored starting state.
         // The anchored starting state is used for anchored searches. The only
         // mechanical difference between it and the unanchored start state is
         // that missing transitions map to the DEAD state instead of the FAIL
         // state.
-        self.set_anchored_start_state();
+        self.set_anchored_start_state()?;
         // Rewrite transitions to the FAIL state on the unanchored start state
         // as self-transitions. This keeps the start state active at all times.
         self.add_unanchored_start_state_loop();
@@ -671,11 +976,17 @@ impl<'a> Compiler<'a> {
         // the DEAD state can never be escaped. It MUST be used as a sentinel
         // in any correct search.
         self.add_dead_state_loop();
+        // Make some (possibly zero) states use a dense representation for
+        // transitions. It's important to do this right after the states
+        // and non-failure transitions are solidified. That way, subsequent
+        // accesses (particularly `fill_failure_transitions`) will benefit from
+        // the faster transition lookup in densified states.
+        self.densify()?;
         // The meat of the Aho-Corasick algorithm: compute and write failure
         // transitions. i.e., the state to move to when a transition isn't
         // defined in the current state. These are epsilon transitions and thus
         // make this formulation an NFA.
-        self.fill_failure_transitions();
+        self.fill_failure_transitions()?;
         // Handle a special case under leftmost semantics when at least one
         // of the patterns is the empty string.
         self.close_start_state_loop_for_leftmost();
@@ -683,12 +994,7 @@ impl<'a> Compiler<'a> {
         // NON-MATCH, ... This permits us to very quickly query the type of
         // the state we're currently in during a search.
         self.shuffle();
-        // Turn our set of bytes into equivalent classes. This NFA
-        // implementation doesn't use byte classes directly, but any
-        // Aho-Corasick searcher built from this one might.
-        self.nfa.byte_classes = self.byteset.byte_classes();
         self.nfa.prefilter = self.prefilter.build();
-        self.calculate_memory_usage();
         // Store the maximum ID of all *relevant* special states. Start states
         // are only relevant when we have a prefilter, otherwise, there is zero
         // reason to care about whether a state is a start state or not during
@@ -706,6 +1012,10 @@ impl<'a> Compiler<'a> {
         } else {
             self.nfa.special.max_match_id
         };
+        self.nfa.sparse.shrink_to_fit();
+        self.nfa.dense.shrink_to_fit();
+        self.nfa.matches.shrink_to_fit();
+        self.nfa.pattern_lens.shrink_to_fit();
         Ok(self.nfa)
     }
 
@@ -772,10 +1082,9 @@ impl<'a> Compiler<'a> {
                     continue 'PATTERNS;
                 }
 
-                // Add this byte to our equivalence classes. We don't use these
-                // for NFA construction. These are instead used only if we're
-                // building a DFA. They would technically be useful for the
-                // NFA, but it would require a second pass over the patterns.
+                // Add this byte to our equivalence classes. These don't
+                // get used while building the trie, but other Aho-Corasick
+                // implementations may use them.
                 self.byteset.set_range(b, b);
                 if self.builder.ascii_case_insensitive {
                     let b = opposite_ascii_case(b);
@@ -789,22 +1098,22 @@ impl<'a> Compiler<'a> {
                 // use a dense representation that uses more memory but is
                 // faster. Other states use a sparse representation that uses
                 // less memory but is slower.
-                let next = self.nfa.follow(prev, b);
+                let next = self.nfa.follow_transition(prev, b);
                 if next != NFA::FAIL {
                     prev = next;
                 } else {
-                    let next = self.add_state(depth)?;
-                    self.nfa.set_follow(prev, b, next);
+                    let next = self.nfa.alloc_state(depth)?;
+                    self.nfa.add_transition(prev, b, next);
                     if self.builder.ascii_case_insensitive {
                         let b = opposite_ascii_case(b);
-                        self.nfa.set_follow(prev, b, next);
+                        self.nfa.add_transition(prev, b, next);
                     }
                     prev = next;
                 }
             }
             // Once the pattern has been added, log the match in the final
             // state that it reached.
-            self.nfa.states[prev].matches.push(pid);
+            self.nfa.add_match(prev, pid);
         }
         Ok(())
     }
@@ -932,7 +1241,7 @@ impl<'a> Compiler<'a> {
     /// automaton. There are also a couple Java libraries that support leftmost
     /// longest semantics, but they do it by building a queue of matches at
     /// search time, which is even worse than what Perl is doing. ---AG
-    fn fill_failure_transitions(&mut self) {
+    fn fill_failure_transitions(&mut self) -> Result<(), BuildError> {
         let is_leftmost = self.builder.match_kind.is_leftmost();
         let start_uid = self.nfa.special.start_unanchored_id;
         // Initialize the queue for breadth first search with all transitions
@@ -941,9 +1250,9 @@ impl<'a> Compiler<'a> {
         // transitions, then this would never terminate.
         let mut queue = VecDeque::new();
         let mut seen = self.queued_set();
-        let (mut t, mut i) = (None, 0);
-        while let Some(t) = self.nfa.next_transition(start_uid, t, i) {
-            i += 1;
+        let mut prevt = None;
+        while let Some(t) = self.nfa.next_transition(start_uid, prevt) {
+            prevt = Some(t);
 
             // Skip anything we've seen before and any self-transitions on the
             // start state.
@@ -965,9 +1274,9 @@ impl<'a> Compiler<'a> {
             }
         }
         while let Some(id) = queue.pop_front() {
-            let (mut t, mut i) = (None, 0);
-            while let Some(t) = self.nfa.next_transition(id, t, i) {
-                i += 1;
+            let mut prevt = None;
+            while let Some(t) = self.nfa.next_transition(id, prevt) {
+                prevt = Some(t);
 
                 if seen.contains(t.next) {
                     // The only way to visit a duplicate state in a transition
@@ -1007,12 +1316,12 @@ impl<'a> Compiler<'a> {
                     continue;
                 }
                 let mut fail = self.nfa.states[id].fail;
-                while self.nfa.follow(fail, t.byte) == NFA::FAIL {
+                while self.nfa.follow_transition(fail, t.byte) == NFA::FAIL {
                     fail = self.nfa.states[fail].fail;
                 }
-                fail = self.nfa.follow(fail, t.byte);
+                fail = self.nfa.follow_transition(fail, t.byte);
                 self.nfa.states[t.next].fail = fail;
-                self.copy_matches(fail, t.next);
+                self.nfa.copy_matches(fail, t.next)?;
             }
             // If the start state is a match state, then this automaton can
             // match the empty string. This implies all states are match states
@@ -1024,9 +1333,11 @@ impl<'a> Compiler<'a> {
             // states only report the first match, which is never empty since
             // it isn't a start state.
             if !is_leftmost {
-                self.copy_matches(self.nfa.special.start_unanchored_id, id);
+                self.nfa
+                    .copy_matches(self.nfa.special.start_unanchored_id, id)?;
             }
         }
+        Ok(())
     }
 
     /// Shuffle the states so that they appear in this sequence:
@@ -1136,6 +1447,49 @@ impl<'a> Compiler<'a> {
         remapper.remap(&mut self.nfa);
     }
 
+    /// Attempts to convert the transition representation of a subset of states
+    /// in this NFA from sparse to dense. This can greatly improve search
+    /// performance since states with a higher number of transitions tend to
+    /// correlate with very active states.
+    ///
+    /// We generally only densify states that are close to the start state.
+    /// These tend to be the most active states and thus benefit from a dense
+    /// representation more than other states.
+    ///
+    /// This tends to best balance between memory usage and performance. In
+    /// particular, the *vast majority* of all states in a typical Aho-Corasick
+    /// automaton have only 1 transition and are usually farther from the start
+    /// state and thus don't get densified.
+    ///
+    /// Note that this doesn't remove the sparse representation of transitions
+    /// for states that are densified. It could be done, but actually removing
+    /// entries from `NFA::sparse` is likely more expensive than it's worth.
+    fn densify(&mut self) -> Result<(), BuildError> {
+        for i in 0..self.nfa.states.len() {
+            let sid = StateID::new(i).unwrap();
+            // Don't bother densifying states that are only used as sentinels.
+            if sid == NFA::DEAD || sid == NFA::FAIL {
+                continue;
+            }
+            // Only densify states that are "close enough" to the start state.
+            if self.nfa.states[sid].depth.as_usize()
+                >= self.builder.dense_depth
+            {
+                continue;
+            }
+            let dense = self.nfa.alloc_dense_state()?;
+            let mut prevt = None;
+            while let Some(t) = self.nfa.next_transition(sid, prevt) {
+                let class = usize::from(self.nfa.byte_classes.get(t.byte));
+                let index = dense.as_usize() + class;
+                self.nfa.dense[index] = t.next;
+                prevt = Some(t);
+            }
+            self.nfa.states[sid].dense = dense;
+        }
+        Ok(())
+    }
+
     /// Returns a set that tracked queued states.
     ///
     /// This is only necessary when ASCII case insensitivity is enabled, since
@@ -1160,7 +1514,7 @@ impl<'a> Compiler<'a> {
     fn init_unanchored_start_state(&mut self) {
         let start_uid = self.nfa.special.start_unanchored_id;
         for byte in 0..=255 {
-            self.nfa.set_follow(start_uid, byte, NFA::FAIL);
+            self.nfa.add_transition(start_uid, byte, NFA::FAIL);
         }
     }
 
@@ -1168,12 +1522,15 @@ impl<'a> Compiler<'a> {
     /// matches from the unanchored starting state with one change: the failure
     /// transition is changed to the DEAD state, so that for any undefined
     /// transitions, the search will stop.
-    fn set_anchored_start_state(&mut self) {
+    fn set_anchored_start_state(&mut self) -> Result<(), BuildError> {
         let start_uid = self.nfa.special.start_unanchored_id;
         let start_aid = self.nfa.special.start_anchored_id;
-        self.nfa.states[start_aid].trans =
-            self.nfa.states[start_uid].trans.clone();
-        self.copy_matches(start_uid, start_aid);
+        let mut prevt = None;
+        while let Some(t) = self.nfa.next_transition(start_uid, prevt) {
+            prevt = Some(t);
+            self.nfa.add_transition(start_aid, t.byte, t.next)?;
+        }
+        self.nfa.copy_matches(start_uid, start_aid)?;
         // This is the main difference between the unanchored and anchored
         // starting states. If a lookup on an anchored starting state fails,
         // then the search should stop.
@@ -1181,6 +1538,7 @@ impl<'a> Compiler<'a> {
         // N.B. This assumes that the loop on the unanchored starting state
         // hasn't been created yet.
         self.nfa.states[start_aid].fail = NFA::DEAD;
+        Ok(())
     }
 
     /// Set the failure transitions on the start state to loop back to the
@@ -1195,8 +1553,8 @@ impl<'a> Compiler<'a> {
     fn add_unanchored_start_state_loop(&mut self) {
         let start_uid = self.nfa.special.start_unanchored_id;
         for b in 0..=255 {
-            if self.nfa.follow(start_uid, b) == NFA::FAIL {
-                self.nfa.set_follow(start_uid, b, start_uid);
+            if self.nfa.follow_transition(start_uid, b) == NFA::FAIL {
+                self.nfa.add_transition(start_uid, b, start_uid);
             }
         }
     }
@@ -1218,8 +1576,9 @@ impl<'a> Compiler<'a> {
         let start = &mut self.nfa.states[start_uid];
         if self.builder.match_kind.is_leftmost() && start.is_match() {
             for b in 0..=255 {
-                if self.nfa.follow(start_uid, b) == start_uid {
-                    self.nfa.set_follow(start_uid, b, NFA::DEAD);
+                if self.nfa.follow_transition_sparse(start_uid, b) == start_uid
+                {
+                    self.nfa.add_transition(start_uid, b, NFA::DEAD);
                 }
             }
         }
@@ -1230,48 +1589,7 @@ impl<'a> Compiler<'a> {
     /// point of the dead state is to act as a sink that can never be escaped.
     fn add_dead_state_loop(&mut self) {
         for b in 0..=255 {
-            self.nfa.set_follow(NFA::DEAD, b, NFA::DEAD);
-        }
-    }
-
-    /// Copy matches from the `src` state to the `dst` state. This is useful
-    /// when a match state can be reached via a failure transition. In which
-    /// case, you'll want to copy the matches (if any) from the state reached
-    /// by the failure transition to the original state you were at.
-    fn copy_matches(&mut self, src: StateID, dst: StateID) {
-        let (src, dst) =
-            get_two_mut(&mut self.nfa.states, src.as_usize(), dst.as_usize());
-        dst.matches.extend_from_slice(&src.matches);
-    }
-
-    /// Allocate and add a fresh state to the underlying NFA and return its
-    /// ID (guaranteed to be one more than the ID of the previously allocated
-    /// state). If the ID would overflow `StateID`, then this returns an error.
-    fn add_state(&mut self, depth: usize) -> Result<StateID, BuildError> {
-        // This is OK because we error when building the trie if we see a
-        // pattern whose length cannot fit into a 'SmallIndex', and the longest
-        // possible depth corresponds to the length of the longest pattern.
-        let depth = SmallIndex::new(depth)
-            .expect("patterns longer than SmallIndex::MAX are not allowed");
-        let id = StateID::new(self.nfa.states.len()).map_err(|e| {
-            BuildError::state_id_overflow(StateID::MAX.as_u64(), e.attempted())
-        })?;
-        self.nfa.states.push(State {
-            trans: vec![],
-            matches: vec![],
-            fail: self.nfa.special.start_unanchored_id,
-            depth,
-        });
-        Ok(id)
-    }
-
-    /// Computes the total amount of heap used by this NFA in bytes.
-    fn calculate_memory_usage(&mut self) {
-        use core::mem::size_of;
-
-        self.nfa.states.shrink_to_fit();
-        for state in self.nfa.states.iter_mut() {
-            self.nfa.memory_usage += size_of::<State>() + state.memory_usage();
+            self.nfa.add_transition(NFA::DEAD, b, NFA::DEAD);
         }
     }
 }
@@ -1370,7 +1688,7 @@ impl core::fmt::Debug for NFA {
             write!(f, "\n")?;
             if self.is_match(sid) {
                 write!(f, "         matches: ")?;
-                for (i, pid) in state.matches.iter().enumerate() {
+                for (i, pid) in self.iter_matches(sid).enumerate() {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
@@ -1388,20 +1706,5 @@ impl core::fmt::Debug for NFA {
         writeln!(f, "memory usage: {:?}", self.memory_usage())?;
         writeln!(f, ")")?;
         Ok(())
-    }
-}
-
-/// Safely return two mutable borrows to two different locations in the given
-/// slice.
-///
-/// This panics if i == j.
-fn get_two_mut<T>(xs: &mut [T], i: usize, j: usize) -> (&mut T, &mut T) {
-    assert!(i != j, "{} must not be equal to {}", i, j);
-    if i < j {
-        let (before, after) = xs.split_at_mut(j);
-        (&mut before[i], &mut after[0])
-    } else {
-        let (before, after) = xs.split_at_mut(i);
-        (&mut after[0], &mut before[j])
     }
 }
