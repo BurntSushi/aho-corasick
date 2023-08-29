@@ -173,8 +173,6 @@ impl DFA {
         sid: StateID,
         pids: impl Iterator<Item = PatternID>,
     ) {
-        use core::mem::size_of;
-
         let index = (sid.as_usize() >> self.stride2).checked_sub(2).unwrap();
         let mut at_least_one = false;
         for pid in pids {
