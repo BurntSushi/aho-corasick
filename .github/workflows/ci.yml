@@ -6,6 +6,27 @@ on:
     - master
   schedule:
   - cron: '00 01 * * *'
+
+# The section is needed to drop write-all permissions that are granted on
+# `schedule` event. By specifying any permission explicitly all others are set
+# to none. By using the principle of least privilege the damage a compromised
+# workflow can do (because of an injection or compromised third party tool or
+# action) is restricted. Currently the worklow doesn't need any additional
+# permission except for pulling the code. Adding labels to issues, commenting
+# on pull-requests, etc. may need additional permissions:
+#
+# Syntax for this section:
+# https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#permissions
+#
+# Reference for how to assign permissions on a job-by-job basis:
+# https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
+#
+# Reference for available permissions that we can enable if needed:
+# https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
+permissions:
+  # to fetch code (actions/checkout)
+  contents: read
+
 jobs:
   test:
     name: test
@@ -14,6 +35,8 @@ jobs:
       # systems.
       CARGO: cargo
       # When CARGO is set to CROSS, TARGET is set to `--target matrix.target`.
+      # Note that we only use cross on Linux, so setting a target on a
+      # different OS will just use normal cargo.
       TARGET:
       # Bump this as appropriate. We pin to a version to make sure CI
       # continues to work as cross releases in the past have broken things
@@ -21,17 +44,8 @@ jobs:
       CROSS_VERSION: v0.2.5
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        build:
-        - pinned
-        - stable
-        - stable-32
-        - stable-mips
-        - beta
-        - nightly
-        - macos
-        - win-msvc
-        - win-gnu
         include:
         - build: pinned
           os: ubuntu-latest
@@ -39,14 +53,22 @@ jobs:
         - build: stable
           os: ubuntu-latest
           rust: stable
-        - build: stable-32
+        - build: stable-x86
           os: ubuntu-latest
           rust: stable
           target: i686-unknown-linux-gnu
-        - build: stable-mips
+        - build: stable-aarch64
           os: ubuntu-latest
           rust: stable
-          target: mips64-unknown-linux-gnuabi64
+          target: aarch64-unknown-linux-gnu
+        - build: stable-powerpc64
+          os: ubuntu-latest
+          rust: stable
+          target: powerpc64-unknown-linux-gnu
+        - build: stable-s390x
+          os: ubuntu-latest
+          rust: stable
+          target: s390x-unknown-linux-gnu
         - build: beta
           os: ubuntu-latest
           rust: beta
