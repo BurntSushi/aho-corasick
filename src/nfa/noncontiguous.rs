@@ -473,14 +473,8 @@ impl NFA {
         while self.matches[link].link != StateID::ZERO {
             link = self.matches[link].link;
         }
-        let new_match_link =
-            StateID::new(self.matches.len()).map_err(|e| {
-                BuildError::state_id_overflow(
-                    StateID::MAX.as_u64(),
-                    e.attempted(),
-                )
-            })?;
-        self.matches.push(Match { pid, link: StateID::ZERO });
+        let new_match_link = self.alloc_match()?;
+        self.matches[new_match_link].pid = pid;
         if link == StateID::ZERO {
             self.states[sid].matches = new_match_link;
         } else {
@@ -693,8 +687,6 @@ unsafe impl Automaton for NFA {
 
     #[inline(always)]
     fn memory_usage(&self) -> usize {
-        use core::mem::size_of;
-
         self.states.len() * core::mem::size_of::<State>()
             + self.sparse.len() * core::mem::size_of::<Transition>()
             + self.matches.len() * core::mem::size_of::<Match>()
@@ -708,9 +700,6 @@ unsafe impl Automaton for NFA {
         self.prefilter.as_ref()
     }
 }
-
-// BREADCRUMBS: Add `dense` field below that is non-zero when the state's
-// transitions are defined in a dense table.
 
 /// A representation of a sparse NFA state for an Aho-Corasick automaton.
 ///
@@ -996,11 +985,11 @@ impl<'a> Compiler<'a> {
         self.nfa.special.start_anchored_id = self.nfa.alloc_state(0)?;
         // Initialize the unanchored starting state in order to make it dense,
         // and thus make transition lookups on this state faster.
-        self.init_unanchored_start_state();
+        self.init_unanchored_start_state()?;
         // Set all transitions on the DEAD state to point to itself. This way,
         // the DEAD state can never be escaped. It MUST be used as a sentinel
         // in any correct search.
-        self.add_dead_state_loop();
+        self.add_dead_state_loop()?;
         // Build the base trie from the given patterns.
         self.build_trie(patterns)?;
         self.nfa.states.shrink_to_fit();
@@ -1145,17 +1134,17 @@ impl<'a> Compiler<'a> {
                     prev = next;
                 } else {
                     let next = self.nfa.alloc_state(depth)?;
-                    self.nfa.add_transition(prev, b, next);
+                    self.nfa.add_transition(prev, b, next)?;
                     if self.builder.ascii_case_insensitive {
                         let b = opposite_ascii_case(b);
-                        self.nfa.add_transition(prev, b, next);
+                        self.nfa.add_transition(prev, b, next)?;
                     }
                     prev = next;
                 }
             }
             // Once the pattern has been added, log the match in the final
             // state that it reached.
-            self.nfa.add_match(prev, pid);
+            self.nfa.add_match(prev, pid)?;
         }
         Ok(())
     }
@@ -1557,11 +1546,12 @@ impl<'a> Compiler<'a> {
     /// make the unanchored starting state dense, and thus in turn make
     /// transition lookups on it faster. (Which is worth doing because it's
     /// the most active state.)
-    fn init_unanchored_start_state(&mut self) {
+    fn init_unanchored_start_state(&mut self) -> Result<(), BuildError> {
         let start_uid = self.nfa.special.start_unanchored_id;
         let start_aid = self.nfa.special.start_anchored_id;
-        self.nfa.init_full_state(start_uid, NFA::FAIL);
-        self.nfa.init_full_state(start_aid, NFA::FAIL);
+        self.nfa.init_full_state(start_uid, NFA::FAIL)?;
+        self.nfa.init_full_state(start_aid, NFA::FAIL)?;
+        Ok(())
     }
 
     /// Setup the anchored start state by copying all of the transitions and
@@ -1650,8 +1640,9 @@ impl<'a> Compiler<'a> {
     /// Sets all transitions on the dead state to point back to the dead state.
     /// Normally, missing transitions map back to the failure state, but the
     /// point of the dead state is to act as a sink that can never be escaped.
-    fn add_dead_state_loop(&mut self) {
-        self.nfa.init_full_state(NFA::DEAD, NFA::DEAD);
+    fn add_dead_state_loop(&mut self) -> Result<(), BuildError> {
+        self.nfa.init_full_state(NFA::DEAD, NFA::DEAD)?;
+        Ok(())
     }
 }
 
