@@ -1,0 +1,99 @@
+[[bench]]
+model = "compile"
+name = "empty"
+regex = []
+haystack = ""
+count = 0
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "compile"
+name = "onebyte"
+regex = ["a"]
+haystack = "a"
+count = 1
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "compile"
+name = "twobytes"
+regex = ["a", "b"]
+haystack = "ab"
+count = 2
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "compile"
+name = "many-short"
+regex = [
+  "ADL", "ADl", "AdL", "Adl", "BAK", "BAk", "BAK", "BaK", "Bak",
+  "BaK", "HOL", "HOl", "HoL", "Hol", "IRE", "IRe", "IrE", "Ire",
+  "JOH", "JOh", "JoH", "Joh", "SHE", "SHe", "ShE", "She", "WAT",
+  "WAt", "WaT", "Wat", "aDL", "aDl", "adL", "adl", "bAK", "bAk",
+  "bAK", "baK", "bak", "baK", "hOL", "hOl", "hoL", "hol", "iRE",
+  "iRe", "irE", "ire", "jOH", "jOh", "joH", "joh", "sHE", "sHe",
+  "shE", "she", "wAT", "wAt", "waT", "wat", "ſHE", "ſHe", "ſhE",
+  "ſhe",
+]
+haystack = "ſhe"
+count = 1
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "compile"
+name = "words5000"
+regex = { path = "words-5000", per-line = "pattern" }
+haystack = "transfuse"
+count = 1
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "compile"
+name = "words15000"
+regex = { path = "words-15000", per-line = "pattern" }
+haystack = "dovetailing"
+count = 1
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+]

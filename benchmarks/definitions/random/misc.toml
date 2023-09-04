@@ -1,0 +1,49 @@
+analysis = '''
+Miscellaneous benchmarks on a random haystack.
+'''
+
+[[bench]]
+model = "count"
+name = "ten-one-prefix"
+regex = [
+  "zacdef", "zbcdef", "zccdef", "zdcdef", "zecdef", "zfcdef",
+  "zgcdef", "zhcdef", "zicdef", "zjcdef",
+]
+haystack = { path = "random.txt" }
+count = 0
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "ten-diff-prefix"
+regex = [
+  "abcdef", "bcdefg", "cdefgh", "defghi", "efghij", "fghijk",
+  "ghijkl", "hijklm", "ijklmn", "jklmno",
+]
+haystack = { path = "random.txt" }
+count = 0
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]

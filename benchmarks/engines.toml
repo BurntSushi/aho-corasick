@@ -1,0 +1,191 @@
+# Engines for the aho-corasick crate. We don't cover literally every possible
+# configuration, but we try to cover everything broadly.
+
+[[engine]]
+  name = "rust/aho-corasick/default/standard"
+  cwd = "./engines/rust-aho-corasick"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["default/standard"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
+  name = "rust/aho-corasick/default/leftmost-first"
+  cwd = "./engines/rust-aho-corasick"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["default/leftmost-first"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
+  name = "rust/aho-corasick/default/leftmost-longest"
+  cwd = "./engines/rust-aho-corasick"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["default/leftmost-longest"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
+  name = "rust/aho-corasick/nfa-noncontiguous/leftmost-first"
+  cwd = "./engines/rust-aho-corasick"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["nfa-noncontiguous/leftmost-first"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
+  name = "rust/aho-corasick/nfa-contiguous/leftmost-first"
+  cwd = "./engines/rust-aho-corasick"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["nfa-contiguous/leftmost-first"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
+  name = "rust/aho-corasick/dfa/leftmost-first"
+  cwd = "./engines/rust-aho-corasick"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["dfa/leftmost-first"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
+  name = "rust/aho-corasick/packed/leftmost-first"
+  cwd = "./engines/rust-aho-corasick"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["packed/leftmost-first"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+# Aho-Corasick engines from daachorse. AFAIK, this is the only Rust library
+# that is anywhere near competitive with the aho-corasick crate.
+#
+# It uses the "double array trie" technique for implementing the Aho-Corasick
+# algorithm with a few additional tricks that were published as part of
+# creating this library.
+#
+# Ref: https://github.com/daac-tools/daachorse
+
+[[engine]]
+  name = "daachorse/bytewise/leftmost-first"
+  cwd = "./engines/rust-daachorse"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["bytewise/leftmost-first"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
+  name = "daachorse/bytewise/leftmost-longest"
+  cwd = "./engines/rust-daachorse"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["bytewise/leftmost-longest"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+# Naive engines. Useful for comparisons and to determine the crossover point
+# where a multi-substring algorithm is beneficial over multi single-substring
+# algorithms. We include both the `memchr` crate and `std`.
+
+[[engine]]
+  name = "naive/rust/std"
+  cwd = "./engines/naive"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["rust/std"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
+  name = "naive/rust/memchr/memmem"
+  cwd = "./engines/naive"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["rust/memchr/memmem"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]

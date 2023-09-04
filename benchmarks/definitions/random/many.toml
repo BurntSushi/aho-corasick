@@ -1,0 +1,41 @@
+analysis = '''
+Miscellaneous benchmarks on a large random haystack with a large pattern set.
+'''
+
+[[bench]]
+model = "count"
+name = "words100"
+regex = { path = "words-100", per-line = "pattern" }
+haystack = { path = "random10x.txt" }
+count = 0
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "words5000"
+regex = { path = "words-5000", per-line = "pattern" }
+haystack = { path = "random10x.txt" }
+count = 0
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
