@@ -117,6 +117,10 @@ jobs:
     - name: Show CPU info for debugging
       if: matrix.os == 'ubuntu-latest'
       run: lscpu
+    # See: https://github.com/rust-lang/regex/blob/a2887636930156023172e4b376a6febad4e49120/.github/workflows/ci.yml#L145-L163
+    - name: Pin memchr to 2.6.2
+      if: matrix.build == 'pinned'
+      run: cargo update -p memchr --precise 2.6.2
     - run: ${{ env.CARGO }} build --verbose $TARGET
     - run: ${{ env.CARGO }} doc --verbose $TARGET
     - run: ${{ env.CARGO }} test --verbose $TARGET
