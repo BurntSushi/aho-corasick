@@ -1,0 +1,227 @@
+analysis = '''
+These benchmarks test various workloads on a corpus that corresponds to the
+repetition of a single byte. For the most part, we compare the impact of
+prefix optimizations on this case. Namely, if the repeated byte is `z` and
+a prefix byte is `z`, then this represents the worst case for the prefix
+optimizations.
+'''
+
+[[bench]]
+model = "count"
+name = "onebyte-match"
+regex = ["z"]
+haystack = { contents = "z", repeat = 10_000 }
+count = 10_000
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "onebyte-nomatch"
+regex = ["z"]
+haystack = { contents = "a", repeat = 10_000 }
+count = 0
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "twobytes-match"
+regex = ["z", "a"]
+haystack = { contents = "z", repeat = 10_000 }
+count = 10_000
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "twobytes-nomatch"
+regex = ["a", "b"]
+haystack = { contents = "z", repeat = 10_000 }
+count = 0
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "threebytes-match"
+regex = ["z", "a", "b"]
+haystack = { contents = "z", repeat = 10_000 }
+count = 10_000
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "threebytes-nomatch"
+regex = ["a", "b", "c"]
+haystack = { contents = "z", repeat = 10_000 }
+count = 0
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "fourbytes-match"
+regex = ["z", "a", "b", "c"]
+haystack = { contents = "z", repeat = 10_000 }
+count = 10_000
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "fourbytes-nomatch"
+regex = ["a", "b", "c", "d"]
+haystack = { contents = "z", repeat = 10_000 }
+count = 0
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "fivebytes-match"
+regex = ["z", "a", "b", "c", "d"]
+haystack = { contents = "z", repeat = 10_000 }
+count = 10_000
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "fivebytes-nomatch"
+regex = ["a", "b", "c", "d", "e"]
+haystack = { contents = "z", repeat = 10_000 }
+count = 0
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "samebytes-match"
+regex = ["zzzzzzzzzz"]
+haystack = { contents = "z", repeat = 10_000 }
+count = 1_000
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]

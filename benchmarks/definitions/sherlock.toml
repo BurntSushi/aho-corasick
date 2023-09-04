@@ -1,0 +1,239 @@
+[[bench]]
+model = "count"
+name = "name-alt1"
+regex = ["Sherlock", "Street"]
+haystack = { path = "sherlock.txt" }
+count = 158
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "name-alt2"
+regex = ["Sherlock", "Holmes"]
+haystack = { path = "sherlock.txt" }
+count = 558
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "name-alt3"
+regex = ["Sherlock", "Holmes", "Watson", "Irene", "Adler", "John", "Baker"]
+haystack = { path = "sherlock.txt" }
+count = 740
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "name-alt4"
+regex = ["Sher", "Hol"]
+haystack = { path = "sherlock.txt" }
+count = 582
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "name-alt5"
+regex = ["Sherlock", "Holmes", "Watson"]
+haystack = { path = "sherlock.txt" }
+count = 639
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "name-alt6"
+regex = ["SherlockZ", "HolmesZ", "WatsonZ", "IreneZ", "MoriartyZ"]
+haystack = { path = "sherlock.txt" }
+count = 0
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "name-alt7"
+regex = ["Шерлок Холмс", "Джон Уотсон"]
+haystack = { path = "sherlock.txt" }
+count = 0
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "name-nocase1"
+regex = [
+  "ADL", "ADl", "AdL", "Adl", "BAK", "BAk", "BAK", "BaK", "Bak",
+  "BaK", "HOL", "HOl", "HoL", "Hol", "IRE", "IRe", "IrE", "Ire",
+  "JOH", "JOh", "JoH", "Joh", "SHE", "SHe", "ShE", "She", "WAT",
+  "WAt", "WaT", "Wat", "aDL", "aDl", "adL", "adl", "bAK", "bAk",
+  "bAK", "baK", "bak", "baK", "hOL", "hOl", "hoL", "hol", "iRE",
+  "iRe", "irE", "ire", "jOH", "jOh", "joH", "joh", "sHE", "sHe",
+  "shE", "she", "wAT", "wAt", "waT", "wat", "ſHE", "ſHe", "ſhE",
+  "ſhe",
+]
+haystack = { path = "sherlock.txt" }
+count = 1_764
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "name-nocase2"
+regex = [
+  "HOL", "HOl", "HoL", "Hol", "SHE", "SHe", "ShE", "She", "hOL",
+  "hOl", "hoL", "hol", "sHE", "sHe", "shE", "she", "ſHE", "ſHe",
+  "ſhE", "ſhe",
+]
+haystack = { path = "sherlock.txt" }
+count = 1_307
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "name-nocase3"
+regex = [
+  "HOL", "HOl", "HoL", "Hol", "SHE", "SHe", "ShE", "She", "WAT",
+  "WAt", "WaT", "Wat", "hOL", "hOl", "hoL", "hol", "sHE", "sHe",
+  "shE", "she", "wAT", "wAt", "waT", "wat", "ſHE", "ſHe", "ſhE",
+  "ſhe",
+]
+haystack = { path = "sherlock.txt" }
+count = 1_442
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
+
+[[bench]]
+model = "count"
+name = "words5000"
+regex = { path = "words-5000", per-line = "pattern" }
+haystack = { path = "sherlock.txt" }
+count = [
+  { engine = "^naive/.*", count = 572 },
+  { engine = ".*", count = 567 },
+]
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/default/leftmost-longest",
+  "rust/aho-corasick/nfa-noncontiguous/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "daachorse/bytewise/leftmost-longest",
+  "naive/rust/memchr/memmem",
+  "naive/rust/std",
+]
