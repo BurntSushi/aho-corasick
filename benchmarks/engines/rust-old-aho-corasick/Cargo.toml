@@ -8,12 +8,9 @@ name = "main"
 path = "main.rs"
 
 [dependencies]
-aho-corasick = { version = "*", path = "../../../", features = ["logging"] }
 anyhow = "1.0.69"
-# Using an older version here because I am really not a fan of the dependency
-# tree explosion that has happened in 0.10.
-env_logger = "0.9.3"
 lexopt = "0.3.0"
+aho-corasick = "=1.0.5"
 
 [dependencies.shared]
 path = "../../shared"

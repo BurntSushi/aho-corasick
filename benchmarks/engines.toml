@@ -113,6 +113,121 @@
     bin = "cargo"
     args = ["clean"]
 
+# Engines for aho-corasick, but pinned to 1.0.5. Essentially a way of
+# benchmarking the older version before some internal refactoring.
+
+[[engine]]
+  name = "rust/old-aho-corasick/default/standard"
+  cwd = "./engines/rust-old-aho-corasick"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["default/standard"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
+  name = "rust/old-aho-corasick/default/leftmost-first"
+  cwd = "./engines/rust-old-aho-corasick"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["default/leftmost-first"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
+  name = "rust/old-aho-corasick/default/leftmost-longest"
+  cwd = "./engines/rust-old-aho-corasick"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["default/leftmost-longest"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
+  name = "rust/old-aho-corasick/nfa-noncontiguous/leftmost-first"
+  cwd = "./engines/rust-old-aho-corasick"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["nfa-noncontiguous/leftmost-first"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
+  name = "rust/old-aho-corasick/nfa-contiguous/leftmost-first"
+  cwd = "./engines/rust-old-aho-corasick"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["nfa-contiguous/leftmost-first"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
+  name = "rust/old-aho-corasick/dfa/leftmost-first"
+  cwd = "./engines/rust-old-aho-corasick"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["dfa/leftmost-first"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
+  name = "rust/old-aho-corasick/packed/leftmost-first"
+  cwd = "./engines/rust-old-aho-corasick"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["packed/leftmost-first"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
 # Aho-Corasick engines from daachorse. AFAIK, this is the only Rust library
 # that is anywhere near competitive with the aho-corasick crate.
 #
