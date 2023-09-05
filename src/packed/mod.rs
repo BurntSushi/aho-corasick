@@ -112,5 +112,6 @@ mod rabinkarp;
 mod teddy;
 #[cfg(all(feature = "std", test))]
 mod tests;
+mod vector;
 #[cfg(all(feature = "std", target_arch = "x86_64"))]
 mod vectorold;
