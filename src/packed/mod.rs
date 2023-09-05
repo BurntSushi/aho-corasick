@@ -113,4 +113,4 @@ mod teddy;
 #[cfg(all(feature = "std", test))]
 mod tests;
 #[cfg(all(feature = "std", target_arch = "x86_64"))]
-mod vector;
+mod vectorold;
