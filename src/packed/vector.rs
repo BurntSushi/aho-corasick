@@ -45,15 +45,6 @@ pub(crate) trait Vector: Copy + core::fmt::Debug {
     /// `data`.
     unsafe fn load_unaligned(data: *const u8) -> Self;
 
-    /// Returns a scalar such that bit `i` is set if and only if the most
-    /// significant bit of the corresponding 8-bit lane `i` is set.
-    ///
-    /// # Safety
-    ///
-    /// Callers must ensure that this is okay to call in the current target for
-    /// the current CPU.
-    unsafe fn movemask(self) -> u32;
-
     /// Do an 8-bit pairwise equality check. If lane `i` is equal in this
     /// vector and the one given, then lane `i` in the resulting vector is set
     /// to `0xFF`. Otherwise, it is set to `0x00`.
@@ -81,6 +72,14 @@ pub(crate) trait Vector: Copy + core::fmt::Debug {
     /// Callers must ensure that this is okay to call in the current target for
     /// the current CPU.
     unsafe fn or(self, vector2: Self) -> Self;
+
+    /// Returns true if and only if this vector has zero in all of its lanes.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
+    unsafe fn is_zero(self) -> bool;
 }
 
 #[cfg(target_arch = "x86_64")]
@@ -105,11 +104,6 @@ mod x86sse2 {
         }
 
         #[inline(always)]
-        unsafe fn movemask(self) -> u32 {
-            _mm_movemask_epi8(self) as u32
-        }
-
-        #[inline(always)]
         unsafe fn cmpeq(self, vector2: Self) -> __m128i {
             _mm_cmpeq_epi8(self, vector2)
         }
@@ -122,6 +116,12 @@ mod x86sse2 {
         #[inline(always)]
         unsafe fn or(self, vector2: Self) -> __m128i {
             _mm_or_si128(self, vector2)
+        }
+
+        #[inline(always)]
+        unsafe fn is_zero(self) -> bool {
+            let cmp = self.cmpeq(Self::splat(0));
+            _mm_movemask_epi8(cmp) as u32 == 0xFFFF
         }
     }
 }
@@ -148,11 +148,6 @@ mod x86avx2 {
         }
 
         #[inline(always)]
-        unsafe fn movemask(self) -> u32 {
-            _mm256_movemask_epi8(self) as u32
-        }
-
-        #[inline(always)]
         unsafe fn cmpeq(self, vector2: Self) -> __m256i {
             _mm256_cmpeq_epi8(self, vector2)
         }
@@ -165,6 +160,12 @@ mod x86avx2 {
         #[inline(always)]
         unsafe fn or(self, vector2: Self) -> __m256i {
             _mm256_or_si256(self, vector2)
+        }
+
+        #[inline(always)]
+        unsafe fn is_zero(self) -> bool {
+            let cmp = self.cmpeq(Self::splat(0));
+            _mm256_movemask_epi8(cmp) as u32 == 0xFFFFFFFF
         }
     }
 }
@@ -191,11 +192,6 @@ mod aarch64neon {
         }
 
         #[inline(always)]
-        unsafe fn movemask(self) -> u32 {
-            todo!()
-        }
-
-        #[inline(always)]
         unsafe fn cmpeq(self, vector2: Self) -> uint8x16_t {
             vceqq_u8(self, vector2)
         }
@@ -209,6 +205,13 @@ mod aarch64neon {
         unsafe fn or(self, vector2: Self) -> uint8x16_t {
             vorrq_u8(self, vector2)
         }
+
+        #[inline(always)]
+        unsafe fn is_zero(self) -> bool {
+            // could also use vmaxvq_u8
+            let maxes = vreinterpretq_u64_u8(vpmaxq_u8(self, self));
+            vgetq_lane_u64(maxes, 0) == 0
+        }
     }
 }
 
@@ -217,3 +220,180 @@ mod aarch64neon {
 // load_unaligned. This should make documenting my understanding easier since
 // Teddy requires a much bigger vocabulary of vector functions than the memchr
 // crate does.
+
+#[cfg(all(test, target_arch = "aarch64", target_feature = "neon"))]
+mod tests {
+    use core::arch::aarch64::*;
+
+    use super::*;
+
+    #[target_feature(enable = "neon")]
+    unsafe fn load(lanes: [u8; 16]) -> uint8x16_t {
+        uint8x16_t::load_unaligned(&lanes as *const u8)
+    }
+
+    #[target_feature(enable = "neon")]
+    unsafe fn unload(v: uint8x16_t) -> [u8; 16] {
+        [
+            vgetq_lane_u8(v, 0),
+            vgetq_lane_u8(v, 1),
+            vgetq_lane_u8(v, 2),
+            vgetq_lane_u8(v, 3),
+            vgetq_lane_u8(v, 4),
+            vgetq_lane_u8(v, 5),
+            vgetq_lane_u8(v, 6),
+            vgetq_lane_u8(v, 7),
+            vgetq_lane_u8(v, 8),
+            vgetq_lane_u8(v, 9),
+            vgetq_lane_u8(v, 10),
+            vgetq_lane_u8(v, 11),
+            vgetq_lane_u8(v, 12),
+            vgetq_lane_u8(v, 13),
+            vgetq_lane_u8(v, 14),
+            vgetq_lane_u8(v, 15),
+        ]
+    }
+
+    #[test]
+    fn vector_splat() {
+        #[target_feature(enable = "neon")]
+        unsafe fn test() {
+            let v = uint8x16_t::splat(0xAF);
+            assert_eq!(
+                unload(v),
+                [
+                    0xAF, 0xAF, 0xAF, 0xAF, 0xAF, 0xAF, 0xAF, 0xAF, 0xAF,
+                    0xAF, 0xAF, 0xAF, 0xAF, 0xAF, 0xAF, 0xAF
+                ]
+            );
+        }
+        unsafe { test() }
+    }
+
+    #[test]
+    fn vector_cmpeq() {
+        #[target_feature(enable = "neon")]
+        unsafe fn test() {
+            let v1 =
+                load([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 1]);
+            let v2 =
+                load([16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
+            assert_eq!(
+                unload(v1.cmpeq(v2)),
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF]
+            );
+        }
+        unsafe { test() }
+    }
+
+    #[test]
+    fn vector_and() {
+        #[target_feature(enable = "neon")]
+        unsafe fn test() {
+            let v1 =
+                load([0, 0, 0, 0, 0, 0b1001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            let v2 =
+                load([0, 0, 0, 0, 0, 0b1010, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            assert_eq!(
+                unload(v1.and(v2)),
+                [0, 0, 0, 0, 0, 0b1000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            );
+        }
+        unsafe { test() }
+    }
+
+    #[test]
+    fn vector_or() {
+        #[target_feature(enable = "neon")]
+        unsafe fn test() {
+            let v1 =
+                load([0, 0, 0, 0, 0, 0b1001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            let v2 =
+                load([0, 0, 0, 0, 0, 0b1010, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            assert_eq!(
+                unload(v1.or(v2)),
+                [0, 0, 0, 0, 0, 0b1011, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            );
+        }
+        unsafe { test() }
+    }
+
+    #[test]
+    fn vector_is_zero() {
+        #[target_feature(enable = "neon")]
+        unsafe fn test() {
+            let v = load([0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            assert!(!v.is_zero());
+            let v = load([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            assert!(v.is_zero());
+        }
+        unsafe { test() }
+    }
+
+    #[test]
+    fn example_vmaxvq_u8_non_zero() {
+        #[target_feature(enable = "neon")]
+        unsafe fn example() {
+            let v = load([0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            assert_eq!(vmaxvq_u8(v), 1);
+        }
+        unsafe { example() }
+    }
+
+    #[test]
+    fn example_vmaxvq_u8_zero() {
+        #[target_feature(enable = "neon")]
+        unsafe fn example() {
+            let v = load([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            assert_eq!(vmaxvq_u8(v), 0);
+        }
+        unsafe { example() }
+    }
+
+    #[test]
+    fn example_vpmaxq_u8_non_zero() {
+        #[target_feature(enable = "neon")]
+        unsafe fn example() {
+            let v = load([0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            let r = vpmaxq_u8(v, v);
+            assert_eq!(
+                unload(r),
+                [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0]
+            );
+        }
+        unsafe { example() }
+    }
+
+    #[test]
+    fn example_vpmaxq_u8_self() {
+        #[target_feature(enable = "neon")]
+        unsafe fn example() {
+            let v =
+                load([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+            let r = vpmaxq_u8(v, v);
+            assert_eq!(
+                unload(r),
+                [2, 4, 6, 8, 10, 12, 14, 16, 2, 4, 6, 8, 10, 12, 14, 16]
+            );
+        }
+        unsafe { example() }
+    }
+
+    #[test]
+    fn example_vpmaxq_u8_other() {
+        #[target_feature(enable = "neon")]
+        unsafe fn example() {
+            let v1 =
+                load([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+            let v2 = load([
+                17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+            ]);
+            let r = vpmaxq_u8(v1, v2);
+            assert_eq!(
+                unload(r),
+                [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32]
+            );
+        }
+        unsafe { example() }
+    }
+}
