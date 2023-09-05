@@ -10,7 +10,7 @@ keywords = ["string", "search", "text", "pattern", "multi"]
 license = "Unlicense OR MIT"
 categories = ["text-processing"]
 autotests = false
-exclude = ["/aho-corasick-debug"]
+exclude = ["/aho-corasick-debug", "/benchmarks", "/tmp"]
 edition = "2021"
 rust-version = "1.60.0"
 

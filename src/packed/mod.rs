@@ -40,7 +40,9 @@ let matches: Vec<PatternID> = searcher
     .collect();
 assert_eq!(vec![PatternID::ZERO], matches);
 # Some(()) }
-# if cfg!(all(feature = "std", target_arch = "x86_64")) {
+# if cfg!(all(feature = "std", any(
+#     target_arch = "x86_64", target_arch = "aarch64",
+# ))) {
 #     example().unwrap()
 # } else {
 #     assert!(example().is_none());
@@ -66,7 +68,9 @@ let matches: Vec<PatternID> = searcher
     .collect();
 assert_eq!(vec![PatternID::must(1)], matches);
 # Some(()) }
-# if cfg!(all(feature = "std", target_arch = "x86_64")) {
+# if cfg!(all(feature = "std", any(
+#     target_arch = "x86_64", target_arch = "aarch64",
+# ))) {
 #     example().unwrap()
 # } else {
 #     assert!(example().is_none());
@@ -107,10 +111,10 @@ implementation detail, here are some common reasons:
 pub use crate::packed::api::{Builder, Config, FindIter, MatchKind, Searcher};
 
 mod api;
+mod ext;
 mod pattern;
 mod rabinkarp;
 mod teddy;
 #[cfg(all(feature = "std", test))]
 mod tests;
-#[cfg(all(feature = "std", target_arch = "x86_64"))]
-mod vectorold;
+mod vector;

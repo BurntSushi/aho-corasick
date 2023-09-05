@@ -131,8 +131,6 @@ jobs:
     - run: ${{ env.CARGO }} test --lib --verbose --no-default-features --features std,perf-literal,logging $TARGET
     - if: matrix.build == 'nightly'
       run: ${{ env.CARGO }} build --manifest-path aho-corasick-debug/Cargo.toml $TARGET
-    - if: matrix.build == 'nightly'
-      run: ${{ env.CARGO }} bench --verbose --manifest-path bench/Cargo.toml -- --test
 
   rustfmt:
     name: rustfmt

@@ -1,0 +1,238 @@
+analysis = '''
+These benchmarks come from [rebar's curated benchmark set].
+
+We don't copy all of the benchmarks from there. Just the ones where the
+`aho-corasick` crate is likely relevant. For example, for the regex
+`(?i)Sherlock Holmes`, a small set of prefix literals is extracted that results
+in a Teddy searcher being used. So we specifically benchmark the literals that
+are extracted (at time of writing).
+
+[rebar's curated benchmark set]: https://github.com/BurntSushi/rebar/tree/e6100636137496c97273efcb5f5d869278e2e95d/benchmarks/definitions/curated
+'''
+
+[[bench]]
+model = "count"
+name = "sherlock-en"
+regex = ['Sherlock Holmes']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 513
+engines = [
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/default/leftmost-first",
+  "rust/old-aho-corasick/dfa/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "sherlock-casei-en"
+regex = [
+  "SHER", "SHEr", "SHeR", "SHer", "ShER", "ShEr", "SheR", "Sher",
+  "sHER", "sHEr", "sHeR", "sHer", "shER", "shEr", "sheR", "sher",
+  "ſHE" , "ſHe" , "ſhE" , "ſhe" ,
+]
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 540  # original regex is 522
+engines = [
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/default/leftmost-first",
+  "rust/old-aho-corasick/dfa/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "sherlock-ru"
+regex = ['Шерлок Холмс']
+haystack = { path = "opensubtitles/ru-sampled.txt" }
+count = 724
+engines = [
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/default/leftmost-first",
+  "rust/old-aho-corasick/dfa/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "sherlock-casei-ru"
+regex = [
+  'ШЕ\xd0', 'ШЕ\xd1',
+  'Ше\xd0', 'Ше\xd1',
+  'шЕ\xd0', 'шЕ\xd1',
+  'ше\xd0', 'ше\xd1',
+]
+haystack = { path = "opensubtitles/ru-sampled.txt" }
+count = 1608  # original regex is 746
+engines = [
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/default/leftmost-first",
+  "rust/old-aho-corasick/dfa/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "sherlock-zh"
+regex = ['夏洛克·福尔摩斯']
+haystack = { path = "opensubtitles/zh-sampled.txt" }
+count = 30
+engines = [
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/default/leftmost-first",
+  "rust/old-aho-corasick/dfa/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "alt-sherlock-en"
+regex = [
+  'Sherlock Holmes',
+  'John Watson',
+  'Irene Adler',
+  'Inspector Lestrade',
+  'Professor Moriarty',
+]
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 714
+engines = [
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/default/leftmost-first",
+  "rust/old-aho-corasick/dfa/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "alt-sherlock-casei-en"
+regex = [
+  'SHE', 'SHe', 'ShE', 'She', 'sHE', 'sHe', 'shE', 'she', 'ſH', 'ſh',
+  'JOH', 'JOh', 'JoH', 'Joh', 'jOH', 'jOh', 'joH', 'joh',
+  'IRE', 'IRe', 'IrE', 'Ire', 'iRE', 'iRe', 'irE', 'ire',
+  'INS', 'INs', 'IN\xc5', 'InS', 'Ins', 'In\xc5',
+  'iNS', 'iNs', 'iN\xc5', 'inS', 'ins', 'in\xc5',
+  'PRO', 'PRo', 'PrO', 'Pro', 'pRO', 'pRo', 'prO', 'pro',
+]
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 2456  # original regex is 725
+engines = [
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/default/leftmost-first",
+  "rust/old-aho-corasick/dfa/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "alt-sherlock-ru"
+regex = [
+  "Шерлок Холмс",
+  "Джон Уотсон",
+  "Ирен Адлер",
+  "инспектор Лестрейд",
+  "профессор Мориарти",
+]
+haystack = { path = "opensubtitles/ru-sampled.txt" }
+count = 899
+engines = [
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/default/leftmost-first",
+  "rust/old-aho-corasick/dfa/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "alt-sherlock-casei-ru"
+regex = [
+  'ШЕ', 'Ше', 'шЕ', 'ше',
+  'ДЖ', 'Дж', 'дЖ', 'дж', 'ᲁ\xd0',
+  'ИР', 'Ир', 'иР', 'ир',
+  'ИН', 'Ин', 'иН', 'ин',
+  'ПР', 'Пр', 'пР', 'пр',
+]
+haystack = { path = "opensubtitles/ru-sampled.txt" }
+count = 11_400  # original regex is 971
+engines = [
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/default/leftmost-first",
+  "rust/old-aho-corasick/dfa/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "alt-sherlock-zh"
+regex = [
+  "夏洛克·福尔摩斯",
+  "约翰华生",
+  "阿德勒",
+  "雷斯垂德",
+  "莫里亚蒂教授",
+]
+haystack = { path = "opensubtitles/zh-sampled.txt" }
+count = 207
+engines = [
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/default/leftmost-first",
+  "rust/old-aho-corasick/dfa/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "dictionary-15"
+regex = { path = "dictionary/english/length-15.txt", per-line = "pattern" }
+haystack = { path = "opensubtitles/en-medium.txt" }
+count = 1
+engines = [
+  "rust/aho-corasick/default/leftmost-first",
+  "rust/aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/old-aho-corasick/default/leftmost-first",
+  "rust/old-aho-corasick/nfa-contiguous/leftmost-first",
+  "rust/old-aho-corasick/dfa/leftmost-first",
+  "daachorse/bytewise/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
