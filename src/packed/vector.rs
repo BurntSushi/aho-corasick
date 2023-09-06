@@ -192,26 +192,93 @@ pub(crate) trait Vector: Copy + core::fmt::Debug {
     ) -> Option<T>;
 }
 
-// BREADCRUMBS:
-//
-// Add shift_in_one_byte and shift_in_three_bytes.
-//
-// Main question at this point is whether it makes sense to support Fat
-// Teddy on the same Vector trait, or whether we need a new trait. I think
-// the main issue is 128-bit vector support and the use of alignr. For AVX2,
-// _mm256_alingr_epi8 works like two individual 128-bit ALIGNR instructions
-// (odd, but useful for Fat Teddy and needs to be worked around for Slim
-// Teddy). The question is how to do that for 128-bit vectors. We could extract
-// 64-bit integers and do shifting at a scalar level that way. But that
-// seems... not ideal. But even if we implement it, it doesn't mean we have to
-// use it?
-//
-// We might be able to get around this with a shuffle followed by N
-// extracts/inserts? No that's dumb, because we might as well just use a
-// regular shift at that point.
-//
-// Very tempting to just make a VectorFat trait and only implement it for
-// AVX2... Sigh.
+pub(crate) trait FatVector: Vector {
+    type Half: Vector;
+
+    /// Read a half-vector-size number of bytes from the given pointer, and
+    /// broadcast it across both halfs of a full vector. The pointer does not
+    /// need to be aligned.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
+    ///
+    /// Callers must guarantee that at least `Self::HALF::BYTES` bytes are
+    /// readable from `data`.
+    unsafe fn load_half_unaligned(data: *const u8) -> Self;
+
+    /// Like `Vector::shift_in_one_byte`, except this is done for each half
+    /// of the vector instead.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
+    unsafe fn half_shift_in_one_byte(self, vector2: Self) -> Self;
+
+    /// Like `Vector::shift_in_two_bytes`, except this is done for each half
+    /// of the vector instead.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
+    unsafe fn half_shift_in_two_bytes(self, vector2: Self) -> Self;
+
+    /// Like `Vector::shift_in_two_bytes`, except this is done for each half
+    /// of the vector instead.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
+    unsafe fn half_shift_in_three_bytes(self, vector2: Self) -> Self;
+
+    /// Swap the 128-bit lanes in this vector.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
+    unsafe fn swap_128bit_lanes(self) -> Self;
+
+    /// Unpack and interleave the 8-bit lanes from the low 128 bits of each
+    /// vector and return the result.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
+    unsafe fn interleave_low_8bit_lanes(self, vector2: Self) -> Self;
+
+    /// Unpack and interleave the 8-bit lanes from the high 128 bits of each
+    /// vector and return the result.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
+    unsafe fn interleave_high_8bit_lanes(self, vector2: Self) -> Self;
+
+    /// Call the provided function for each low 64-bit lane in this vector
+    /// and then in the other vector. The given function is provided the lane
+    /// index and lane value as a `u64`. (The high 128-bits of each vector are
+    /// ignored.)
+    ///
+    /// If `f` returns `Some`, then iteration over the lanes is stopped and the
+    /// value is returned. Otherwise, this returns `None`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
+    unsafe fn for_each_low_64bit_lane<T>(
+        self,
+        vector2: Self,
+        f: impl FnMut(usize, u64) -> Option<T>,
+    ) -> Option<T>;
+}
 
 #[cfg(target_arch = "x86_64")]
 mod x86sse2 {
@@ -307,7 +374,7 @@ mod x86sse2 {
 mod x86avx2 {
     use core::arch::x86_64::*;
 
-    use super::Vector;
+    use super::{FatVector, Vector};
 
     impl Vector for __m256i {
         const BITS: usize = 256;
@@ -415,6 +482,69 @@ mod x86avx2 {
             }
 
             let hi = _mm256_extracti128_si256(self, 1);
+            let lane = _mm_cvtsi128_si64(hi) as u64;
+            if let Some(t) = f(2, lane) {
+                return Some(t);
+            }
+            let lane = _mm_cvtsi128_si64(_mm_srli_si128(hi, 8)) as u64;
+            if let Some(t) = f(3, lane) {
+                return Some(t);
+            }
+
+            None
+        }
+    }
+
+    impl FatVector for __m256i {
+        type Half = __m128i;
+
+        unsafe fn load_half_unaligned(data: *const u8) -> Self {
+            let half = Self::Half::load_unaligned(data);
+            _mm256_broadcastsi128_si256(half)
+        }
+
+        unsafe fn half_shift_in_one_byte(self, vector2: Self) -> Self {
+            _mm256_alignr_epi8(self, vector2, 15)
+        }
+
+        unsafe fn half_shift_in_two_bytes(self, vector2: Self) -> Self {
+            _mm256_alignr_epi8(self, vector2, 14)
+        }
+
+        unsafe fn half_shift_in_three_bytes(self, vector2: Self) -> Self {
+            _mm256_alignr_epi8(self, vector2, 13)
+        }
+
+        unsafe fn swap_128bit_lanes(self) -> Self {
+            _mm256_permute4x64_epi64(self, 0x4E)
+        }
+
+        unsafe fn interleave_low_8bit_lanes(self, vector2: Self) -> Self {
+            _mm256_unpacklo_epi8(self, vector2)
+        }
+
+        unsafe fn interleave_high_8bit_lanes(self, vector2: Self) -> Self {
+            _mm256_unpackhi_epi8(self, vector2)
+        }
+
+        unsafe fn for_each_low_64bit_lane<T>(
+            self,
+            vector2: Self,
+            mut f: impl FnMut(usize, u64) -> Option<T>,
+        ) -> Option<T> {
+            // TODO: Why not use _mm256_extract_epi64 here instead?
+
+            let lo = _mm256_castsi256_si128(self);
+            let lane = _mm_cvtsi128_si64(lo) as u64;
+            if let Some(t) = f(0, lane) {
+                return Some(t);
+            }
+            let lane = _mm_cvtsi128_si64(_mm_srli_si128(lo, 8)) as u64;
+            if let Some(t) = f(1, lane) {
+                return Some(t);
+            }
+
+            let hi = _mm256_castsi256_si128(vector2);
             let lane = _mm_cvtsi128_si64(hi) as u64;
             if let Some(t) = f(2, lane) {
                 return Some(t);
@@ -736,6 +866,11 @@ mod tests_avx2 {
     }
 
     #[target_feature(enable = "avx2")]
+    unsafe fn load_half(lanes: [u8; 16]) -> __m256i {
+        __m256i::load_half_unaligned(&lanes as *const u8)
+    }
+
+    #[target_feature(enable = "avx2")]
     unsafe fn unload(v: __m256i) -> [u8; 32] {
         [
             _mm256_extract_epi8(v, 0) as u8,
@@ -1049,6 +1184,30 @@ mod tests_avx2 {
                     0x1817161514131211,
                     0x201F1E1D1C1B1A19
                 ]
+            );
+        }
+        if !is_runnable() {
+            return;
+        }
+        unsafe { test() }
+    }
+
+    #[test]
+    fn fat_vector_half_shift_in_one_byte() {
+        #[target_feature(enable = "avx2")]
+        unsafe fn test() {
+            let v1 = load_half([
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+            ]);
+            let v2 = load_half([
+                17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+            ]);
+            assert_eq!(
+                unload(v1.half_shift_in_one_byte(v2)),
+                [
+                    32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 32,
+                    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+                ],
             );
         }
         if !is_runnable() {
