@@ -241,7 +241,7 @@ pub(crate) trait FatVector: Vector {
     ///
     /// Callers must ensure that this is okay to call in the current target for
     /// the current CPU.
-    unsafe fn swap_128bit_lanes(self) -> Self;
+    unsafe fn swap_halves(self) -> Self;
 
     /// Unpack and interleave the 8-bit lanes from the low 128 bits of each
     /// vector and return the result.
@@ -261,10 +261,10 @@ pub(crate) trait FatVector: Vector {
     /// the current CPU.
     unsafe fn interleave_high_8bit_lanes(self, vector2: Self) -> Self;
 
-    /// Call the provided function for each low 64-bit lane in this vector
-    /// and then in the other vector. The given function is provided the lane
-    /// index and lane value as a `u64`. (The high 128-bits of each vector are
-    /// ignored.)
+    /// Call the provided function for each 64-bit lane in the lower half
+    /// of this vector and then in the other vector. The given function is
+    /// provided the lane index and lane value as a `u64`. (The high 128-bits
+    /// of each vector are ignored.)
     ///
     /// If `f` returns `Some`, then iteration over the lanes is stopped and the
     /// value is returned. Otherwise, this returns `None`.
@@ -515,7 +515,7 @@ mod x86avx2 {
             _mm256_alignr_epi8(self, vector2, 13)
         }
 
-        unsafe fn swap_128bit_lanes(self) -> Self {
+        unsafe fn swap_halves(self) -> Self {
             _mm256_permute4x64_epi64(self, 0x4E)
         }
 
@@ -1208,6 +1208,170 @@ mod tests_avx2 {
                     32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 32,
                     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
                 ],
+            );
+        }
+        if !is_runnable() {
+            return;
+        }
+        unsafe { test() }
+    }
+
+    #[test]
+    fn fat_vector_half_shift_in_two_bytes() {
+        #[target_feature(enable = "avx2")]
+        unsafe fn test() {
+            let v1 = load_half([
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+            ]);
+            let v2 = load_half([
+                17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+            ]);
+            assert_eq!(
+                unload(v1.half_shift_in_two_bytes(v2)),
+                [
+                    31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 31,
+                    32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
+                ],
+            );
+        }
+        if !is_runnable() {
+            return;
+        }
+        unsafe { test() }
+    }
+
+    #[test]
+    fn fat_vector_half_shift_in_three_bytes() {
+        #[target_feature(enable = "avx2")]
+        unsafe fn test() {
+            let v1 = load_half([
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+            ]);
+            let v2 = load_half([
+                17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+            ]);
+            assert_eq!(
+                unload(v1.half_shift_in_three_bytes(v2)),
+                [
+                    30, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 30,
+                    31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+                ],
+            );
+        }
+        if !is_runnable() {
+            return;
+        }
+        unsafe { test() }
+    }
+
+    #[test]
+    fn fat_vector_swap_halves() {
+        #[target_feature(enable = "avx2")]
+        unsafe fn test() {
+            let v = load([
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+                19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+            ]);
+            assert_eq!(
+                unload(v.swap_halves()),
+                [
+                    17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+                    31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+                    16,
+                ],
+            );
+        }
+        if !is_runnable() {
+            return;
+        }
+        unsafe { test() }
+    }
+
+    #[test]
+    fn fat_vector_interleave_low_8bit_lanes() {
+        #[target_feature(enable = "avx2")]
+        unsafe fn test() {
+            let v1 = load([
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+                19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+            ]);
+            let v2 = load([
+                33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+                48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62,
+                63, 64,
+            ]);
+            assert_eq!(
+                unload(v1.interleave_low_8bit_lanes(v2)),
+                [
+                    1, 33, 2, 34, 3, 35, 4, 36, 5, 37, 6, 38, 7, 39, 8, 40,
+                    17, 49, 18, 50, 19, 51, 20, 52, 21, 53, 22, 54, 23, 55,
+                    24, 56,
+                ],
+            );
+        }
+        if !is_runnable() {
+            return;
+        }
+        unsafe { test() }
+    }
+
+    #[test]
+    fn fat_vector_interleave_high_8bit_lanes() {
+        #[target_feature(enable = "avx2")]
+        unsafe fn test() {
+            let v1 = load([
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+                19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+            ]);
+            let v2 = load([
+                33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+                48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62,
+                63, 64,
+            ]);
+            assert_eq!(
+                unload(v1.interleave_high_8bit_lanes(v2)),
+                [
+                    9, 41, 10, 42, 11, 43, 12, 44, 13, 45, 14, 46, 15, 47, 16,
+                    48, 25, 57, 26, 58, 27, 59, 28, 60, 29, 61, 30, 62, 31,
+                    63, 32, 64,
+                ],
+            );
+        }
+        if !is_runnable() {
+            return;
+        }
+        unsafe { test() }
+    }
+
+    #[test]
+    fn fat_vector_for_each_low_64bit_lane() {
+        #[target_feature(enable = "avx2")]
+        unsafe fn test() {
+            let v1 = load([
+                0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
+                0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14,
+                0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E,
+                0x1F, 0x20,
+            ]);
+            let v2 = load([
+                0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A,
+                0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x34,
+                0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E,
+                0x3F, 0x40,
+            ]);
+            let mut lanes = [0u64; 4];
+            v1.for_each_low_64bit_lane(v2, |i, lane| {
+                lanes[i] = lane;
+                None::<()>
+            });
+            assert_eq!(
+                lanes,
+                [
+                    0x0807060504030201,
+                    0x100F0E0D0C0B0A09,
+                    0x2827262524232221,
+                    0x302F2E2D2C2B2A29
+                ]
             );
         }
         if !is_runnable() {
