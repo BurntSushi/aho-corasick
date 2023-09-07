@@ -588,6 +588,7 @@ mod x86avx2 {
     }
 }
 
+/*
 #[cfg(target_arch = "aarch64")]
 mod aarch64neon {
     use core::arch::aarch64::*;
@@ -631,6 +632,7 @@ mod aarch64neon {
         }
     }
 }
+*/
 
 #[cfg(all(test, target_arch = "x86_64", target_feature = "sse2"))]
 mod tests_ssse3 {
@@ -1410,6 +1412,7 @@ mod tests_avx2 {
     }
 }
 
+/*
 #[cfg(all(test, target_arch = "aarch64", target_feature = "neon"))]
 mod tests_neon {
     use core::arch::aarch64::*;
@@ -1609,3 +1612,4 @@ mod tests_neon {
         unsafe { test() }
     }
 }
+*/
