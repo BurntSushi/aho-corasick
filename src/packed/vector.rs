@@ -1,3 +1,9 @@
+// NOTE: The descriptions for each of the vector methods on the traits below
+// are pretty inscrutable. For this reason, there are tests for every method
+// on for every trait impl below. If you're confused about what an op does,
+// consult its test. (They probably should be doc tests, but I couldn't figure
+// out how to write them in a non-annoying way.)
+
 /// A trait for describing vector operations used by vectorized searchers.
 ///
 /// The trait is highly constrained to low level vector operations needed for
@@ -192,6 +198,29 @@ pub(crate) trait Vector: Copy + core::fmt::Debug {
     ) -> Option<T>;
 }
 
+/// This trait extends the `Vector` trait with additional operations to support
+/// Fat Teddy.
+///
+/// Fat Teddy uses 16 buckets instead of 8, but reads half as many bytes (as
+/// the vector size) instead of the full size of a vector per iteration. For
+/// example, when using a 256-bit vector, Slim Teddy reads 32 bytes at a timr
+/// but Fat Teddy reads 16 bytes at a time.
+///
+/// Fat Teddy is useful when searching for a large number of literals.
+/// The extra number of buckets spreads the literals out more and reduces
+/// verification time.
+///
+/// Currently we only implement this for AVX on x86_64. It would be nice to
+/// implement this for SSE on x86_64 and NEON on aarch64, with the latter two
+/// only reading 8 bytes at a time. It's not clear how well it would work, but
+/// there are some tricky things to figure out in terms of implementation. The
+/// `half_shift_in_{one,two,three}_bytes` methods in particular are probably
+/// the trickiest of the bunch. For AVX2, these are implemented by taking
+/// advantage of the fact that `_mm256_alignr_epi8` operates on each 128-bit
+/// half instead of the full 256-bit vector. (Where as `_mm_alignr_epi8`
+/// operates on the full 128-bit vector and not on each 64-bit half.) I didn't
+/// do a careful survey of NEON to see if it could easily support these
+/// operations.
 pub(crate) trait FatVector: Vector {
     type Half: Vector;
 
@@ -1414,6 +1443,81 @@ mod tests_neon {
         ]
     }
 
+    // Example functions. These don't test the Vector traits, but rather,
+    // specific NEON instructions. They are basically little experiments I
+    // wrote to figure out what an instruction does since their descriptions
+    // are so dense. I decided to keep the experiments around as example tests
+    // in case there' useful.
+
+    #[test]
+    fn example_vmaxvq_u8_non_zero() {
+        #[target_feature(enable = "neon")]
+        unsafe fn example() {
+            let v = load([0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            assert_eq!(vmaxvq_u8(v), 1);
+        }
+        unsafe { example() }
+    }
+
+    #[test]
+    fn example_vmaxvq_u8_zero() {
+        #[target_feature(enable = "neon")]
+        unsafe fn example() {
+            let v = load([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            assert_eq!(vmaxvq_u8(v), 0);
+        }
+        unsafe { example() }
+    }
+
+    #[test]
+    fn example_vpmaxq_u8_non_zero() {
+        #[target_feature(enable = "neon")]
+        unsafe fn example() {
+            let v = load([0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            let r = vpmaxq_u8(v, v);
+            assert_eq!(
+                unload(r),
+                [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0]
+            );
+        }
+        unsafe { example() }
+    }
+
+    #[test]
+    fn example_vpmaxq_u8_self() {
+        #[target_feature(enable = "neon")]
+        unsafe fn example() {
+            let v =
+                load([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+            let r = vpmaxq_u8(v, v);
+            assert_eq!(
+                unload(r),
+                [2, 4, 6, 8, 10, 12, 14, 16, 2, 4, 6, 8, 10, 12, 14, 16]
+            );
+        }
+        unsafe { example() }
+    }
+
+    #[test]
+    fn example_vpmaxq_u8_other() {
+        #[target_feature(enable = "neon")]
+        unsafe fn example() {
+            let v1 =
+                load([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+            let v2 = load([
+                17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+            ]);
+            let r = vpmaxq_u8(v1, v2);
+            assert_eq!(
+                unload(r),
+                [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32]
+            );
+        }
+        unsafe { example() }
+    }
+
+    // Now we test the actual methods on the Vector trait.
+
     #[test]
     fn vector_splat() {
         #[target_feature(enable = "neon")]
@@ -1503,72 +1607,5 @@ mod tests_neon {
             );
         }
         unsafe { test() }
-    }
-
-    #[test]
-    fn example_vmaxvq_u8_non_zero() {
-        #[target_feature(enable = "neon")]
-        unsafe fn example() {
-            let v = load([0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-            assert_eq!(vmaxvq_u8(v), 1);
-        }
-        unsafe { example() }
-    }
-
-    #[test]
-    fn example_vmaxvq_u8_zero() {
-        #[target_feature(enable = "neon")]
-        unsafe fn example() {
-            let v = load([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-            assert_eq!(vmaxvq_u8(v), 0);
-        }
-        unsafe { example() }
-    }
-
-    #[test]
-    fn example_vpmaxq_u8_non_zero() {
-        #[target_feature(enable = "neon")]
-        unsafe fn example() {
-            let v = load([0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-            let r = vpmaxq_u8(v, v);
-            assert_eq!(
-                unload(r),
-                [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0]
-            );
-        }
-        unsafe { example() }
-    }
-
-    #[test]
-    fn example_vpmaxq_u8_self() {
-        #[target_feature(enable = "neon")]
-        unsafe fn example() {
-            let v =
-                load([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
-            let r = vpmaxq_u8(v, v);
-            assert_eq!(
-                unload(r),
-                [2, 4, 6, 8, 10, 12, 14, 16, 2, 4, 6, 8, 10, 12, 14, 16]
-            );
-        }
-        unsafe { example() }
-    }
-
-    #[test]
-    fn example_vpmaxq_u8_other() {
-        #[target_feature(enable = "neon")]
-        unsafe fn example() {
-            let v1 =
-                load([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
-            let v2 = load([
-                17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
-            ]);
-            let r = vpmaxq_u8(v1, v2);
-            assert_eq!(
-                unload(r),
-                [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32]
-            );
-        }
-        unsafe { example() }
     }
 }

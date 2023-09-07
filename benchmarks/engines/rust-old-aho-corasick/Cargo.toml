@@ -1,0 +1,21 @@
+[package]
+name = "main"
+version = "1.0.5"
+edition = "2021"
+
+[[bin]]
+name = "main"
+path = "main.rs"
+
+[dependencies]
+anyhow = "1.0.69"
+lexopt = "0.3.0"
+aho-corasick = "=1.0.5"
+
+[dependencies.shared]
+path = "../../shared"
+
+[profile.release]
+debug = true
+codegen-units = 1
+lto = "thin"

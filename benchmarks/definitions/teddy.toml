@@ -1,0 +1,311 @@
+analysis = '''
+These benchmarks are specifically designed to stress certain areas of substring
+search using the Teddy vector algorithm.
+'''
+
+[[bench]]
+model = "count"
+name = "teddy1-1pat-supercommon"
+regex = [' ']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 139_756
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy1-1pat-common"
+regex = ['a']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 47_062
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy1-1pat-uncommon"
+regex = ['<']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 0
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy1-2pat-common"
+regex = ['a', 'b']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 55_518
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy1-2pat-uncommon"
+regex = ['<', '>']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 0
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy1-Npat-common"
+regex = ['a', 'b', 't', 'e', 'i', 'o', 'c', 'g']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 309_829
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy1-Npat-uncommon"
+regex = ['<', '>', '#', '&', '@', '%', '~', '`']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 217
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy2-1pat-common"
+regex = [' t']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 17_907
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy2-1pat-uncommon"
+regex = ['<>']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 0
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy2-2pat-common"
+regex = ['at', 'be']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 9_982
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy2-2pat-uncommon"
+regex = ['<>', '&&']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 0
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy2-Npat-common"
+regex = ['as', 'ie', 'me', 'be', 'oo', 'th', 'if', 'my']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 31_360
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy2-Npat-uncommon"
+regex = ['<>', '#&', '@%', '~`', 'ZZ', 'YY', 'WW', 'UU']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 4
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy3-1pat-common"
+regex = ['the']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 7_256
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy3-1pat-uncommon"
+regex = ['<&>']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 0
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy3-2pat-common"
+regex = ['the', 'you']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 13_529
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy3-2pat-uncommon"
+regex = ['<&>', 'ZQY']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 0
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy3-Npat-common"
+regex = ['you', 'the', 'and', 'for', 'was', 'are', 'can', 'don']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = [
+  # Applying single substring search for each leads to slightly different
+  # counts because of the possibility of overlapping matches. We generally
+  # try to avoid this, but the count discrepancy is close enough that we
+  # leave it alone.
+  { engine = '.*/memmem', count = 21_465 },
+  { engine = '.*', count = 21_436 },
+]
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy3-Npat-uncommon"
+regex = ['<&>', 'ZQY', 'ADA', 'QQQ', '@-@', '{;}', '*]$', 'BXU']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 1
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy4-1pat-common"
+regex = ['that']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 1_771
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy4-1pat-uncommon"
+regex = ['<&@>']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 0
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy4-2pat-common"
+regex = ['that', 'have']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 2_843
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy4-2pat-uncommon"
+regex = ['<&@>', 'WXYZ']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 0
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy4-Npat-common"
+regex = ['that', 'have', 'this', 'your', 'know', 'with', 'what', 'here']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 9_270
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "teddy4-Npat-uncommon"
+regex = ['abut', 'chum', 'dink', 'flop', 'golf', 'hoax', 'isle', 'pear']
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 52
+engines = [
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
