@@ -5,8 +5,8 @@ use core::{cmp, fmt};
 use alloc::{collections::BTreeMap, format, vec, vec::Vec};
 
 use crate::packed::{
+    oldteddy::Teddy,
     pattern::{PatternID, Patterns},
-    teddy::Teddy,
 };
 
 /// A builder for constructing a Teddy matcher.
@@ -75,7 +75,7 @@ impl Builder {
     }
 
     fn build_imp(&self, patterns: &Patterns) -> Option<Teddy> {
-        use crate::packed::teddy::runtime;
+        use crate::packed::oldteddy::runtime;
 
         // Most of the logic here is just about selecting the optimal settings,
         // or perhaps even rejecting construction altogether. The choices

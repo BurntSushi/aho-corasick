@@ -107,11 +107,11 @@ implementation detail, here are some common reasons:
 pub use crate::packed::api::{Builder, Config, FindIter, MatchKind, Searcher};
 
 mod api;
+mod oldteddy;
+#[cfg(all(feature = "std", target_arch = "x86_64"))]
+mod oldvector;
 mod pattern;
 mod rabinkarp;
-mod teddy;
 #[cfg(all(feature = "std", test))]
 mod tests;
 mod vector;
-#[cfg(all(feature = "std", target_arch = "x86_64"))]
-mod vectorold;

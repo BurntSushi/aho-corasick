@@ -1,7 +1,7 @@
 #[cfg(not(all(feature = "std", target_arch = "x86_64")))]
-pub use crate::packed::teddy::fallback::{Builder, Teddy};
+pub use crate::packed::oldteddy::fallback::{Builder, Teddy};
 #[cfg(all(feature = "std", target_arch = "x86_64"))]
-pub use crate::packed::teddy::{compile::Builder, runtime::Teddy};
+pub use crate::packed::oldteddy::{compile::Builder, runtime::Teddy};
 
 #[cfg(all(feature = "std", target_arch = "x86_64"))]
 mod compile;

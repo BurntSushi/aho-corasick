@@ -1,8 +1,8 @@
 use crate::{
     packed::{
+        oldteddy::{self, Teddy},
         pattern::Patterns,
         rabinkarp::RabinKarp,
-        teddy::{self, Teddy},
     },
     util::search::{Match, Span},
 };
@@ -266,7 +266,7 @@ impl Builder {
     }
 
     fn build_teddy(&self, patterns: &Patterns) -> Option<Teddy> {
-        teddy::Builder::new()
+        oldteddy::Builder::new()
             .avx(self.config.force_avx)
             .fat(self.config.force_teddy_fat)
             .build(&patterns)
