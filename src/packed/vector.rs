@@ -317,7 +317,7 @@ pub(crate) trait FatVector: Vector {
 }
 
 #[cfg(target_arch = "x86_64")]
-mod x86sse2 {
+mod x86ssse3 {
     use core::arch::x86_64::*;
 
     use crate::util::int::{I32, I64, I8};
@@ -394,12 +394,11 @@ mod x86sse2 {
             self,
             mut f: impl FnMut(usize, u64) -> Option<T>,
         ) -> Option<T> {
-            // TODO: Why not use _mm_extract_epi64 here?
-            let lane = _mm_cvtsi128_si64(self).to_bits();
+            let lane = _mm_extract_epi64(self, 0).to_bits();
             if let Some(t) = f(0, lane) {
                 return Some(t);
             }
-            let lane = _mm_cvtsi128_si64(_mm_srli_si128(self, 8)).to_bits();
+            let lane = _mm_extract_epi64(self, 1).to_bits();
             if let Some(t) = f(1, lane) {
                 return Some(t);
             }
@@ -503,34 +502,27 @@ mod x86avx2 {
             self,
             mut f: impl FnMut(usize, u64) -> Option<T>,
         ) -> Option<T> {
-            // TODO:
-            //
-            // In a prior implementation I used to use transmute for stuff like
-            // this, but my memory is that it led to worse codegen and slower
-            // overall perf. But this was years ago. It should perhaps be
-            // re-litigated.
-            //
-            // But even so, why not use _mm256_extract_epi64 here instead?
-            let lo = _mm256_extracti128_si256(self, 0);
-            let lane = _mm_cvtsi128_si64(lo).to_bits();
+            // NOTE: At one point in the past, I used transmute to this to
+            // get a [u64; 4], but it turned out to lead to worse codegen IIRC.
+            // I've tried it more recently, and it looks like that's no longer
+            // the case. But since there's no difference, we stick with the
+            // slightly more complicated but transmute-free version.
+            let lane = _mm256_extract_epi64(self, 0).to_bits();
             if let Some(t) = f(0, lane) {
                 return Some(t);
             }
-            let lane = _mm_cvtsi128_si64(_mm_srli_si128(lo, 8)).to_bits();
+            let lane = _mm256_extract_epi64(self, 1).to_bits();
             if let Some(t) = f(1, lane) {
                 return Some(t);
             }
-
-            let hi = _mm256_extracti128_si256(self, 1);
-            let lane = _mm_cvtsi128_si64(hi).to_bits();
+            let lane = _mm256_extract_epi64(self, 2).to_bits();
             if let Some(t) = f(2, lane) {
                 return Some(t);
             }
-            let lane = _mm_cvtsi128_si64(_mm_srli_si128(hi, 8)).to_bits();
+            let lane = _mm256_extract_epi64(self, 3).to_bits();
             if let Some(t) = f(3, lane) {
                 return Some(t);
             }
-
             None
         }
     }
@@ -538,62 +530,64 @@ mod x86avx2 {
     impl FatVector for __m256i {
         type Half = __m128i;
 
+        #[inline(always)]
         unsafe fn load_half_unaligned(data: *const u8) -> Self {
             let half = Self::Half::load_unaligned(data);
             _mm256_broadcastsi128_si256(half)
         }
 
+        #[inline(always)]
         unsafe fn half_shift_in_one_byte(self, vector2: Self) -> Self {
             _mm256_alignr_epi8(self, vector2, 15)
         }
 
+        #[inline(always)]
         unsafe fn half_shift_in_two_bytes(self, vector2: Self) -> Self {
             _mm256_alignr_epi8(self, vector2, 14)
         }
 
+        #[inline(always)]
         unsafe fn half_shift_in_three_bytes(self, vector2: Self) -> Self {
             _mm256_alignr_epi8(self, vector2, 13)
         }
 
+        #[inline(always)]
         unsafe fn swap_halves(self) -> Self {
             _mm256_permute4x64_epi64(self, 0x4E)
         }
 
+        #[inline(always)]
         unsafe fn interleave_low_8bit_lanes(self, vector2: Self) -> Self {
             _mm256_unpacklo_epi8(self, vector2)
         }
 
+        #[inline(always)]
         unsafe fn interleave_high_8bit_lanes(self, vector2: Self) -> Self {
             _mm256_unpackhi_epi8(self, vector2)
         }
 
+        #[inline(always)]
         unsafe fn for_each_low_64bit_lane<T>(
             self,
             vector2: Self,
             mut f: impl FnMut(usize, u64) -> Option<T>,
         ) -> Option<T> {
-            // TODO: Why not use _mm256_extract_epi64 here instead?
-
-            let lo = _mm256_castsi256_si128(self);
-            let lane = _mm_cvtsi128_si64(lo).to_bits();
+            let lane = _mm256_extract_epi64(self, 0).to_bits();
             if let Some(t) = f(0, lane) {
                 return Some(t);
             }
-            let lane = _mm_cvtsi128_si64(_mm_srli_si128(lo, 8)).to_bits();
+            let lane = _mm256_extract_epi64(self, 1).to_bits();
             if let Some(t) = f(1, lane) {
                 return Some(t);
             }
-
-            let hi = _mm256_castsi256_si128(vector2);
-            let lane = _mm_cvtsi128_si64(hi).to_bits();
+            let lane = _mm256_extract_epi64(vector2, 0).to_bits();
             if let Some(t) = f(2, lane) {
                 return Some(t);
             }
-            let lane = _mm_cvtsi128_si64(_mm_srli_si128(hi, 8)).to_bits();
+            let lane = _mm256_extract_epi64(vector2, 1).to_bits();
             if let Some(t) = f(3, lane) {
                 return Some(t);
             }
-
             None
         }
     }
