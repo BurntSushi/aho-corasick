@@ -4,6 +4,11 @@
 // consult its test. (They probably should be doc tests, but I couldn't figure
 // out how to write them in a non-annoying way.)
 
+use core::{
+    fmt::Debug,
+    panic::{RefUnwindSafe, UnwindSafe},
+};
+
 /// A trait for describing vector operations used by vectorized searchers.
 ///
 /// The trait is highly constrained to low level vector operations needed for
@@ -20,7 +25,9 @@
 /// avoid marking the routines with `#[target_feature]` and instead mark
 /// them as `#[inline(always)]` to ensure they get appropriately inlined.
 /// (`inline(always)` cannot be used with target_feature.)
-pub(crate) trait Vector: Copy + core::fmt::Debug {
+pub(crate) trait Vector:
+    Copy + Debug + Send + Sync + UnwindSafe + RefUnwindSafe
+{
     /// The number of bits in the vector.
     const BITS: usize;
     /// The number of bytes in the vector. That is, this is the size of the
@@ -313,6 +320,8 @@ pub(crate) trait FatVector: Vector {
 mod x86sse2 {
     use core::arch::x86_64::*;
 
+    use crate::util::int::{I32, I64, I8};
+
     use super::Vector;
 
     impl Vector for __m128i {
@@ -321,18 +330,18 @@ mod x86sse2 {
 
         #[inline(always)]
         unsafe fn splat(byte: u8) -> __m128i {
-            _mm_set1_epi8(byte as i8)
+            _mm_set1_epi8(i8::from_bits(byte))
         }
 
         #[inline(always)]
         unsafe fn load_unaligned(data: *const u8) -> __m128i {
-            _mm_loadu_si128(data as *const __m128i)
+            _mm_loadu_si128(data.cast::<__m128i>())
         }
 
         #[inline(always)]
         unsafe fn is_zero(self) -> bool {
             let cmp = self.cmpeq(Self::splat(0));
-            _mm_movemask_epi8(cmp) as u32 == 0xFFFF
+            _mm_movemask_epi8(cmp).to_bits() == 0xFFFF
         }
 
         #[inline(always)]
@@ -386,11 +395,11 @@ mod x86sse2 {
             mut f: impl FnMut(usize, u64) -> Option<T>,
         ) -> Option<T> {
             // TODO: Why not use _mm_extract_epi64 here?
-            let lane = _mm_cvtsi128_si64(self) as u64;
+            let lane = _mm_cvtsi128_si64(self).to_bits();
             if let Some(t) = f(0, lane) {
                 return Some(t);
             }
-            let lane = _mm_cvtsi128_si64(_mm_srli_si128(self, 8)) as u64;
+            let lane = _mm_cvtsi128_si64(_mm_srli_si128(self, 8)).to_bits();
             if let Some(t) = f(1, lane) {
                 return Some(t);
             }
@@ -403,6 +412,8 @@ mod x86sse2 {
 mod x86avx2 {
     use core::arch::x86_64::*;
 
+    use crate::util::int::{I32, I64, I8};
+
     use super::{FatVector, Vector};
 
     impl Vector for __m256i {
@@ -411,18 +422,18 @@ mod x86avx2 {
 
         #[inline(always)]
         unsafe fn splat(byte: u8) -> __m256i {
-            _mm256_set1_epi8(byte as i8)
+            _mm256_set1_epi8(i8::from_bits(byte))
         }
 
         #[inline(always)]
         unsafe fn load_unaligned(data: *const u8) -> __m256i {
-            _mm256_loadu_si256(data as *const __m256i)
+            _mm256_loadu_si256(data.cast::<__m256i>())
         }
 
         #[inline(always)]
         unsafe fn is_zero(self) -> bool {
             let cmp = self.cmpeq(Self::splat(0));
-            _mm256_movemask_epi8(cmp) as u32 == 0xFFFFFFFF
+            _mm256_movemask_epi8(cmp).to_bits() == 0xFFFFFFFF
         }
 
         #[inline(always)]
@@ -501,21 +512,21 @@ mod x86avx2 {
             //
             // But even so, why not use _mm256_extract_epi64 here instead?
             let lo = _mm256_extracti128_si256(self, 0);
-            let lane = _mm_cvtsi128_si64(lo) as u64;
+            let lane = _mm_cvtsi128_si64(lo).to_bits();
             if let Some(t) = f(0, lane) {
                 return Some(t);
             }
-            let lane = _mm_cvtsi128_si64(_mm_srli_si128(lo, 8)) as u64;
+            let lane = _mm_cvtsi128_si64(_mm_srli_si128(lo, 8)).to_bits();
             if let Some(t) = f(1, lane) {
                 return Some(t);
             }
 
             let hi = _mm256_extracti128_si256(self, 1);
-            let lane = _mm_cvtsi128_si64(hi) as u64;
+            let lane = _mm_cvtsi128_si64(hi).to_bits();
             if let Some(t) = f(2, lane) {
                 return Some(t);
             }
-            let lane = _mm_cvtsi128_si64(_mm_srli_si128(hi, 8)) as u64;
+            let lane = _mm_cvtsi128_si64(_mm_srli_si128(hi, 8)).to_bits();
             if let Some(t) = f(3, lane) {
                 return Some(t);
             }
@@ -564,21 +575,21 @@ mod x86avx2 {
             // TODO: Why not use _mm256_extract_epi64 here instead?
 
             let lo = _mm256_castsi256_si128(self);
-            let lane = _mm_cvtsi128_si64(lo) as u64;
+            let lane = _mm_cvtsi128_si64(lo).to_bits();
             if let Some(t) = f(0, lane) {
                 return Some(t);
             }
-            let lane = _mm_cvtsi128_si64(_mm_srli_si128(lo, 8)) as u64;
+            let lane = _mm_cvtsi128_si64(_mm_srli_si128(lo, 8)).to_bits();
             if let Some(t) = f(1, lane) {
                 return Some(t);
             }
 
             let hi = _mm256_castsi256_si128(vector2);
-            let lane = _mm_cvtsi128_si64(hi) as u64;
+            let lane = _mm_cvtsi128_si64(hi).to_bits();
             if let Some(t) = f(2, lane) {
                 return Some(t);
             }
-            let lane = _mm_cvtsi128_si64(_mm_srli_si128(hi, 8)) as u64;
+            let lane = _mm_cvtsi128_si64(_mm_srli_si128(hi, 8)).to_bits();
             if let Some(t) = f(3, lane) {
                 return Some(t);
             }
@@ -638,6 +649,8 @@ mod aarch64neon {
 mod tests_ssse3 {
     use core::arch::x86_64::*;
 
+    use crate::util::int::{I32, U32};
+
     use super::*;
 
     fn is_runnable() -> bool {
@@ -652,22 +665,22 @@ mod tests_ssse3 {
     #[target_feature(enable = "ssse3")]
     unsafe fn unload(v: __m128i) -> [u8; 16] {
         [
-            _mm_extract_epi8(v, 0) as u8,
-            _mm_extract_epi8(v, 1) as u8,
-            _mm_extract_epi8(v, 2) as u8,
-            _mm_extract_epi8(v, 3) as u8,
-            _mm_extract_epi8(v, 4) as u8,
-            _mm_extract_epi8(v, 5) as u8,
-            _mm_extract_epi8(v, 6) as u8,
-            _mm_extract_epi8(v, 7) as u8,
-            _mm_extract_epi8(v, 8) as u8,
-            _mm_extract_epi8(v, 9) as u8,
-            _mm_extract_epi8(v, 10) as u8,
-            _mm_extract_epi8(v, 11) as u8,
-            _mm_extract_epi8(v, 12) as u8,
-            _mm_extract_epi8(v, 13) as u8,
-            _mm_extract_epi8(v, 14) as u8,
-            _mm_extract_epi8(v, 15) as u8,
+            _mm_extract_epi8(v, 0).to_bits().low_u8(),
+            _mm_extract_epi8(v, 1).to_bits().low_u8(),
+            _mm_extract_epi8(v, 2).to_bits().low_u8(),
+            _mm_extract_epi8(v, 3).to_bits().low_u8(),
+            _mm_extract_epi8(v, 4).to_bits().low_u8(),
+            _mm_extract_epi8(v, 5).to_bits().low_u8(),
+            _mm_extract_epi8(v, 6).to_bits().low_u8(),
+            _mm_extract_epi8(v, 7).to_bits().low_u8(),
+            _mm_extract_epi8(v, 8).to_bits().low_u8(),
+            _mm_extract_epi8(v, 9).to_bits().low_u8(),
+            _mm_extract_epi8(v, 10).to_bits().low_u8(),
+            _mm_extract_epi8(v, 11).to_bits().low_u8(),
+            _mm_extract_epi8(v, 12).to_bits().low_u8(),
+            _mm_extract_epi8(v, 13).to_bits().low_u8(),
+            _mm_extract_epi8(v, 14).to_bits().low_u8(),
+            _mm_extract_epi8(v, 15).to_bits().low_u8(),
         ]
     }
 
@@ -885,6 +898,8 @@ mod tests_ssse3 {
 mod tests_avx2 {
     use core::arch::x86_64::*;
 
+    use crate::util::int::{I32, U32};
+
     use super::*;
 
     fn is_runnable() -> bool {
@@ -904,38 +919,38 @@ mod tests_avx2 {
     #[target_feature(enable = "avx2")]
     unsafe fn unload(v: __m256i) -> [u8; 32] {
         [
-            _mm256_extract_epi8(v, 0) as u8,
-            _mm256_extract_epi8(v, 1) as u8,
-            _mm256_extract_epi8(v, 2) as u8,
-            _mm256_extract_epi8(v, 3) as u8,
-            _mm256_extract_epi8(v, 4) as u8,
-            _mm256_extract_epi8(v, 5) as u8,
-            _mm256_extract_epi8(v, 6) as u8,
-            _mm256_extract_epi8(v, 7) as u8,
-            _mm256_extract_epi8(v, 8) as u8,
-            _mm256_extract_epi8(v, 9) as u8,
-            _mm256_extract_epi8(v, 10) as u8,
-            _mm256_extract_epi8(v, 11) as u8,
-            _mm256_extract_epi8(v, 12) as u8,
-            _mm256_extract_epi8(v, 13) as u8,
-            _mm256_extract_epi8(v, 14) as u8,
-            _mm256_extract_epi8(v, 15) as u8,
-            _mm256_extract_epi8(v, 16) as u8,
-            _mm256_extract_epi8(v, 17) as u8,
-            _mm256_extract_epi8(v, 18) as u8,
-            _mm256_extract_epi8(v, 19) as u8,
-            _mm256_extract_epi8(v, 20) as u8,
-            _mm256_extract_epi8(v, 21) as u8,
-            _mm256_extract_epi8(v, 22) as u8,
-            _mm256_extract_epi8(v, 23) as u8,
-            _mm256_extract_epi8(v, 24) as u8,
-            _mm256_extract_epi8(v, 25) as u8,
-            _mm256_extract_epi8(v, 26) as u8,
-            _mm256_extract_epi8(v, 27) as u8,
-            _mm256_extract_epi8(v, 28) as u8,
-            _mm256_extract_epi8(v, 29) as u8,
-            _mm256_extract_epi8(v, 30) as u8,
-            _mm256_extract_epi8(v, 31) as u8,
+            _mm256_extract_epi8(v, 0).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 1).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 2).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 3).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 4).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 5).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 6).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 7).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 8).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 9).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 10).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 11).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 12).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 13).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 14).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 15).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 16).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 17).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 18).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 19).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 20).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 21).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 22).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 23).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 24).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 25).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 26).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 27).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 28).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 29).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 30).to_bits().low_u8(),
+            _mm256_extract_epi8(v, 31).to_bits().low_u8(),
         ]
     }
 

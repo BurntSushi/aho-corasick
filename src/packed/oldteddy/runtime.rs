@@ -57,6 +57,7 @@ use crate::{
         oldteddy::compile,
         oldvector,
         pattern::{PatternID, Patterns},
+        vector::{FatVector, Vector},
     },
     util::search::Match,
 };
