@@ -107,6 +107,7 @@ implementation detail, here are some common reasons:
 pub use crate::packed::api::{Builder, Config, FindIter, MatchKind, Searcher};
 
 mod api;
+mod ext;
 mod oldteddy;
 mod pattern;
 mod rabinkarp;

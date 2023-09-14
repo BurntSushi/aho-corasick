@@ -316,8 +316,8 @@ pub(crate) trait FatVector: Vector {
     ) -> Option<T>;
 }
 
-#[cfg(target_arch = "x86_64")]
-mod x86ssse3 {
+#[cfg(all(target_arch = "x86_64", target_feature = "sse2"))]
+mod x86_64_ssse3 {
     use core::arch::x86_64::*;
 
     use crate::util::int::{I32, I64, I8};
@@ -407,8 +407,8 @@ mod x86ssse3 {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
-mod x86avx2 {
+#[cfg(all(target_arch = "x86_64", target_feature = "sse2"))]
+mod x86_64_avx2 {
     use core::arch::x86_64::*;
 
     use crate::util::int::{I32, I64, I8};
@@ -595,7 +595,7 @@ mod x86avx2 {
 
 /*
 #[cfg(target_arch = "aarch64")]
-mod aarch64neon {
+mod aarch64_neon {
     use core::arch::aarch64::*;
 
     use super::Vector;
@@ -640,7 +640,7 @@ mod aarch64neon {
 */
 
 #[cfg(all(test, target_arch = "x86_64", target_feature = "sse2"))]
-mod tests_ssse3 {
+mod tests_x86_64_ssse3 {
     use core::arch::x86_64::*;
 
     use crate::util::int::{I32, U32};
@@ -889,7 +889,7 @@ mod tests_ssse3 {
 }
 
 #[cfg(all(test, target_arch = "x86_64", target_feature = "sse2"))]
-mod tests_avx2 {
+mod tests_x86_64_avx2 {
     use core::arch::x86_64::*;
 
     use crate::util::int::{I32, U32};
@@ -1423,7 +1423,7 @@ mod tests_avx2 {
 
 /*
 #[cfg(all(test, target_arch = "aarch64", target_feature = "neon"))]
-mod tests_neon {
+mod tests_aarch64_neon {
     use core::arch::aarch64::*;
 
     use super::*;

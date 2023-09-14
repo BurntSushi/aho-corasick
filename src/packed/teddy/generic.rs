@@ -9,31 +9,47 @@ use alloc::{
 
 use crate::{
     packed::{
+        ext::Pointer,
         pattern::{PatternID, Patterns},
         vector::{FatVector, Vector},
     },
-    util::{
-        int::{U16, U32},
-        search::Match,
-    },
+    util::int::{U16, U32},
 };
 
-// BREADCRUMBS:
-//
-// Also, before duplicating it, switch it over to using raw pointers. I think.
-//
-// Consider using Vector trait in old teddy implementation to ensure everything
-// still works.
-
-#[derive(Clone, Debug)]
-struct Slim<V, const N: usize> {
-    teddy: Teddy<8>,
-    masks: [Mask<V>; N],
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct Match {
+    pid: PatternID,
+    start: *const u8,
+    end: *const u8,
 }
 
-impl<V: Vector, const N: usize> Slim<V, N> {
+impl Match {
+    pub(crate) fn pattern(&self) -> PatternID {
+        self.pid
+    }
+
+    pub(crate) fn start(&self) -> *const u8 {
+        self.start
+    }
+
+    pub(crate) fn end(&self) -> *const u8 {
+        self.end
+    }
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct Slim<V, const BYTES: usize> {
+    teddy: Teddy<8>,
+    masks: [Mask<V>; BYTES],
+}
+
+impl<V: Vector, const BYTES: usize> Slim<V, BYTES> {
     #[inline(always)]
-    unsafe fn new(patterns: Arc<Patterns>) -> Slim<V, N> {
+    pub(crate) unsafe fn new(patterns: Arc<Patterns>) -> Slim<V, BYTES> {
+        assert!(
+            1 <= BYTES && BYTES <= 4,
+            "only 1, 2, 3 or 4 bytes are supported"
+        );
         let teddy = Teddy::new(patterns);
         let masks = SlimMaskBuilder::from_teddy(&teddy);
         Slim { teddy, masks }
@@ -42,51 +58,62 @@ impl<V: Vector, const N: usize> Slim<V, N> {
     /// Returns the approximate total amount of heap used by this type, in
     /// units of bytes.
     #[inline(always)]
-    fn memory_usage(&self) -> usize {
+    pub(crate) fn memory_usage(&self) -> usize {
         self.teddy.memory_usage()
     }
 
     /// Returns the minimum length, in bytes, that a haystack must be in order
     /// to use it with this searcher.
     #[inline(always)]
-    fn minimum_len(&self) -> usize {
-        V::BYTES + (N - 1)
+    pub(crate) fn minimum_len(&self) -> usize {
+        V::BYTES + (BYTES - 1)
     }
 }
 
 impl<V: Vector> Slim<V, 1> {
     #[inline(always)]
-    unsafe fn find_at(&self, haystack: &[u8], mut at: usize) -> Option<Match> {
-        debug_assert!(haystack[at..].len() >= self.minimum_len());
-
-        let len = haystack.len();
-        while at <= len - 16 {
-            let c = self.candidate(haystack, at);
-            if !c.is_zero() {
-                if let Some(m) = self.teddy.verify(haystack, at, c) {
-                    return Some(m);
-                }
+    pub(crate) unsafe fn find(
+        &self,
+        start: *const u8,
+        end: *const u8,
+    ) -> Option<Match> {
+        let len = end.distance(start);
+        debug_assert!(len >= self.minimum_len());
+        let mut cur = start;
+        while cur <= end.sub(V::BYTES) {
+            if let Some(m) = self.find_one(cur, end) {
+                return Some(m);
             }
-            at += 16;
+            cur = cur.add(V::BYTES);
         }
-        if at < len {
-            at = len - 16;
-            let c = self.candidate(haystack, at);
-            if !c.is_zero() {
-                if let Some(m) = self.teddy.verify(haystack, at, c) {
-                    return Some(m);
-                }
+        if cur < end {
+            cur = end.sub(V::BYTES);
+            if let Some(m) = self.find_one(cur, end) {
+                return Some(m);
             }
         }
         None
     }
 
     #[inline(always)]
-    unsafe fn candidate(&self, haystack: &[u8], at: usize) -> V {
-        debug_assert!(haystack[at..].len() >= 16);
+    unsafe fn find_one(
+        &self,
+        cur: *const u8,
+        end: *const u8,
+    ) -> Option<Match> {
+        let c = self.candidate(cur);
+        if !c.is_zero() {
+            if let Some(m) = self.teddy.verify(cur, end, c) {
+                return Some(m);
+            }
+        }
+        None
+    }
 
-        let chunk = V::load_unaligned(haystack.as_ptr().add(at));
-        Mask::members1(chunk, self.masks[0])
+    #[inline(always)]
+    unsafe fn candidate(&self, cur: *const u8) -> V {
+        let chunk = V::load_unaligned(cur);
+        Mask::members1(chunk, self.masks)
     }
 }
 
@@ -169,19 +196,19 @@ impl<const N: usize> Teddy<N> {
     /// given `haystack`. The candidate chunk given should correspond to 8-bit
     /// bitsets for N buckets.
     #[inline(always)]
-    fn verify64(
+    unsafe fn verify64(
         &self,
-        haystack: &[u8],
-        at: usize,
+        cur: *const u8,
+        end: *const u8,
         mut candidate_chunk: u64,
     ) -> Option<Match> {
         while candidate_chunk != 0 {
             let bit = candidate_chunk.trailing_zeros().as_usize();
             candidate_chunk &= !(1 << bit);
 
-            let at = at + (bit / N);
+            let cur = cur.add(bit / N);
             let bucket = bit % N;
-            if let Some(m) = self.verify_bucket(haystack, bucket, at) {
+            if let Some(m) = self.verify_bucket(cur, end, bucket) {
                 return Some(m);
             }
         }
@@ -191,39 +218,24 @@ impl<const N: usize> Teddy<N> {
     /// Verify whether there are any matches starting at `at` in the given
     /// `haystack` corresponding only to patterns in the given bucket.
     #[inline(always)]
-    fn verify_bucket(
+    unsafe fn verify_bucket(
         &self,
-        haystack: &[u8],
+        cur: *const u8,
+        end: *const u8,
         bucket: usize,
-        at: usize,
     ) -> Option<Match> {
-        // Forcing this function to not inline and be "cold" seems to help
-        // the codegen for Teddy overall. Interestingly, this is good for a
-        // 16% boost in the sherlock/packed/teddy/name/alt1 benchmark (among
-        // others). Overall, this seems like a problem with codegen, since
-        // creating the Match itself is a very small amount of code.
-        #[cold]
-        #[inline(never)]
-        fn match_from_span(pid: PatternID, start: usize, end: usize) -> Match {
-            Match::must(pid.as_usize(), start..end)
-        }
-
-        // N.B. The bounds check for this bucket lookup *should* be elided
-        // since we assert the number of buckets in each `find_at` routine,
-        // and the compiler can prove that the `% 8` (or `% 16`) in callers
-        // of this routine will always be in bounds.
-        for pid in self.buckets[bucket].iter().copied() {
+        debug_assert!(bucket < self.buckets.len());
+        // SAFETY: The caller must ensure that the bucket index is correct.
+        for pid in self.buckets.get_unchecked(bucket).iter().copied() {
             // SAFETY: This is safe because we are guaranteed that every
-            // index in a Teddy bucket is a valid index into `pats`. This
-            // guarantee is upheld by the assert checking `max_pattern_id` in
-            // the beginning of `find_at` above.
-            //
-            // This explicit bounds check elision is (amazingly) good for a
-            // 25-50% boost in some benchmarks, particularly ones with a lot
-            // of short literals.
-            let pat = unsafe { self.patterns.get_unchecked(pid) };
-            if pat.is_prefix(&haystack[at..]) {
-                return Some(match_from_span(pid, at, at + pat.len()));
+            // index in a Teddy bucket is a valid index into `pats`, by
+            // construction.
+            debug_assert!(pid.as_usize() < self.patterns.len());
+            let pat = self.patterns.get_unchecked(pid);
+            if pat.is_prefix_raw(cur, end) {
+                let start = cur;
+                let end = start.add(pat.len());
+                return Some(Match { pid, start, end });
             }
         }
         None
@@ -271,17 +283,21 @@ impl Teddy<8> {
     #[inline(always)]
     unsafe fn verify<V: Vector>(
         &self,
-        haystack: &[u8],
-        at: usize,
+        mut cur: *const u8,
+        end: *const u8,
         candidate: V,
     ) -> Option<Match> {
-        debug_assert!(candidate.is_zero());
+        debug_assert!(!candidate.is_zero());
         // Convert the candidate into 64-bit chunks, and then verify each of
         // those chunks.
-        candidate.for_each_64bit_lane(|i, chunk| {
-            let at = at + i * 8;
-            self.verify64(haystack, at, chunk)
-        })
+        candidate.for_each_64bit_lane(
+            #[inline(always)]
+            |i, chunk| {
+                let result = self.verify64(cur, end, chunk);
+                cur = cur.add(8);
+                result
+            },
+        )
     }
 }
 
@@ -300,8 +316,8 @@ impl Teddy<16> {
     #[inline(always)]
     unsafe fn verify<V: FatVector>(
         &self,
-        haystack: &[u8],
-        at: usize,
+        mut cur: *const u8,
+        end: *const u8,
         candidate: V,
     ) -> Option<Match> {
         // This is a bit tricky, but we basically want to convert our
@@ -325,7 +341,7 @@ impl Teddy<16> {
         // a16 should be checked before a01. So the transformation shown above
         // allows us to use our normal verification procedure with one small
         // change: we treat each bitset as 16 bits instead of 8 bits.
-        debug_assert!(candidate.is_zero());
+        debug_assert!(!candidate.is_zero());
 
         // Swap the 128-bit lanes in the candidate vector.
         let swapped = candidate.swap_halves();
@@ -340,10 +356,15 @@ impl Teddy<16> {
         // of the low 64-bit integers. All we care about are the low 128-bit
         // lanes of r1 and r2. Combined, they contain all our 16-bit bitsets
         // laid out in the desired order, as described above.
-        r1.for_each_low_64bit_lane(r2, |i, chunk| {
-            let at = at + i * 4;
-            self.verify64(haystack, at, chunk)
-        })
+        r1.for_each_low_64bit_lane(
+            r2,
+            #[inline(always)]
+            |i, chunk| {
+                let result = self.verify64(cur, end, chunk);
+                cur = cur.add(4);
+                result
+            },
+        )
     }
 }
 
@@ -386,12 +407,12 @@ impl<V: Vector> Mask<V> {
     /// `mask1` should correspond to a low/high mask for the first byte of all
     /// patterns that are being searched.
     #[inline(always)]
-    unsafe fn members1(chunk: V, mask1: Mask<V>) -> V {
+    unsafe fn members1(chunk: V, masks: [Mask<V>; 1]) -> V {
         let lomask = V::splat(0xF);
         let hlo = chunk.and(lomask);
         let hhi = chunk.shift_8bit_lane_right::<4>().and(lomask);
-        let locand = mask1.lo.shuffle_bytes(hlo);
-        let hicand = mask1.hi.shuffle_bytes(hhi);
+        let locand = masks[0].lo.shuffle_bytes(hlo);
+        let hicand = masks[0].hi.shuffle_bytes(hhi);
         locand.and(hicand)
     }
 
@@ -413,17 +434,17 @@ impl<V: Vector> Mask<V> {
     /// The masks should correspond to the masks computed for the first and
     /// second bytes of all patterns that are being searched.
     #[inline(always)]
-    unsafe fn members2(chunk: V, mask1: Mask<V>, mask2: Mask<V>) -> (V, V) {
+    unsafe fn members2(chunk: V, masks: [Mask<V>; 2]) -> (V, V) {
         let lomask = V::splat(0xF);
         let hlo = chunk.and(lomask);
         let hhi = chunk.shift_8bit_lane_right::<4>().and(lomask);
 
-        let locand1 = mask1.lo.shuffle_bytes(hlo);
-        let hicand1 = mask1.hi.shuffle_bytes(hhi);
+        let locand1 = masks[0].lo.shuffle_bytes(hlo);
+        let hicand1 = masks[0].hi.shuffle_bytes(hhi);
         let cand1 = locand1.and(hicand1);
 
-        let locand2 = mask2.lo.shuffle_bytes(hlo);
-        let hicand2 = mask2.hi.shuffle_bytes(hhi);
+        let locand2 = masks[1].lo.shuffle_bytes(hlo);
+        let hicand2 = masks[1].hi.shuffle_bytes(hhi);
         let cand2 = locand2.and(hicand2);
 
         (cand1, cand2)
@@ -448,26 +469,21 @@ impl<V: Vector> Mask<V> {
     /// The masks should correspond to the masks computed for the first, second
     /// and third bytes of all patterns that are being searched.
     #[inline(always)]
-    unsafe fn members3(
-        chunk: V,
-        mask1: Mask<V>,
-        mask2: Mask<V>,
-        mask3: Mask<V>,
-    ) -> (V, V, V) {
+    unsafe fn members3(chunk: V, masks: [Mask<V>; 3]) -> (V, V, V) {
         let lomask = V::splat(0xF);
         let hlo = chunk.and(lomask);
         let hhi = chunk.shift_8bit_lane_right::<4>().and(lomask);
 
-        let locand1 = mask1.lo.shuffle_bytes(hlo);
-        let hicand1 = mask1.hi.shuffle_bytes(hhi);
+        let locand1 = masks[0].lo.shuffle_bytes(hlo);
+        let hicand1 = masks[0].hi.shuffle_bytes(hhi);
         let cand1 = locand1.and(hicand1);
 
-        let locand2 = mask2.lo.shuffle_bytes(hlo);
-        let hicand2 = mask2.hi.shuffle_bytes(hhi);
+        let locand2 = masks[1].lo.shuffle_bytes(hlo);
+        let hicand2 = masks[1].hi.shuffle_bytes(hhi);
         let cand2 = locand2.and(hicand2);
 
-        let locand3 = mask3.lo.shuffle_bytes(hlo);
-        let hicand3 = mask3.hi.shuffle_bytes(hhi);
+        let locand3 = masks[2].lo.shuffle_bytes(hlo);
+        let hicand3 = masks[2].hi.shuffle_bytes(hhi);
         let cand3 = locand3.and(hicand3);
 
         (cand1, cand2, cand3)
@@ -492,31 +508,25 @@ impl<V: Vector> Mask<V> {
     /// The masks should correspond to the masks computed for the first,
     /// second, third and fourth bytes of all patterns that are being searched.
     #[inline(always)]
-    unsafe fn members4(
-        chunk: V,
-        mask1: Mask<V>,
-        mask2: Mask<V>,
-        mask3: Mask<V>,
-        mask4: Mask<V>,
-    ) -> (V, V, V, V) {
+    unsafe fn members4(chunk: V, masks: [Mask<V>; 4]) -> (V, V, V, V) {
         let lomask = V::splat(0xF);
         let hlo = chunk.and(lomask);
         let hhi = chunk.shift_8bit_lane_right::<4>().and(lomask);
 
-        let locand1 = mask1.lo.shuffle_bytes(hlo);
-        let hicand1 = mask1.hi.shuffle_bytes(hhi);
+        let locand1 = masks[0].lo.shuffle_bytes(hlo);
+        let hicand1 = masks[0].hi.shuffle_bytes(hhi);
         let cand1 = locand1.and(hicand1);
 
-        let locand2 = mask2.lo.shuffle_bytes(hlo);
-        let hicand2 = mask2.hi.shuffle_bytes(hhi);
+        let locand2 = masks[1].lo.shuffle_bytes(hlo);
+        let hicand2 = masks[1].hi.shuffle_bytes(hhi);
         let cand2 = locand2.and(hicand2);
 
-        let locand3 = mask3.lo.shuffle_bytes(hlo);
-        let hicand3 = mask3.hi.shuffle_bytes(hhi);
+        let locand3 = masks[2].lo.shuffle_bytes(hlo);
+        let hicand3 = masks[2].hi.shuffle_bytes(hhi);
         let cand3 = locand3.and(hicand3);
 
-        let locand4 = mask4.lo.shuffle_bytes(hlo);
-        let hicand4 = mask4.hi.shuffle_bytes(hhi);
+        let locand4 = masks[3].lo.shuffle_bytes(hlo);
+        let hicand4 = masks[3].hi.shuffle_bytes(hhi);
         let cand4 = locand4.and(hicand4);
 
         (cand1, cand2, cand3, cand4)

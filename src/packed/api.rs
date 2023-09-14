@@ -1,9 +1,7 @@
+use alloc::sync::Arc;
+
 use crate::{
-    packed::{
-        oldteddy::{self, Teddy},
-        pattern::Patterns,
-        rabinkarp::RabinKarp,
-    },
+    packed::{pattern::Patterns, rabinkarp::RabinKarp, teddy},
     util::search::{Match, Span},
 };
 
@@ -241,6 +239,7 @@ impl Builder {
         }
         let mut patterns = self.patterns.clone();
         patterns.set_match_kind(self.config.kind);
+        let patterns = Arc::new(patterns);
         let rabinkarp = RabinKarp::new(&patterns);
         // Effectively, we only want to return a searcher if we can use Teddy,
         // since Teddy is our only fast packed searcher at the moment.
@@ -250,7 +249,7 @@ impl Builder {
         let (search_kind, minimum_len) = match self.config.force {
             None | Some(ForceAlgorithm::Teddy) => {
                 debug!("trying to build Teddy packed matcher");
-                let teddy = match self.build_teddy(&patterns) {
+                let teddy = match self.build_teddy(Arc::clone(&patterns)) {
                     None => return None,
                     Some(teddy) => teddy,
                 };
@@ -265,11 +264,11 @@ impl Builder {
         Some(Searcher { patterns, rabinkarp, search_kind, minimum_len })
     }
 
-    fn build_teddy(&self, patterns: &Patterns) -> Option<Teddy> {
-        oldteddy::Builder::new()
+    fn build_teddy(&self, patterns: Arc<Patterns>) -> Option<teddy::Searcher> {
+        teddy::Builder::new()
             .avx(self.config.force_avx)
             .fat(self.config.force_teddy_fat)
-            .build(&patterns)
+            .build(patterns)
     }
 
     /// Add the given pattern to this set to match.
@@ -365,7 +364,7 @@ impl Default for Builder {
 /// ```
 #[derive(Clone, Debug)]
 pub struct Searcher {
-    patterns: Patterns,
+    patterns: Arc<Patterns>,
     rabinkarp: RabinKarp,
     search_kind: SearchKind,
     minimum_len: usize,
@@ -373,7 +372,7 @@ pub struct Searcher {
 
 #[derive(Clone, Debug)]
 enum SearchKind {
-    Teddy(Teddy),
+    Teddy(teddy::Searcher),
     RabinKarp,
 }
 
@@ -499,14 +498,11 @@ impl Searcher {
         let haystack = haystack.as_ref();
         match self.search_kind {
             SearchKind::Teddy(ref teddy) => {
+                // self.find_in_slow(haystack, span)
                 if haystack[span].len() < teddy.minimum_len() {
                     return self.find_in_slow(haystack, span);
                 }
-                teddy.find_at(
-                    &self.patterns,
-                    &haystack[..span.end],
-                    span.start,
-                )
+                teddy.find(&haystack[..span.end], span.start)
             }
             SearchKind::RabinKarp => self.rabinkarp.find_at(
                 &self.patterns,

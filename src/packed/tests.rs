@@ -40,8 +40,9 @@ struct SearchTestOwned {
 
 impl SearchTest {
     fn variations(&self) -> Vec<SearchTestOwned> {
+        let count = if cfg!(miri) { 1 } else { 261 };
         let mut tests = vec![];
-        for i in 0..=260 {
+        for i in 0..count {
             tests.push(self.offset_prefix(i));
             tests.push(self.offset_suffix(i));
             tests.push(self.offset_both(i));
@@ -392,13 +393,17 @@ macro_rules! testconfig {
             run_search_tests($collection, |test| {
                 let mut config = Config::new();
                 $with(&mut config);
-                config
-                    .builder()
-                    .extend(test.patterns.iter().map(|p| p.as_bytes()))
-                    .build()
-                    .unwrap()
-                    .find_iter(&test.haystack)
-                    .collect()
+                let mut builder = config.builder();
+                builder.extend(test.patterns.iter().map(|p| p.as_bytes()));
+                let searcher = match builder.build() {
+                    Some(searcher) => searcher,
+                    None => {
+                        // TODO: Once all of Teddy is ported over, get rid of
+                        // this and go back to unwrap.
+                        return None;
+                    }
+                };
+                Some(searcher.find_iter(&test.haystack).collect())
             });
         }
     };
@@ -550,7 +555,7 @@ fn search_tests_have_unique_names() {
     assert("TEDDY", TEDDY);
 }
 
-fn run_search_tests<F: FnMut(&SearchTestOwned) -> Vec<Match>>(
+fn run_search_tests<F: FnMut(&SearchTestOwned) -> Option<Vec<Match>>>(
     which: TestCollection,
     mut f: F,
 ) {
@@ -564,12 +569,18 @@ fn run_search_tests<F: FnMut(&SearchTestOwned) -> Vec<Match>>(
     for &tests in which {
         for spec in tests {
             for test in spec.variations() {
+                let results = match f(&test) {
+                    None => continue,
+                    Some(results) => results,
+                };
                 assert_eq!(
                     test.matches,
-                    get_match_triples(f(&test)).as_slice(),
-                    "test: {}, patterns: {:?}, haystack: {:?}, offset: {:?}",
+                    get_match_triples(results).as_slice(),
+                    "test: {}, patterns: {:?}, haystack(len={:?}): {:?}, \
+                     offset: {:?}",
                     test.name,
                     test.patterns,
+                    test.haystack.len(),
                     test.haystack,
                     test.offset,
                 );

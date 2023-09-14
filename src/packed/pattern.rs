@@ -2,7 +2,10 @@ use core::{cmp, fmt, mem, u16, usize};
 
 use alloc::{boxed::Box, string::String, vec, vec::Vec};
 
-use crate::packed::api::MatchKind;
+use crate::{
+    packed::{api::MatchKind, ext::Pointer},
+    util::int::U16,
+};
 
 /// The type used for representing a pattern identifier.
 ///
@@ -154,7 +157,7 @@ impl Patterns {
     /// Return the pattern with the given identifier. If such a pattern does
     /// not exist, then this panics.
     pub fn get(&self, id: PatternID) -> Pattern<'_> {
-        Pattern(&self.by_id[id as usize])
+        Pattern(&self.by_id[id.as_usize()])
     }
 
     /// Return the pattern with the given identifier without performing bounds
@@ -166,7 +169,7 @@ impl Patterns {
     /// before using this method.
     #[cfg(all(feature = "std", target_arch = "x86_64"))]
     pub unsafe fn get_unchecked(&self, id: PatternID) -> Pattern<'_> {
-        Pattern(self.by_id.get_unchecked(id as usize))
+        Pattern(self.by_id.get_unchecked(id.as_usize()))
     }
 
     /// Return an iterator over all the patterns in this collection, in the
@@ -266,6 +269,41 @@ impl<'p> Pattern<'p> {
     #[inline(always)]
     pub fn is_prefix(&self, bytes: &[u8]) -> bool {
         is_prefix(bytes, self.bytes())
+    }
+
+    /// Returns true if this pattern is a prefix of the haystack given by the
+    /// raw `start` and `end` pointers.
+    ///
+    /// # Safety
+    ///
+    /// * It must be the case that `start < end` and that the distance between
+    /// them is at least equal to `V::BYTES`. That is, it must always be valid
+    /// to do at least an unaligned load of `V` at `start`.
+    /// * Both `start` and `end` must be valid for reads.
+    /// * Both `start` and `end` must point to an initialized value.
+    /// * Both `start` and `end` must point to the same allocated object and
+    /// must either be in bounds or at most one byte past the end of the
+    /// allocated object.
+    /// * Both `start` and `end` must be _derived from_ a pointer to the same
+    /// object.
+    /// * The distance between `start` and `end` must not overflow `isize`.
+    /// * The distance being in bounds must not rely on "wrapping around" the
+    /// address space.
+    #[inline(always)]
+    pub unsafe fn is_prefix_raw(
+        &self,
+        start: *const u8,
+        end: *const u8,
+    ) -> bool {
+        let patlen = self.bytes().len();
+        let haylen = end.distance(start);
+        if patlen > haylen {
+            return false;
+        }
+        // SAFETY: We've checked that the haystack has length at least equal
+        // to this pattern. All other safety concerns are the responsibility
+        // of the caller.
+        is_equal_raw(start, self.bytes().as_ptr(), patlen)
     }
 }
 
