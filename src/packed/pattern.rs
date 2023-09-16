@@ -14,8 +14,6 @@ use crate::{
 // but it might be more cache friendly instead of chasing more pointers during
 // verification. Or perhaps even better, maybe there's a way to lay them out in
 // order per bucket so that we aren't chasing pattern IDs in the first place.
-//
-// Benchmark the 'fat' Teddy crossover point.
 
 /// A non-empty collection of non-empty patterns to search for.
 ///
