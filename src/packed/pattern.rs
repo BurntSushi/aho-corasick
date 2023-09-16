@@ -166,7 +166,6 @@ impl Patterns {
     ///
     /// Callers must ensure that a pattern with the given identifier exists
     /// before using this method.
-    #[cfg(all(feature = "std", target_arch = "x86_64"))]
     pub unsafe fn get_unchecked(&self, id: PatternID) -> Pattern<'_> {
         Pattern(self.by_id.get_unchecked(id.as_usize()))
     }
