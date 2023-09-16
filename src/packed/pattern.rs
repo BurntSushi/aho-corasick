@@ -5,13 +5,17 @@ use alloc::{boxed::Box, string::String, vec, vec::Vec};
 use crate::{
     packed::{api::MatchKind, ext::Pointer},
     util::int::U16,
+    PatternID,
 };
 
-/// The type used for representing a pattern identifier.
-///
-/// We don't use `usize` here because our packed searchers don't scale to
-/// huge numbers of patterns, so we keep things a bit smaller.
-pub type PatternID = u16;
+// BREADCRUMBS:
+//
+// Try used a flatter `Patterns` structure. I guess we'll need a second lookup,
+// but it might be more cache friendly instead of chasing more pointers during
+// verification. Or perhaps even better, maybe there's a way to lay them out in
+// order per bucket so that we aren't chasing pattern IDs in the first place.
+//
+// Benchmark the 'fat' Teddy crossover point.
 
 /// A non-empty collection of non-empty patterns to search for.
 ///
@@ -63,7 +67,7 @@ impl Patterns {
             by_id: vec![],
             order: vec![],
             minimum_len: usize::MAX,
-            max_pattern_id: 0,
+            max_pattern_id: PatternID::ZERO,
             total_pattern_bytes: 0,
         }
     }
@@ -75,7 +79,7 @@ impl Patterns {
         assert!(!bytes.is_empty());
         assert!(self.by_id.len() <= u16::MAX as usize);
 
-        let id = self.by_id.len() as u16;
+        let id = PatternID::new(self.by_id.len()).unwrap();
         self.max_pattern_id = id;
         self.order.push(id);
         self.by_id.push(bytes.to_vec());
@@ -95,10 +99,7 @@ impl Patterns {
             MatchKind::LeftmostLongest => {
                 let (order, by_id) = (&mut self.order, &mut self.by_id);
                 order.sort_by(|&id1, &id2| {
-                    by_id[id1 as usize]
-                        .len()
-                        .cmp(&by_id[id2 as usize].len())
-                        .reverse()
+                    by_id[id1].len().cmp(&by_id[id2].len()).reverse()
                 });
             }
         }
@@ -131,14 +132,14 @@ impl Patterns {
         self.by_id.clear();
         self.order.clear();
         self.minimum_len = usize::MAX;
-        self.max_pattern_id = 0;
+        self.max_pattern_id = PatternID::ZERO;
     }
 
     /// Return the maximum pattern identifier in this collection. This can be
     /// useful in searchers for ensuring that the collection of patterns they
     /// are provided at search time and at build time have the same size.
     pub fn max_pattern_id(&self) -> PatternID {
-        assert_eq!((self.max_pattern_id + 1) as usize, self.len());
+        assert_eq!(self.max_pattern_id.one_more(), self.len());
         self.max_pattern_id
     }
 
@@ -157,7 +158,7 @@ impl Patterns {
     /// Return the pattern with the given identifier. If such a pattern does
     /// not exist, then this panics.
     pub fn get(&self, id: PatternID) -> Pattern<'_> {
-        Pattern(&self.by_id[id.as_usize()])
+        Pattern(&self.by_id[id])
     }
 
     /// Return the pattern with the given identifier without performing bounds

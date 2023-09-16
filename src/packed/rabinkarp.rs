@@ -1,9 +1,6 @@
 use alloc::{vec, vec::Vec};
 
-use crate::{
-    packed::pattern::{PatternID, Patterns},
-    util::search::Match,
-};
+use crate::{packed::pattern::Patterns, util::search::Match, PatternID};
 
 /// The type of the rolling hash used in the Rabin-Karp algorithm.
 type Hash = usize;
@@ -135,7 +132,7 @@ impl RabinKarp {
     /// Returns the approximate total amount of heap used by this searcher, in
     /// units of bytes.
     pub fn memory_usage(&self) -> usize {
-        let num_patterns = self.max_pattern_id as usize + 1;
+        let num_patterns = self.max_pattern_id.one_more();
         self.buckets.len() * core::mem::size_of::<Vec<(Hash, PatternID)>>()
             + num_patterns * core::mem::size_of::<(Hash, PatternID)>()
     }
@@ -159,7 +156,7 @@ impl RabinKarp {
     ) -> Option<Match> {
         let pat = patterns.get(id);
         if pat.is_prefix(&haystack[at..]) {
-            Some(Match::must(id as usize, at..at + pat.len()))
+            Some(Match::new(id, at..at + pat.len()))
         } else {
             None
         }

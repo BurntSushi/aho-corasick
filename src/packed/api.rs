@@ -85,8 +85,8 @@ impl Default for MatchKind {
 pub struct Config {
     kind: MatchKind,
     force: Option<ForceAlgorithm>,
-    force_teddy_fat: Option<bool>,
-    force_avx: Option<bool>,
+    only_teddy_fat: Option<bool>,
+    only_teddy_256bit: Option<bool>,
 }
 
 /// An internal option for forcing the use of a particular packed algorithm.
@@ -113,8 +113,8 @@ impl Config {
         Config {
             kind: MatchKind::LeftmostFirst,
             force: None,
-            force_teddy_fat: None,
-            force_avx: None,
+            only_teddy_fat: None,
+            only_teddy_256bit: None,
         }
     }
 
@@ -151,8 +151,8 @@ impl Config {
     /// should not use it as it is not part of the API stability guarantees of
     /// this crate.
     #[doc(hidden)]
-    pub fn force_teddy_fat(&mut self, yes: Option<bool>) -> &mut Config {
-        self.force_teddy_fat = yes;
+    pub fn only_teddy_fat(&mut self, yes: Option<bool>) -> &mut Config {
+        self.only_teddy_fat = yes;
         self
     }
 
@@ -163,8 +163,8 @@ impl Config {
     /// should not use it as it is not part of the API stability guarantees of
     /// this crate.
     #[doc(hidden)]
-    pub fn force_avx(&mut self, yes: Option<bool>) -> &mut Config {
-        self.force_avx = yes;
+    pub fn only_teddy_256bit(&mut self, yes: Option<bool>) -> &mut Config {
+        self.only_teddy_256bit = yes;
         self
     }
 
@@ -174,7 +174,7 @@ impl Config {
     /// should not use it as it is not part of the API stability guarantees of
     /// this crate.
     #[doc(hidden)]
-    pub fn force_rabin_karp(&mut self, yes: bool) -> &mut Config {
+    pub fn only_rabin_karp(&mut self, yes: bool) -> &mut Config {
         if yes {
             self.force = Some(ForceAlgorithm::RabinKarp);
         } else {
@@ -266,8 +266,8 @@ impl Builder {
 
     fn build_teddy(&self, patterns: Arc<Patterns>) -> Option<teddy::Searcher> {
         teddy::Builder::new()
-            .avx(self.config.force_avx)
-            .fat(self.config.force_teddy_fat)
+            .only_256bit(self.config.only_teddy_256bit)
+            .only_fat(self.config.only_teddy_fat)
             .build(patterns)
     }
 

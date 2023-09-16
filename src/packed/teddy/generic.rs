@@ -10,12 +10,21 @@ use alloc::{
 use crate::{
     packed::{
         ext::Pointer,
-        pattern::{PatternID, Patterns},
+        pattern::Patterns,
         vector::{FatVector, Vector},
     },
     util::int::{U16, U32},
+    PatternID,
 };
 
+/// A match type specialized to the Teddy implementations below.
+///
+/// Essentially, instead of representing a match at byte offsets, we use
+/// raw pointers. This is because the implementations below operate on raw
+/// pointers, and so this is a more natural return type based on how the
+/// implementation works.
+///
+/// Also, the `PatternID` used here is a `u16`.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Match {
     pid: PatternID,
@@ -24,26 +33,46 @@ pub(crate) struct Match {
 }
 
 impl Match {
+    /// Returns the ID of the pattern that matched.
     pub(crate) fn pattern(&self) -> PatternID {
         self.pid
     }
 
+    /// Returns a pointer into the haystack at which the match starts.
     pub(crate) fn start(&self) -> *const u8 {
         self.start
     }
 
+    /// Returns a pointer into the haystack at which the match ends.
     pub(crate) fn end(&self) -> *const u8 {
         self.end
     }
 }
 
+/// A "slim" Teddy implementation that is generic over both the vector type
+/// and the minimum length of the patterns being searched for.
+///
+/// Only 1, 2, 3 and 4 bytes are supported as minimum lengths.
 #[derive(Clone, Debug)]
 pub(crate) struct Slim<V, const BYTES: usize> {
+    /// A generic data structure for doing "slim" Teddy verification.
     teddy: Teddy<8>,
+    /// The masks used as inputs to the shuffle operation to generate
+    /// candidates (which are fed into the verification routines).
     masks: [Mask<V>; BYTES],
 }
 
 impl<V: Vector, const BYTES: usize> Slim<V, BYTES> {
+    /// Create a new "slim" Teddy searcher for the given patterns.
+    ///
+    /// # Panics
+    ///
+    /// This panics when `BYTES` is any value other than 1, 2, 3 or 4.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
     #[inline(always)]
     pub(crate) unsafe fn new(patterns: Arc<Patterns>) -> Slim<V, BYTES> {
         assert!(
@@ -71,6 +100,18 @@ impl<V: Vector, const BYTES: usize> Slim<V, BYTES> {
 }
 
 impl<V: Vector> Slim<V, 1> {
+    /// Look for an occurrences of the patterns in this finder in the haystack
+    /// given by the `start` and `end` pointers.
+    ///
+    /// If no match could be found, then `None` is returned.
+    ///
+    /// # Safety
+    ///
+    /// The given pointers representing the haystack must be valid to read
+    /// from.
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
     #[inline(always)]
     pub(crate) unsafe fn find(
         &self,
@@ -95,6 +136,16 @@ impl<V: Vector> Slim<V, 1> {
         None
     }
 
+    /// Look for a match starting at the `V::BYTES` at and after `cur`. If
+    /// there isn't one, then `None` is returned.
+    ///
+    /// # Safety
+    ///
+    /// The given pointers representing the haystack must be valid to read
+    /// from.
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
     #[inline(always)]
     unsafe fn find_one(
         &self,
@@ -110,6 +161,17 @@ impl<V: Vector> Slim<V, 1> {
         None
     }
 
+    /// Look for a candidate match (represented as a vector) starting at the
+    /// `V::BYTES` at and after `cur`. If there isn't one, then a vector with
+    /// all bits set to zero is returned.
+    ///
+    /// # Safety
+    ///
+    /// The given pointer representing the haystack must be valid to read
+    /// from.
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
     #[inline(always)]
     unsafe fn candidate(&self, cur: *const u8) -> V {
         let chunk = V::load_unaligned(cur);
@@ -117,11 +179,543 @@ impl<V: Vector> Slim<V, 1> {
     }
 }
 
+impl<V: Vector> Slim<V, 2> {
+    /// See Slim<V, 1>::find.
+    #[inline(always)]
+    pub(crate) unsafe fn find(
+        &self,
+        start: *const u8,
+        end: *const u8,
+    ) -> Option<Match> {
+        let len = end.distance(start);
+        debug_assert!(len >= self.minimum_len());
+        let mut cur = start.add(1);
+        let mut prev0 = V::splat(0xFF);
+        while cur <= end.sub(V::BYTES) {
+            if let Some(m) = self.find_one(cur, end, &mut prev0) {
+                return Some(m);
+            }
+            cur = cur.add(V::BYTES);
+        }
+        if cur < end {
+            cur = end.sub(V::BYTES);
+            prev0 = V::splat(0xFF);
+            if let Some(m) = self.find_one(cur, end, &mut prev0) {
+                return Some(m);
+            }
+        }
+        None
+    }
+
+    /// See Slim<V, 1>::find_one.
+    #[inline(always)]
+    unsafe fn find_one(
+        &self,
+        cur: *const u8,
+        end: *const u8,
+        prev0: &mut V,
+    ) -> Option<Match> {
+        let c = self.candidate(cur, prev0);
+        if !c.is_zero() {
+            if let Some(m) = self.teddy.verify(cur.sub(1), end, c) {
+                return Some(m);
+            }
+        }
+        None
+    }
+
+    /// See Slim<V, 1>::candidate.
+    #[inline(always)]
+    unsafe fn candidate(&self, cur: *const u8, prev0: &mut V) -> V {
+        let chunk = V::load_unaligned(cur);
+        let (res0, res1) = Mask::members2(chunk, self.masks);
+        let res0prev0 = res0.shift_in_one_byte(*prev0);
+        let res = res0prev0.and(res1);
+        *prev0 = res0;
+        res
+    }
+}
+
+impl<V: Vector> Slim<V, 3> {
+    /// See Slim<V, 1>::find.
+    #[inline(always)]
+    pub(crate) unsafe fn find(
+        &self,
+        start: *const u8,
+        end: *const u8,
+    ) -> Option<Match> {
+        let len = end.distance(start);
+        debug_assert!(len >= self.minimum_len());
+        let mut cur = start.add(2);
+        let mut prev0 = V::splat(0xFF);
+        let mut prev1 = V::splat(0xFF);
+        while cur <= end.sub(V::BYTES) {
+            if let Some(m) = self.find_one(cur, end, &mut prev0, &mut prev1) {
+                return Some(m);
+            }
+            cur = cur.add(V::BYTES);
+        }
+        if cur < end {
+            cur = end.sub(V::BYTES);
+            prev0 = V::splat(0xFF);
+            prev1 = V::splat(0xFF);
+            if let Some(m) = self.find_one(cur, end, &mut prev0, &mut prev1) {
+                return Some(m);
+            }
+        }
+        None
+    }
+
+    /// See Slim<V, 1>::find_one.
+    #[inline(always)]
+    unsafe fn find_one(
+        &self,
+        cur: *const u8,
+        end: *const u8,
+        prev0: &mut V,
+        prev1: &mut V,
+    ) -> Option<Match> {
+        let c = self.candidate(cur, prev0, prev1);
+        if !c.is_zero() {
+            if let Some(m) = self.teddy.verify(cur.sub(2), end, c) {
+                return Some(m);
+            }
+        }
+        None
+    }
+
+    /// See Slim<V, 1>::candidate.
+    #[inline(always)]
+    unsafe fn candidate(
+        &self,
+        cur: *const u8,
+        prev0: &mut V,
+        prev1: &mut V,
+    ) -> V {
+        let chunk = V::load_unaligned(cur);
+        let (res0, res1, res2) = Mask::members3(chunk, self.masks);
+        let res0prev0 = res0.shift_in_two_bytes(*prev0);
+        let res1prev1 = res1.shift_in_one_byte(*prev1);
+        let res = res0prev0.and(res1prev1).and(res2);
+        *prev0 = res0;
+        *prev1 = res1;
+        res
+    }
+}
+
+impl<V: Vector> Slim<V, 4> {
+    /// See Slim<V, 1>::find.
+    #[inline(always)]
+    pub(crate) unsafe fn find(
+        &self,
+        start: *const u8,
+        end: *const u8,
+    ) -> Option<Match> {
+        let len = end.distance(start);
+        debug_assert!(len >= self.minimum_len());
+        let mut cur = start.add(3);
+        let mut prev0 = V::splat(0xFF);
+        let mut prev1 = V::splat(0xFF);
+        let mut prev2 = V::splat(0xFF);
+        while cur <= end.sub(V::BYTES) {
+            if let Some(m) =
+                self.find_one(cur, end, &mut prev0, &mut prev1, &mut prev2)
+            {
+                return Some(m);
+            }
+            cur = cur.add(V::BYTES);
+        }
+        if cur < end {
+            cur = end.sub(V::BYTES);
+            prev0 = V::splat(0xFF);
+            prev1 = V::splat(0xFF);
+            prev2 = V::splat(0xFF);
+            if let Some(m) =
+                self.find_one(cur, end, &mut prev0, &mut prev1, &mut prev2)
+            {
+                return Some(m);
+            }
+        }
+        None
+    }
+
+    /// See Slim<V, 1>::find_one.
+    #[inline(always)]
+    unsafe fn find_one(
+        &self,
+        cur: *const u8,
+        end: *const u8,
+        prev0: &mut V,
+        prev1: &mut V,
+        prev2: &mut V,
+    ) -> Option<Match> {
+        let c = self.candidate(cur, prev0, prev1, prev2);
+        if !c.is_zero() {
+            if let Some(m) = self.teddy.verify(cur.sub(3), end, c) {
+                return Some(m);
+            }
+        }
+        None
+    }
+
+    /// See Slim<V, 1>::candidate.
+    #[inline(always)]
+    unsafe fn candidate(
+        &self,
+        cur: *const u8,
+        prev0: &mut V,
+        prev1: &mut V,
+        prev2: &mut V,
+    ) -> V {
+        let chunk = V::load_unaligned(cur);
+        let (res0, res1, res2, res3) = Mask::members4(chunk, self.masks);
+        let res0prev0 = res0.shift_in_three_bytes(*prev0);
+        let res1prev1 = res1.shift_in_two_bytes(*prev1);
+        let res2prev2 = res2.shift_in_one_byte(*prev2);
+        let res = res0prev0.and(res1prev1).and(res2prev2).and(res3);
+        *prev0 = res0;
+        *prev1 = res1;
+        *prev2 = res2;
+        res
+    }
+}
+
+/// A "fat" Teddy implementation that is generic over both the vector type
+/// and the minimum length of the patterns being searched for.
+///
+/// Only 1, 2, 3 and 4 bytes are supported as minimum lengths.
+#[derive(Clone, Debug)]
+pub(crate) struct Fat<V, const BYTES: usize> {
+    /// A generic data structure for doing "fat" Teddy verification.
+    teddy: Teddy<16>,
+    /// The masks used as inputs to the shuffle operation to generate
+    /// candidates (which are fed into the verification routines).
+    masks: [Mask<V>; BYTES],
+}
+
+impl<V: FatVector, const BYTES: usize> Fat<V, BYTES> {
+    /// Create a new "fat" Teddy searcher for the given patterns.
+    ///
+    /// # Panics
+    ///
+    /// This panics when `BYTES` is any value other than 1, 2, 3 or 4.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
+    #[inline(always)]
+    pub(crate) unsafe fn new(patterns: Arc<Patterns>) -> Fat<V, BYTES> {
+        assert!(
+            1 <= BYTES && BYTES <= 4,
+            "only 1, 2, 3 or 4 bytes are supported"
+        );
+        let teddy = Teddy::new(patterns);
+        let masks = FatMaskBuilder::from_teddy(&teddy);
+        Fat { teddy, masks }
+    }
+
+    /// Returns the approximate total amount of heap used by this type, in
+    /// units of bytes.
+    #[inline(always)]
+    pub(crate) fn memory_usage(&self) -> usize {
+        self.teddy.memory_usage()
+    }
+
+    /// Returns the minimum length, in bytes, that a haystack must be in order
+    /// to use it with this searcher.
+    #[inline(always)]
+    pub(crate) fn minimum_len(&self) -> usize {
+        V::Half::BYTES + (BYTES - 1)
+    }
+}
+
+impl<V: FatVector> Fat<V, 1> {
+    /// Look for an occurrences of the patterns in this finder in the haystack
+    /// given by the `start` and `end` pointers.
+    ///
+    /// If no match could be found, then `None` is returned.
+    ///
+    /// # Safety
+    ///
+    /// The given pointers representing the haystack must be valid to read
+    /// from.
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
+    #[inline(always)]
+    pub(crate) unsafe fn find(
+        &self,
+        start: *const u8,
+        end: *const u8,
+    ) -> Option<Match> {
+        let len = end.distance(start);
+        debug_assert!(len >= self.minimum_len());
+        let mut cur = start;
+        while cur <= end.sub(V::Half::BYTES) {
+            if let Some(m) = self.find_one(cur, end) {
+                return Some(m);
+            }
+            cur = cur.add(V::Half::BYTES);
+        }
+        if cur < end {
+            cur = end.sub(V::Half::BYTES);
+            if let Some(m) = self.find_one(cur, end) {
+                return Some(m);
+            }
+        }
+        None
+    }
+
+    /// Look for a match starting at the `V::BYTES` at and after `cur`. If
+    /// there isn't one, then `None` is returned.
+    ///
+    /// # Safety
+    ///
+    /// The given pointers representing the haystack must be valid to read
+    /// from.
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
+    #[inline(always)]
+    unsafe fn find_one(
+        &self,
+        cur: *const u8,
+        end: *const u8,
+    ) -> Option<Match> {
+        let c = self.candidate(cur);
+        if !c.is_zero() {
+            if let Some(m) = self.teddy.verify(cur, end, c) {
+                return Some(m);
+            }
+        }
+        None
+    }
+
+    /// Look for a candidate match (represented as a vector) starting at the
+    /// `V::BYTES` at and after `cur`. If there isn't one, then a vector with
+    /// all bits set to zero is returned.
+    ///
+    /// # Safety
+    ///
+    /// The given pointer representing the haystack must be valid to read
+    /// from.
+    ///
+    /// Callers must ensure that this is okay to call in the current target for
+    /// the current CPU.
+    #[inline(always)]
+    unsafe fn candidate(&self, cur: *const u8) -> V {
+        let chunk = V::load_half_unaligned(cur);
+        Mask::members1(chunk, self.masks)
+    }
+}
+
+impl<V: FatVector> Fat<V, 2> {
+    /// See `Fat<V, 1>::find`.
+    #[inline(always)]
+    pub(crate) unsafe fn find(
+        &self,
+        start: *const u8,
+        end: *const u8,
+    ) -> Option<Match> {
+        let len = end.distance(start);
+        debug_assert!(len >= self.minimum_len());
+        let mut cur = start.add(1);
+        let mut prev0 = V::splat(0xFF);
+        while cur <= end.sub(V::Half::BYTES) {
+            if let Some(m) = self.find_one(cur, end, &mut prev0) {
+                return Some(m);
+            }
+            cur = cur.add(V::Half::BYTES);
+        }
+        if cur < end {
+            cur = end.sub(V::Half::BYTES);
+            prev0 = V::splat(0xFF);
+            if let Some(m) = self.find_one(cur, end, &mut prev0) {
+                return Some(m);
+            }
+        }
+        None
+    }
+
+    /// See `Fat<V, 1>::find_one`.
+    #[inline(always)]
+    unsafe fn find_one(
+        &self,
+        cur: *const u8,
+        end: *const u8,
+        prev0: &mut V,
+    ) -> Option<Match> {
+        let c = self.candidate(cur, prev0);
+        if !c.is_zero() {
+            if let Some(m) = self.teddy.verify(cur.sub(1), end, c) {
+                return Some(m);
+            }
+        }
+        None
+    }
+
+    /// See `Fat<V, 1>::candidate`.
+    #[inline(always)]
+    unsafe fn candidate(&self, cur: *const u8, prev0: &mut V) -> V {
+        let chunk = V::load_half_unaligned(cur);
+        let (res0, res1) = Mask::members2(chunk, self.masks);
+        let res0prev0 = res0.half_shift_in_one_byte(*prev0);
+        let res = res0prev0.and(res1);
+        *prev0 = res0;
+        res
+    }
+}
+
+impl<V: FatVector> Fat<V, 3> {
+    /// See `Fat<V, 1>::find`.
+    #[inline(always)]
+    pub(crate) unsafe fn find(
+        &self,
+        start: *const u8,
+        end: *const u8,
+    ) -> Option<Match> {
+        let len = end.distance(start);
+        debug_assert!(len >= self.minimum_len());
+        let mut cur = start.add(2);
+        let mut prev0 = V::splat(0xFF);
+        let mut prev1 = V::splat(0xFF);
+        while cur <= end.sub(V::Half::BYTES) {
+            if let Some(m) = self.find_one(cur, end, &mut prev0, &mut prev1) {
+                return Some(m);
+            }
+            cur = cur.add(V::Half::BYTES);
+        }
+        if cur < end {
+            cur = end.sub(V::Half::BYTES);
+            prev0 = V::splat(0xFF);
+            prev1 = V::splat(0xFF);
+            if let Some(m) = self.find_one(cur, end, &mut prev0, &mut prev1) {
+                return Some(m);
+            }
+        }
+        None
+    }
+
+    /// See `Fat<V, 1>::find_one`.
+    #[inline(always)]
+    unsafe fn find_one(
+        &self,
+        cur: *const u8,
+        end: *const u8,
+        prev0: &mut V,
+        prev1: &mut V,
+    ) -> Option<Match> {
+        let c = self.candidate(cur, prev0, prev1);
+        if !c.is_zero() {
+            if let Some(m) = self.teddy.verify(cur.sub(2), end, c) {
+                return Some(m);
+            }
+        }
+        None
+    }
+
+    /// See `Fat<V, 1>::candidate`.
+    #[inline(always)]
+    unsafe fn candidate(
+        &self,
+        cur: *const u8,
+        prev0: &mut V,
+        prev1: &mut V,
+    ) -> V {
+        let chunk = V::load_half_unaligned(cur);
+        let (res0, res1, res2) = Mask::members3(chunk, self.masks);
+        let res0prev0 = res0.half_shift_in_two_bytes(*prev0);
+        let res1prev1 = res1.half_shift_in_one_byte(*prev1);
+        let res = res0prev0.and(res1prev1).and(res2);
+        *prev0 = res0;
+        *prev1 = res1;
+        res
+    }
+}
+
+impl<V: FatVector> Fat<V, 4> {
+    /// See `Fat<V, 1>::find`.
+    #[inline(always)]
+    pub(crate) unsafe fn find(
+        &self,
+        start: *const u8,
+        end: *const u8,
+    ) -> Option<Match> {
+        let len = end.distance(start);
+        debug_assert!(len >= self.minimum_len());
+        let mut cur = start.add(3);
+        let mut prev0 = V::splat(0xFF);
+        let mut prev1 = V::splat(0xFF);
+        let mut prev2 = V::splat(0xFF);
+        while cur <= end.sub(V::Half::BYTES) {
+            if let Some(m) =
+                self.find_one(cur, end, &mut prev0, &mut prev1, &mut prev2)
+            {
+                return Some(m);
+            }
+            cur = cur.add(V::Half::BYTES);
+        }
+        if cur < end {
+            cur = end.sub(V::Half::BYTES);
+            prev0 = V::splat(0xFF);
+            prev1 = V::splat(0xFF);
+            prev2 = V::splat(0xFF);
+            if let Some(m) =
+                self.find_one(cur, end, &mut prev0, &mut prev1, &mut prev2)
+            {
+                return Some(m);
+            }
+        }
+        None
+    }
+
+    /// See `Fat<V, 1>::find_one`.
+    #[inline(always)]
+    unsafe fn find_one(
+        &self,
+        cur: *const u8,
+        end: *const u8,
+        prev0: &mut V,
+        prev1: &mut V,
+        prev2: &mut V,
+    ) -> Option<Match> {
+        let c = self.candidate(cur, prev0, prev1, prev2);
+        if !c.is_zero() {
+            if let Some(m) = self.teddy.verify(cur.sub(3), end, c) {
+                return Some(m);
+            }
+        }
+        None
+    }
+
+    /// See `Fat<V, 1>::candidate`.
+    #[inline(always)]
+    unsafe fn candidate(
+        &self,
+        cur: *const u8,
+        prev0: &mut V,
+        prev1: &mut V,
+        prev2: &mut V,
+    ) -> V {
+        let chunk = V::load_half_unaligned(cur);
+        let (res0, res1, res2, res3) = Mask::members4(chunk, self.masks);
+        let res0prev0 = res0.half_shift_in_three_bytes(*prev0);
+        let res1prev1 = res1.half_shift_in_two_bytes(*prev1);
+        let res2prev2 = res2.half_shift_in_one_byte(*prev2);
+        let res = res0prev0.and(res1prev1).and(res2prev2).and(res3);
+        *prev0 = res0;
+        *prev1 = res1;
+        *prev2 = res2;
+        res
+    }
+}
+
 /// The common elements of all "slim" and "fat" Teddy search implementations.
 ///
-/// Essentially, this contains the patterns, the buckets and some generally
-/// useful meta data. Namely, it contains enough to implement the verification
-/// step after candidates are identified via the shuffle masks.
+/// Essentially, this contains the patterns and the buckets. Namely, it
+/// contains enough to implement the verification step after candidates are
+/// identified via the shuffle masks.
 ///
 /// It is generic over the number of buckets used. In general, the number of
 /// buckets is either 8 (for "slim" Teddy) or 16 (for "fat" Teddy). The generic
@@ -142,7 +736,14 @@ struct Teddy<const N: usize> {
 }
 
 impl<const N: usize> Teddy<N> {
+    /// Create a new generic data structure for Teddy verification.
     fn new(patterns: Arc<Patterns>) -> Teddy<N> {
+        assert_ne!(0, patterns.len(), "Teddy requires at least one pattern");
+        assert_ne!(
+            0,
+            patterns.minimum_len(),
+            "Teddy does not support zero-length patterns"
+        );
         assert!(N == 8 || N == 16, "Teddy only supports 8 or 16 buckets");
         // MSRV(1.63): Use core::array::from_fn below instead of allocating a
         // superfluous outer Vec. Not a big deal (especially given the BTreeMap
@@ -192,9 +793,14 @@ impl<const N: usize> Teddy<N> {
         t
     }
 
-    /// Verify whether there are any matches starting at or after `at` in the
-    /// given `haystack`. The candidate chunk given should correspond to 8-bit
-    /// bitsets for N buckets.
+    /// Verify whether there are any matches starting at or after `cur` in the
+    /// haystack. The candidate chunk given should correspond to 8-bit bitsets
+    /// for N buckets.
+    ///
+    /// # Safety
+    ///
+    /// The given pointers representing the haystack must be valid to read
+    /// from.
     #[inline(always)]
     unsafe fn verify64(
         &self,
@@ -217,6 +823,13 @@ impl<const N: usize> Teddy<N> {
 
     /// Verify whether there are any matches starting at `at` in the given
     /// `haystack` corresponding only to patterns in the given bucket.
+    ///
+    /// # Safety
+    ///
+    /// The given pointers representing the haystack must be valid to read
+    /// from.
+    ///
+    /// The bucket index must be less than or equal to `self.buckets.len()`.
     #[inline(always)]
     unsafe fn verify_bucket(
         &self,
@@ -262,10 +875,7 @@ impl<const N: usize> Teddy<N> {
         // This is an upper bound rather than a precise accounting. No
         // particular reason, other than it's probably very close to actual
         // memory usage in practice.
-        let patterns_len = usize::try_from(self.patterns.max_pattern_id())
-            .unwrap()
-            .saturating_add(1);
-        patterns_len * core::mem::size_of::<PatternID>()
+        self.patterns.len() * core::mem::size_of::<PatternID>()
     }
 }
 
@@ -274,12 +884,14 @@ impl Teddy<8> {
     ///
     /// The candidate given should be a collection of 8-bit bitsets (one bitset
     /// per lane), where the ith bit is set in the jth lane if and only if the
-    /// byte occurring at `at + j` in `haystack` is in the bucket `i`.
+    /// byte occurring at `at + j` in `cur` is in the bucket `i`.
     ///
     /// # Safety
     ///
     /// Callers must ensure that this is okay to call in the current target for
     /// the current CPU.
+    ///
+    /// The given pointers must be valid to read from.
     #[inline(always)]
     unsafe fn verify<V: Vector>(
         &self,
@@ -306,13 +918,15 @@ impl Teddy<16> {
     ///
     /// The candidate given should be a collection of 8-bit bitsets (one bitset
     /// per lane), where the ith bit is set in the jth lane if and only if the
-    /// byte occurring at `at + (j < 16 ? j : j - 16)` in `haystack` is in the
+    /// byte occurring at `at + (j < 16 ? j : j - 16)` in `cur` is in the
     /// bucket `j < 16 ? i : i + 8`.
     ///
     /// # Safety
     ///
     /// Callers must ensure that this is okay to call in the current target for
     /// the current CPU.
+    ///
+    /// The given pointers must be valid to read from.
     #[inline(always)]
     unsafe fn verify<V: FatVector>(
         &self,

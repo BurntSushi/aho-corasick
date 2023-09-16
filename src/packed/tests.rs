@@ -450,7 +450,7 @@ testconfig!(
     |c: &mut Config| {
         c.force_teddy(true);
         if std::is_x86_feature_detected!("ssse3") {
-            c.force_avx(Some(false));
+            c.only_teddy_256bit(Some(false));
         }
     }
 );
@@ -462,7 +462,7 @@ testconfig!(
     |c: &mut Config| {
         c.force_teddy(true).match_kind(MatchKind::LeftmostLongest);
         if std::is_x86_feature_detected!("ssse3") {
-            c.force_avx(Some(false));
+            c.only_teddy_256bit(Some(false));
         }
     }
 );
@@ -474,7 +474,7 @@ testconfig!(
     |c: &mut Config| {
         c.force_teddy(true);
         if std::is_x86_feature_detected!("avx2") {
-            c.force_avx(Some(true));
+            c.only_teddy_256bit(Some(true));
         }
     }
 );
@@ -486,7 +486,7 @@ testconfig!(
     |c: &mut Config| {
         c.force_teddy(true).match_kind(MatchKind::LeftmostLongest);
         if std::is_x86_feature_detected!("avx2") {
-            c.force_avx(Some(true));
+            c.only_teddy_256bit(Some(true));
         }
     }
 );
@@ -498,7 +498,7 @@ testconfig!(
     |c: &mut Config| {
         c.force_teddy(true);
         if std::is_x86_feature_detected!("avx2") {
-            c.force_teddy_fat(Some(true));
+            c.only_teddy_fat(Some(true));
         }
     }
 );
@@ -510,7 +510,7 @@ testconfig!(
     |c: &mut Config| {
         c.force_teddy(true).match_kind(MatchKind::LeftmostLongest);
         if std::is_x86_feature_detected!("avx2") {
-            c.force_teddy_fat(Some(true));
+            c.only_teddy_fat(Some(true));
         }
     }
 );
@@ -519,7 +519,7 @@ testconfig!(
     search_rabinkarp_leftmost_first,
     PACKED_LEFTMOST_FIRST,
     |c: &mut Config| {
-        c.force_rabin_karp(true);
+        c.only_rabin_karp(true);
     }
 );
 
@@ -527,7 +527,7 @@ testconfig!(
     search_rabinkarp_leftmost_longest,
     PACKED_LEFTMOST_LONGEST,
     |c: &mut Config| {
-        c.force_rabin_karp(true).match_kind(MatchKind::LeftmostLongest);
+        c.only_rabin_karp(true).match_kind(MatchKind::LeftmostLongest);
     }
 );
 
