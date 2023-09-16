@@ -185,10 +185,49 @@ impl Builder {
                 }
             }
         }
-        #[cfg(not(any(all(
-            target_arch = "x86_64",
-            target_feature = "sse2"
-        ))))]
+        #[cfg(target_arch = "aarch64")]
+        {
+            use self::aarch64::SlimNeon;
+
+            if self.only_256bit == Some(true) {
+                debug!(
+                    "skipping Teddy because 256-bits were demanded \
+                     but unavailable"
+                );
+                return None;
+            }
+            if self.only_fat == Some(true) {
+                debug!(
+                    "skipping Teddy because fat was demanded but unavailable"
+                );
+            }
+            match mask_len {
+                1 => {
+                    debug!("Teddy choice: 128-bit slim, 1 byte");
+                    SlimNeon::<1>::new(&patterns)
+                }
+                2 => {
+                    debug!("Teddy choice: 128-bit slim, 2 bytes");
+                    SlimNeon::<2>::new(&patterns)
+                }
+                3 => {
+                    debug!("Teddy choice: 128-bit slim, 3 bytes");
+                    SlimNeon::<3>::new(&patterns)
+                }
+                4 => {
+                    debug!("Teddy choice: 128-bit slim, 4 bytes");
+                    SlimNeon::<4>::new(&patterns)
+                }
+                _ => {
+                    debug!("no supported Teddy configuration found");
+                    None
+                }
+            }
+        }
+        #[cfg(not(any(
+            all(target_arch = "x86_64", target_feature = "sse2"),
+            target_arch = "aarch64"
+        )))]
         {
             None
         }
@@ -556,4 +595,80 @@ mod x86_64 {
             }
         }
     }
+}
+
+#[cfg(target_arch = "aarch64")]
+mod aarch64 {
+    use core::arch::aarch64::uint8x16_t;
+
+    use alloc::sync::Arc;
+
+    use crate::packed::{
+        ext::Pointer,
+        pattern::Patterns,
+        teddy::generic::{self, Match},
+        vector::Vector,
+    };
+
+    use super::{Searcher, SearcherT};
+
+    #[derive(Clone, Debug)]
+    pub(super) struct SlimNeon<const N: usize> {
+        slim128: generic::Slim<uint8x16_t, N>,
+    }
+
+    // Defines SlimSSSE3 wrapper functions for 1, 2, 3 and 4 bytes.
+    macro_rules! slim_neon {
+        ($len:expr) => {
+            impl SlimNeon<$len> {
+                /// Creates a new searcher using "slim" Teddy with 128-bit
+                /// vectors. If SSSE3 is not available in the current
+                /// environment, then this returns `None`.
+                pub(super) fn new(
+                    patterns: &Arc<Patterns>,
+                ) -> Option<Searcher> {
+                    Some(unsafe { SlimNeon::<$len>::new_unchecked(patterns) })
+                }
+
+                /// Creates a new searcher using "slim" Teddy with 256-bit
+                /// vectors without checking whether SSSE3 is available or not.
+                ///
+                /// # Safety
+                ///
+                /// Callers must ensure that SSSE3 is available in the current
+                /// environment.
+                #[target_feature(enable = "neon")]
+                unsafe fn new_unchecked(patterns: &Arc<Patterns>) -> Searcher {
+                    let slim128 = generic::Slim::<uint8x16_t, $len>::new(
+                        Arc::clone(patterns),
+                    );
+                    let memory_usage = slim128.memory_usage();
+                    let minimum_len = slim128.minimum_len();
+                    let imp = Arc::new(SlimNeon { slim128 });
+                    Searcher { imp, memory_usage, minimum_len }
+                }
+            }
+
+            impl SearcherT for SlimNeon<$len> {
+                #[target_feature(enable = "neon")]
+                #[inline]
+                unsafe fn find(
+                    &self,
+                    start: *const u8,
+                    end: *const u8,
+                ) -> Option<Match> {
+                    // SAFETY: All obligations except for `target_feature` are
+                    // passed to the caller. Our use of `target_feature` is
+                    // safe because construction of this type requires that the
+                    // requisite target features are available.
+                    self.slim128.find(start, end)
+                }
+            }
+        };
+    }
+
+    slim_neon!(1);
+    slim_neon!(2);
+    slim_neon!(3);
+    slim_neon!(4);
 }

@@ -593,7 +593,6 @@ mod x86_64_avx2 {
     }
 }
 
-/*
 #[cfg(target_arch = "aarch64")]
 mod aarch64_neon {
     use core::arch::aarch64::*;
@@ -635,9 +634,51 @@ mod aarch64_neon {
         unsafe fn or(self, vector2: Self) -> uint8x16_t {
             vorrq_u8(self, vector2)
         }
+
+        #[inline(always)]
+        unsafe fn shift_8bit_lane_right<const BITS: i32>(self) -> Self {
+            debug_assert!(BITS <= 7);
+            vshrq_n_u8(self, BITS)
+        }
+
+        #[inline(always)]
+        unsafe fn shift_in_one_byte(self, vector2: Self) -> Self {
+            vextq_u8(vector2, self, 15)
+        }
+
+        #[inline(always)]
+        unsafe fn shift_in_two_bytes(self, vector2: Self) -> Self {
+            vextq_u8(vector2, self, 14)
+        }
+
+        #[inline(always)]
+        unsafe fn shift_in_three_bytes(self, vector2: Self) -> Self {
+            vextq_u8(vector2, self, 13)
+        }
+
+        #[inline(always)]
+        unsafe fn shuffle_bytes(self, indices: Self) -> Self {
+            vqtbl1q_u8(self, indices)
+        }
+
+        #[inline(always)]
+        unsafe fn for_each_64bit_lane<T>(
+            self,
+            mut f: impl FnMut(usize, u64) -> Option<T>,
+        ) -> Option<T> {
+            let this = vreinterpretq_u64_u8(self);
+            let lane = vgetq_lane_u64(this, 0);
+            if let Some(t) = f(0, lane) {
+                return Some(t);
+            }
+            let lane = vgetq_lane_u64(this, 1);
+            if let Some(t) = f(1, lane) {
+                return Some(t);
+            }
+            None
+        }
     }
 }
-*/
 
 #[cfg(all(test, target_arch = "x86_64", target_feature = "sse2"))]
 mod tests_x86_64_ssse3 {
@@ -1421,7 +1462,6 @@ mod tests_x86_64_avx2 {
     }
 }
 
-/*
 #[cfg(all(test, target_arch = "aarch64", target_feature = "neon"))]
 mod tests_aarch64_neon {
     use core::arch::aarch64::*;
@@ -1620,5 +1660,89 @@ mod tests_aarch64_neon {
         }
         unsafe { test() }
     }
+
+    #[test]
+    fn vector_shift_in_one_byte() {
+        #[target_feature(enable = "neon")]
+        unsafe fn test() {
+            let v1 =
+                load([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+            let v2 = load([
+                17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+            ]);
+            assert_eq!(
+                unload(v1.shift_in_one_byte(v2)),
+                [32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+            );
+        }
+        unsafe { test() }
+    }
+
+    #[test]
+    fn vector_shift_in_two_bytes() {
+        #[target_feature(enable = "neon")]
+        unsafe fn test() {
+            let v1 =
+                load([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+            let v2 = load([
+                17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+            ]);
+            assert_eq!(
+                unload(v1.shift_in_two_bytes(v2)),
+                [31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+            );
+        }
+        unsafe { test() }
+    }
+
+    #[test]
+    fn vector_shift_in_three_bytes() {
+        #[target_feature(enable = "neon")]
+        unsafe fn test() {
+            let v1 =
+                load([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+            let v2 = load([
+                17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+            ]);
+            assert_eq!(
+                unload(v1.shift_in_three_bytes(v2)),
+                [30, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+            );
+        }
+        unsafe { test() }
+    }
+
+    #[test]
+    fn vector_shuffle_bytes() {
+        #[target_feature(enable = "neon")]
+        unsafe fn test() {
+            let v1 =
+                load([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+            let v2 =
+                load([0, 0, 0, 0, 4, 4, 4, 4, 8, 8, 8, 8, 12, 12, 12, 12]);
+            assert_eq!(
+                unload(v1.shuffle_bytes(v2)),
+                [1, 1, 1, 1, 5, 5, 5, 5, 9, 9, 9, 9, 13, 13, 13, 13],
+            );
+        }
+        unsafe { test() }
+    }
+
+    #[test]
+    fn vector_for_each_64bit_lane() {
+        #[target_feature(enable = "neon")]
+        unsafe fn test() {
+            let v = load([
+                0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
+                0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
+            ]);
+            let mut lanes = [0u64; 2];
+            v.for_each_64bit_lane(|i, lane| {
+                lanes[i] = lane;
+                None::<()>
+            });
+            assert_eq!(lanes, [0x0807060504030201, 0x100F0E0D0C0B0A09],);
+        }
+        unsafe { test() }
+    }
 }
-*/

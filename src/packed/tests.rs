@@ -409,14 +409,14 @@ macro_rules! testconfig {
     };
 }
 
-#[cfg(target_arch = "x86_64")]
+// #[cfg(target_arch = "x86_64")]
 testconfig!(
     search_default_leftmost_first,
     PACKED_LEFTMOST_FIRST,
     |_: &mut Config| {}
 );
 
-#[cfg(target_arch = "x86_64")]
+// #[cfg(target_arch = "x86_64")]
 testconfig!(
     search_default_leftmost_longest,
     PACKED_LEFTMOST_LONGEST,
@@ -425,7 +425,7 @@ testconfig!(
     }
 );
 
-#[cfg(target_arch = "x86_64")]
+// #[cfg(target_arch = "x86_64")]
 testconfig!(
     search_teddy_leftmost_first,
     PACKED_LEFTMOST_FIRST,
@@ -434,7 +434,7 @@ testconfig!(
     }
 );
 
-#[cfg(target_arch = "x86_64")]
+// #[cfg(target_arch = "x86_64")]
 testconfig!(
     search_teddy_leftmost_longest,
     PACKED_LEFTMOST_LONGEST,
@@ -443,72 +443,78 @@ testconfig!(
     }
 );
 
-#[cfg(target_arch = "x86_64")]
+// #[cfg(target_arch = "x86_64")]
 testconfig!(
     search_teddy_ssse3_leftmost_first,
     PACKED_LEFTMOST_FIRST,
     |c: &mut Config| {
         c.force_teddy(true);
+        #[cfg(target_arch = "x86_64")]
         if std::is_x86_feature_detected!("ssse3") {
             c.only_teddy_256bit(Some(false));
         }
     }
 );
 
-#[cfg(target_arch = "x86_64")]
+// #[cfg(target_arch = "x86_64")]
 testconfig!(
     search_teddy_ssse3_leftmost_longest,
     PACKED_LEFTMOST_LONGEST,
     |c: &mut Config| {
         c.force_teddy(true).match_kind(MatchKind::LeftmostLongest);
+        #[cfg(target_arch = "x86_64")]
         if std::is_x86_feature_detected!("ssse3") {
             c.only_teddy_256bit(Some(false));
         }
     }
 );
 
-#[cfg(target_arch = "x86_64")]
+// #[cfg(target_arch = "x86_64")]
 testconfig!(
     search_teddy_avx2_leftmost_first,
     PACKED_LEFTMOST_FIRST,
     |c: &mut Config| {
         c.force_teddy(true);
+        #[cfg(target_arch = "x86_64")]
         if std::is_x86_feature_detected!("avx2") {
             c.only_teddy_256bit(Some(true));
         }
     }
 );
 
-#[cfg(target_arch = "x86_64")]
+// #[cfg(target_arch = "x86_64")]
 testconfig!(
     search_teddy_avx2_leftmost_longest,
     PACKED_LEFTMOST_LONGEST,
     |c: &mut Config| {
         c.force_teddy(true).match_kind(MatchKind::LeftmostLongest);
+        #[cfg(target_arch = "x86_64")]
         if std::is_x86_feature_detected!("avx2") {
             c.only_teddy_256bit(Some(true));
         }
     }
 );
 
-#[cfg(target_arch = "x86_64")]
+// #[cfg(target_arch = "x86_64")]
 testconfig!(
     search_teddy_fat_leftmost_first,
     PACKED_LEFTMOST_FIRST,
     |c: &mut Config| {
         c.force_teddy(true);
+        #[cfg(target_arch = "x86_64")]
         if std::is_x86_feature_detected!("avx2") {
             c.only_teddy_fat(Some(true));
         }
     }
 );
 
-#[cfg(target_arch = "x86_64")]
+// #[cfg(target_arch = "x86_64")]
 testconfig!(
     search_teddy_fat_leftmost_longest,
     PACKED_LEFTMOST_LONGEST,
     |c: &mut Config| {
         c.force_teddy(true).match_kind(MatchKind::LeftmostLongest);
+        #[cfg(target_arch = "x86_64")]
         if std::is_x86_feature_detected!("avx2") {
             c.only_teddy_fat(Some(true));
         }
