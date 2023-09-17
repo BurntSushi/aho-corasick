@@ -201,16 +201,45 @@ impl Builder {
                     "skipping Teddy because fat was demanded but unavailable"
                 );
             }
+            // Since we don't have Fat teddy in aarch64 (I think we'd want at
+            // least 256-bit vectors for that), we need to be careful not to
+            // allow too many patterns as it might overwhelm Teddy. Generally
+            // speaking, as the mask length goes up, the more patterns we can
+            // handle because the mask length results in fewer candidates
+            // generated.
+            //
+            // These thresholds were determined by looking at the measurements
+            // for the rust/aho-corasick/packed/leftmost-first and
+            // rust/aho-corasick/dfa/leftmost-first engines on the `teddy/`
+            // benchmarks.
             match mask_len {
                 1 => {
+                    if patterns.len() > 16 {
+                        debug!(
+                            "skipping Teddy (mask len: 1) because there are \
+                             too many patterns",
+                        );
+                    }
                     debug!("Teddy choice: 128-bit slim, 1 byte");
                     SlimNeon::<1>::new(&patterns)
                 }
                 2 => {
+                    if patterns.len() > 32 {
+                        debug!(
+                            "skipping Teddy (mask len: 2) because there are \
+                             too many patterns",
+                        );
+                    }
                     debug!("Teddy choice: 128-bit slim, 2 bytes");
                     SlimNeon::<2>::new(&patterns)
                 }
                 3 => {
+                    if patterns.len() > 48 {
+                        debug!(
+                            "skipping Teddy (mask len: 3) because there are \
+                             too many patterns",
+                        );
+                    }
                     debug!("Teddy choice: 128-bit slim, 3 bytes");
                     SlimNeon::<3>::new(&patterns)
                 }
