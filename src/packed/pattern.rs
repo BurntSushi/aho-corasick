@@ -43,9 +43,6 @@ pub struct Patterns {
     order: Vec<PatternID>,
     /// The length of the smallest pattern, in bytes.
     minimum_len: usize,
-    /// The largest pattern identifier. This should always be equivalent to
-    /// the number of patterns minus one in this collection.
-    max_pattern_id: PatternID,
     /// The total number of pattern bytes across the entire collection. This
     /// is used for reporting total heap usage in constant time.
     total_pattern_bytes: usize,
@@ -65,7 +62,6 @@ impl Patterns {
             by_id: vec![],
             order: vec![],
             minimum_len: usize::MAX,
-            max_pattern_id: PatternID::ZERO,
             total_pattern_bytes: 0,
         }
     }
@@ -78,7 +74,6 @@ impl Patterns {
         assert!(self.by_id.len() <= u16::MAX as usize);
 
         let id = PatternID::new(self.by_id.len()).unwrap();
-        self.max_pattern_id = id;
         self.order.push(id);
         self.by_id.push(bytes.to_vec());
         self.minimum_len = cmp::min(self.minimum_len, bytes.len());
@@ -130,15 +125,6 @@ impl Patterns {
         self.by_id.clear();
         self.order.clear();
         self.minimum_len = usize::MAX;
-        self.max_pattern_id = PatternID::ZERO;
-    }
-
-    /// Return the maximum pattern identifier in this collection. This can be
-    /// useful in searchers for ensuring that the collection of patterns they
-    /// are provided at search time and at build time have the same size.
-    pub fn max_pattern_id(&self) -> PatternID {
-        assert_eq!(self.max_pattern_id.one_more(), self.len());
-        self.max_pattern_id
     }
 
     /// Returns the length, in bytes, of the smallest pattern.

@@ -528,11 +528,9 @@ impl Searcher {
                 }
                 teddy.find(&haystack[..span.end], span.start)
             }
-            SearchKind::RabinKarp => self.rabinkarp.find_at(
-                &self.patterns,
-                &haystack[..span.end],
-                span.start,
-            ),
+            SearchKind::RabinKarp => {
+                self.rabinkarp.find_at(&haystack[..span.end], span.start)
+            }
         }
     }
 
@@ -627,11 +625,7 @@ impl Searcher {
     /// built but the haystack is smaller than ~34 bytes, then Teddy might not
     /// be able to run.
     fn find_in_slow(&self, haystack: &[u8], span: Span) -> Option<Match> {
-        self.rabinkarp.find_at(
-            &self.patterns,
-            &haystack[..span.end],
-            span.start,
-        )
+        self.rabinkarp.find_at(&haystack[..span.end], span.start)
     }
 }
 
