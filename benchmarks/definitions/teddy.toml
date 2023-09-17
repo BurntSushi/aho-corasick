@@ -919,3 +919,99 @@ engines = [
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
+
+[[bench]]
+model = "count"
+name = "teddy4-80pat-common"
+regex = [
+  'that', 'your', 'have', 'this', 'thin', 'What', 'know', 'with',
+  'here', 'what', 'some', 'like', 'ther', 'want', 'That', 'just',
+  'abou', 'lock', 'Sher', 'Holm', 'righ', 'you.', 'will', 'they',
+  'time', 'from', 'ever', 'Well', 'them', 'come', 'goin', 'Yeah',
+  'take', 'woul', 'good', 'Come', 'were', 'look', 'This', 'They',
+  'back', 'been', 'real', 'coul', 'tell', 'mean', 'gonn', 'down',
+  'love', 'talk', 'Ther', 'you,', 'over', 'when', 'make', 'you?',
+  'ing.', 'didn', 'need', 'neve', 'more', 'call', 'litt', 'hear',
+  'work', 'thou', 'than', 'very', 'unde', 'only', 'doin', 'does',
+  'shou', 'Yes,', 'Wher', 'hing', 'frie', 'happ', 'give', 'nigh',
+]
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 33_670
+engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+]
+
+[[bench]]
+model = "count"
+name = "teddy4-80pat-uncommon"
+regex = [
+  'gnos', 'in."', 'geon', 'Aid.', 'Kink', 'And-', 'Gupt', 'glai',
+  '1...', 'KNEE', 'Hiki', 'Bale', 'het.', 'Kirk', 'Hari', 'hool',
+  'A*S*', 'Guad', '11th', 'EMIL', 'Goos', 'holm', 'Guit', 'itht',
+  'l-fu', 'Geck', 'KENK', 'canv', 'FILT', '~BBC', 'ELSE', 'ezer',
+  'gies', 'i-ce', '(gir', 'guy!', 'Clue', '"ALL', 'gros', 'II..',
+  'ARIU', 'Ahh!', 'Gazz', 'Ken.', 'JUNI', 'Gira', '[bel', 'flut',
+  'daft', 'Caut', 'Humi', 'Grif', 'foss', '1950', 'imou', 'Jimb',
+  'BLIS', 'Bogo', 'BAST', 'Foyl', 'BLIC', 'ari.', '[Ind', 'ERSE',
+  '"Adm', 'Empl', '--de', 'Boil', '2.20', 'COSM', 'Eisu', 'alos',
+  'LITT', 'che.', 'cow!', 'blut', 'Hats', 'atsu', 'Isle', 'hot-',
+]
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 159
+engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+]
+
+[[bench]]
+model = "count"
+name = "teddy4-96pat-common"
+regex = [
+  'that', 'your', 'have', 'this', 'thin', 'What', 'know', 'with',
+  'here', 'what', 'some', 'like', 'ther', 'want', 'That', 'just',
+  'abou', 'lock', 'Sher', 'Holm', 'righ', 'you.', 'will', 'they',
+  'time', 'from', 'ever', 'Well', 'them', 'come', 'goin', 'Yeah',
+  'take', 'woul', 'good', 'Come', 'were', 'look', 'This', 'They',
+  'back', 'been', 'real', 'coul', 'tell', 'mean', 'gonn', 'down',
+  'love', 'talk', 'Ther', 'you,', 'over', 'when', 'make', 'you?',
+  'ing.', 'didn', 'need', 'neve', 'more', 'call', 'litt', 'hear',
+  'work', 'thou', 'than', 'very', 'unde', 'only', 'doin', 'does',
+  'shou', 'Yes,', 'Wher', 'hing', 'frie', 'happ', 'give', 'nigh',
+  'even', 'Than', 'peop', 'agai', 'tion', 'into', 'said', 'kill',
+  'help', 'wher', 'feel', 'much', 'must', 'play', 'life', 'year',
+]
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 36_680
+engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+]
+
+[[bench]]
+model = "count"
+name = "teddy4-96pat-uncommon"
+regex = [
+  'Erm,', '\jus', 'herp', 'Lega', 'anea', 'Kura', 'Loop', 'Delw',
+  '..[K', 'lopi', 'iet,', 'Aars', 'Hauk', '"cut', 'aid.', '-fas',
+  'Fakr', 'anin', 'dale', '9-1-', 'mac.', 'idem', 'kerc', 'ked?',
+  'CTIV', 'baba', '(DOO', 'Coas', 'HANI', 'ctri', 'ehma', 'libu',
+  'he--', 'dat?', 'ace,', 'ALL.', 'kung', 'Dyap', 'fad(', 'ISS]',
+  'Kail', 'alik', 'Dens', 'Eben', 'fizz', '$58,', 'BEAN', 'arte',
+  'CIA.', 'atis', 'eime', 'lman', 'ABEL', 'ix..', 'BETW', 'daft',
+  'Honk', 'LOUS', '"Fun', '$5.0', 'apse', 'HS]:', 'dged', 'apme',
+  '[Bir', 'Jewe', 'anth', 'Jude', '[Fal', '{\1c', 'Filt', 'diya',
+  '35-b', 'Dost', 'Aaah', 'gler', 'Desm', 'boso', 'flap', 'koku',
+  'inap', '(Cal', 'Krau', 'Babe', 'ief.', 'bulb', 'FIDD', '"Hei',
+  'erey', 'euth', 'Esbr', 'doms', 'Gawd', 'Else', 'ill!', '[KIT',
+]
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 283
+engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+]
