@@ -87,6 +87,7 @@ pub struct Config {
     force: Option<ForceAlgorithm>,
     only_teddy_fat: Option<bool>,
     only_teddy_256bit: Option<bool>,
+    heuristic_pattern_limits: bool,
 }
 
 /// An internal option for forcing the use of a particular packed algorithm.
@@ -115,6 +116,7 @@ impl Config {
             force: None,
             only_teddy_fat: None,
             only_teddy_256bit: None,
+            heuristic_pattern_limits: true,
         }
     }
 
@@ -180,6 +182,17 @@ impl Config {
         } else {
             self.force = None;
         }
+        self
+    }
+
+    /// Request that heuristic limitations on the number of patterns be
+    /// employed. This useful to disable for benchmarking where one wants to
+    /// explore how Teddy performs on large number of patterns even if the
+    /// heuristics would otherwise refuse construction.
+    ///
+    /// This is enabled by default.
+    pub fn heuristic_pattern_limits(&mut self, yes: bool) -> &mut Config {
+        self.heuristic_pattern_limits = yes;
         self
     }
 }
@@ -268,6 +281,7 @@ impl Builder {
         teddy::Builder::new()
             .only_256bit(self.config.only_teddy_256bit)
             .only_fat(self.config.only_teddy_fat)
+            .heuristic_pattern_limits(self.config.heuristic_pattern_limits)
             .build(patterns)
     }
 
@@ -325,6 +339,16 @@ impl Builder {
             self.add(p);
         }
         self
+    }
+
+    /// Returns the number of patterns added to this builder.
+    pub fn len(&self) -> usize {
+        self.patterns.len()
+    }
+
+    /// Returns the length, in bytes, of the shortest pattern added.
+    pub fn minimum_len(&self) -> usize {
+        self.patterns.minimum_len()
     }
 }
 

@@ -11,6 +11,8 @@ use {
 use shared::{Benchmark, Sample};
 
 fn main() -> anyhow::Result<()> {
+    env_logger::try_init()?;
+
     let mut p = lexopt::Parser::from_env();
     let (mut engine, mut quiet) = (String::new(), false);
     while let Some(arg) = p.next()? {
@@ -120,6 +122,7 @@ fn main() -> anyhow::Result<()> {
             model_compile_packed(&b, || {
                 let searcher = aho_corasick::packed::Config::new()
                     .match_kind(aho_corasick::packed::MatchKind::LeftmostFirst)
+                    .heuristic_pattern_limits(false)
                     .builder()
                     .extend(&b.needles)
                     .build()
@@ -132,6 +135,7 @@ fn main() -> anyhow::Result<()> {
         ("count", "packed/leftmost-first") => {
             let searcher = aho_corasick::packed::Config::new()
                 .match_kind(aho_corasick::packed::MatchKind::LeftmostFirst)
+                .heuristic_pattern_limits(false)
                 .builder()
                 .extend(&b.needles)
                 .build()

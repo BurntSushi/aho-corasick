@@ -34,6 +34,11 @@ pub(crate) struct Builder {
     /// 256-bit vectors are requested and they aren't available, then a
     /// searcher will not be built.
     only_256bit: Option<bool>,
+    /// When true (the default), the number of patterns will be used as a
+    /// heuristic for refusing construction of a Teddy searcher. The point here
+    /// is that too many patterns can overwhelm Teddy. But this can be disabled
+    /// in cases where the caller knows better.
+    heuristic_pattern_limits: bool,
 }
 
 impl Default for Builder {
@@ -45,7 +50,11 @@ impl Default for Builder {
 impl Builder {
     /// Create a new builder for configuring a Teddy matcher.
     pub(crate) fn new() -> Builder {
-        Builder { only_fat: None, only_256bit: None }
+        Builder {
+            only_fat: None,
+            only_256bit: None,
+            heuristic_pattern_limits: true,
+        }
     }
 
     /// Build a matcher for the set of patterns given. If a matcher could not
@@ -80,8 +89,23 @@ impl Builder {
         self
     }
 
+    /// Request that heuristic limitations on the number of patterns be
+    /// employed. This useful to disable for benchmarking where one wants to
+    /// explore how Teddy performs on large number of patterns even if the
+    /// heuristics would otherwise refuse construction.
+    ///
+    /// This is enabled by default.
+    pub(crate) fn heuristic_pattern_limits(
+        &mut self,
+        yes: bool,
+    ) -> &mut Builder {
+        self.heuristic_pattern_limits = yes;
+        self
+    }
+
     fn build_imp(&self, patterns: Arc<Patterns>) -> Option<Searcher> {
-        if patterns.len() > 64 {
+        let patlimit = self.heuristic_pattern_limits;
+        if patlimit && patterns.len() > 64 {
             debug!("skipping Teddy because of too many patterns");
             return None;
         }
@@ -130,6 +154,22 @@ impl Builder {
                 }
                 Some(true) => true,
             };
+            // Just like for aarch64, it's possible that too many patterns will
+            // overhwelm Teddy. Unlike aarch64 though, we have Fat teddy which
+            // helps things scale a bit more by spreading patterns over more
+            // buckets.
+            //
+            // These thresholds were determined by looking at the measurements
+            // for the rust/aho-corasick/packed/leftmost-first and
+            // rust/aho-corasick/dfa/leftmost-first engines on the `teddy/`
+            // benchmarks.
+            if patlimit && mask_len == 1 && patterns.len() > 16 {
+                debug!(
+                    "skipping Teddy (mask len: 1) because there are \
+                             too many patterns",
+                );
+                return None;
+            }
             match (mask_len, use_avx2, fat) {
                 (1, false, _) => {
                     debug!("Teddy choice: 128-bit slim, 1 byte");
@@ -214,7 +254,7 @@ impl Builder {
             // benchmarks.
             match mask_len {
                 1 => {
-                    if patterns.len() > 16 {
+                    if patlimit && patterns.len() > 16 {
                         debug!(
                             "skipping Teddy (mask len: 1) because there are \
                              too many patterns",
@@ -224,7 +264,7 @@ impl Builder {
                     SlimNeon::<1>::new(&patterns)
                 }
                 2 => {
-                    if patterns.len() > 32 {
+                    if patlimit && patterns.len() > 32 {
                         debug!(
                             "skipping Teddy (mask len: 2) because there are \
                              too many patterns",
@@ -234,7 +274,7 @@ impl Builder {
                     SlimNeon::<2>::new(&patterns)
                 }
                 3 => {
-                    if patterns.len() > 48 {
+                    if patlimit && patterns.len() > 48 {
                         debug!(
                             "skipping Teddy (mask len: 3) because there are \
                              too many patterns",
