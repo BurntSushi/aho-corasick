@@ -1,0 +1,992 @@
+name,model,rebar_version,engine,engine_version,err,haystack_len,iters,total,median,mad,mean,stddev,min,max
+build/empty,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,,402659,4.75s,7.38us,0.00ns,7.37us,770.00ns,5.17us,38.21us
+build/empty,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,,406964,4.75s,7.25us,0.00ns,7.29us,890.00ns,5.17us,38.12us
+build/empty,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,,409037,4.82s,7.25us,0.00ns,7.25us,769.00ns,5.17us,41.58us
+build/empty,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,,395434,4.75s,7.54us,0.00ns,7.50us,766.00ns,5.38us,36.17us
+build/empty,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,,416432,4.81s,7.12us,0.00ns,7.12us,796.00ns,5.21us,33.83us
+build/empty,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,,423466,4.82s,7.08us,0.00ns,7.00us,881.00ns,5.25us,38.50us
+build/empty,compile,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,,1000000,690.54ms,1.00ns,0.00ns,17.00ns,20.00ns,1.00ns,4.88us
+build/onebyte,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,,351919,4.76s,8.42us,0.00ns,8.40us,786.00ns,6.33us,39.42us
+build/onebyte,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,,325140,4.75s,9.08us,0.00ns,9.09us,736.00ns,6.67us,38.79us
+build/onebyte,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,,322154,4.76s,9.12us,0.00ns,9.18us,681.00ns,7.00us,39.88us
+build/onebyte,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,,1000000,1.42s,250.00ns,0.00ns,256.00ns,75.00ns,125.00ns,32.17us
+build/onebyte,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,,350616,4.75s,8.50us,0.00ns,8.43us,791.00ns,6.42us,40.92us
+build/onebyte,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,,333431,4.75s,8.88us,0.00ns,8.86us,876.00ns,6.75us,34.67us
+build/onebyte,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,,331717,4.75s,8.96us,0.00ns,8.91us,867.00ns,6.67us,41.54us
+build/onebyte,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+build/onebyte,compile,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,,1000000,5.02s,2.79us,0.00ns,2.79us,233.00ns,2.62us,33.88us
+build/onebyte,compile,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,,1000000,5.01s,2.79us,0.00ns,2.80us,234.00ns,2.62us,33.50us
+build/onebyte,compile,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,,1000000,814.52ms,42.00ns,0.00ns,37.00ns,25.00ns,1.00ns,16.50us
+build/twobytes,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,,304925,4.75s,9.67us,0.00ns,9.70us,1.00us,7.42us,40.75us
+build/twobytes,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,,260929,4.69s,11.38us,0.00ns,11.34us,1.01us,8.50us,42.71us
+build/twobytes,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,,265422,4.68s,11.12us,0.00ns,11.15us,1.08us,8.33us,42.75us
+build/twobytes,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,,1000000,1.59s,333.00ns,0.00ns,317.00ns,86.00ns,208.00ns,30.92us
+build/twobytes,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,,307521,4.76s,9.62us,0.00ns,9.62us,920.00ns,7.42us,43.17us
+build/twobytes,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,,257560,4.69s,11.58us,0.00ns,11.50us,0.99us,8.75us,43.25us
+build/twobytes,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,,257161,4.68s,11.58us,0.00ns,11.51us,0.95us,8.83us,43.46us
+build/twobytes,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+build/twobytes,compile,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,,1000000,5.07s,2.83us,0.00ns,2.83us,241.00ns,2.67us,35.79us
+build/twobytes,compile,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,,1000000,5.08s,2.83us,0.00ns,2.83us,242.00ns,2.67us,35.25us
+build/twobytes,compile,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,,1000000,806.67ms,42.00ns,0.00ns,43.00ns,34.00ns,1.00ns,23.50us
+build/many-short,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,,37431,4.55s,79.21us,0.00ns,79.59us,1.87us,75.54us,122.75us
+build/many-short,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,,3271,4.56s,913.67us,0.00ns,915.87us,10.70us,884.83us,0.97ms
+build/many-short,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,,3280,4.56s,912.21us,0.00ns,913.30us,11.29us,877.21us,0.98ms
+build/many-short,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,,533906,4.88s,4.83us,0.00ns,4.83us,309.00ns,4.67us,35.12us
+build/many-short,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,,37449,4.56s,79.25us,0.00ns,79.55us,2.00us,74.04us,114.79us
+build/many-short,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,,3275,4.56s,915.00us,0.00ns,915.52us,7.23us,886.88us,0.96ms
+build/many-short,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,,3276,4.56s,915.38us,0.00ns,915.39us,7.66us,877.67us,0.96ms
+build/many-short,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+build/many-short,compile,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,,362879,4.75s,8.12us,0.00ns,8.18us,434.00ns,7.96us,38.88us
+build/many-short,compile,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,,366070,4.75s,8.08us,0.00ns,8.10us,410.00ns,7.88us,39.67us
+build/many-short,compile,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,,1000000,4.05s,1.08us,0.00ns,1.07us,142.00ns,0.96us,26.54us
+build/words5000,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,,837,4.56s,3.58ms,0.00ns,3.59ms,14.30us,3.56ms,3.80ms
+build/words5000,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,,862,4.55s,3.48ms,20.00ns,3.48ms,13.98us,3.45ms,3.55ms
+build/words5000,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,,855,4.56s,3.51ms,0.00ns,3.51ms,11.94us,3.48ms,3.56ms
+build/words5000,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,,835,4.56s,3.59ms,0.00ns,3.59ms,11.54us,3.57ms,3.65ms
+build/words5000,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,,862,4.56s,3.48ms,21.00ns,3.48ms,13.83us,3.45ms,3.54ms
+build/words5000,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,,855,4.56s,3.51ms,0.00ns,3.51ms,11.27us,3.49ms,3.56ms
+build/words5000,compile,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,,644,4.56s,4.66ms,42.00ns,4.65ms,24.59us,4.61ms,4.77ms
+build/words5000,compile,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,,672,4.56s,4.46ms,41.00ns,4.46ms,23.38us,4.42ms,4.53ms
+build/words5000,compile,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,,10110,4.56s,227.75us,0.00ns,232.84us,11.32us,217.67us,345.54us
+build/words15000,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,,291,4.56s,10.31ms,0.00ns,10.32ms,20.46us,10.27ms,10.40ms
+build/words15000,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,,298,4.55s,10.04ms,188.00ns,10.05ms,142.30us,9.93ms,11.63ms
+build/words15000,compile,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,,288,4.56s,10.41ms,0.00ns,10.41ms,21.60us,10.37ms,10.48ms
+build/words15000,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,,292,4.56s,10.26ms,42.00ns,10.27ms,18.40us,10.23ms,10.33ms
+build/words15000,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,,300,4.56s,10.01ms,166.00ns,10.00ms,51.64us,9.91ms,10.16ms
+build/words15000,compile,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,,290,4.56s,10.35ms,42.00ns,10.36ms,19.28us,10.32ms,10.44ms
+build/words15000,compile,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,,296,4.56s,10.13ms,34.96us,10.12ms,91.22us,9.99ms,10.29ms
+build/words15000,compile,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,,290,4.56s,10.35ms,333.00ns,10.32ms,171.23us,10.17ms,11.43ms
+build/words15000,compile,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,,2881,4.55s,761.42us,0.00ns,762.32us,9.33us,747.96us,831.58us
+curated/sherlock-en,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2311,4.56s,1.29ms,0.00ns,1.30ms,6.47us,1.29ms,1.34ms
+curated/sherlock-en,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,31176,4.56s,95.92us,0.00ns,96.19us,1.72us,95.75us,136.04us
+curated/sherlock-en,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,899232,2311,4.56s,1.29ms,0.00ns,1.30ms,6.80us,1.29ms,1.36ms
+curated/sherlock-en,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+curated/sherlock-en,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,899232,3557,4.56s,841.25us,0.00ns,843.60us,5.35us,839.12us,884.38us
+curated/sherlock-en,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,95053,4.63s,31.42us,0.00ns,31.51us,894.00ns,31.17us,70.04us
+curated/sherlock-casei-en,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2307,4.56s,1.30ms,0.00ns,1.30ms,6.83us,1.30ms,1.38ms
+curated/sherlock-casei-en,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,29974,4.56s,99.71us,0.00ns,100.04us,1.82us,99.21us,144.54us
+curated/sherlock-casei-en,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,899232,2307,4.56s,1.30ms,0.00ns,1.30ms,6.71us,1.30ms,1.35ms
+curated/sherlock-casei-en,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+curated/sherlock-casei-en,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,899232,2416,4.56s,1.24ms,20.00ns,1.24ms,7.19us,1.23ms,1.30ms
+curated/sherlock-casei-en,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,5610,4.56s,533.83us,0.00ns,534.77us,4.93us,527.58us,592.21us
+curated/sherlock-ru,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,1570556,1324,4.56s,2.26ms,0.00ns,2.27ms,8.19us,2.26ms,2.32ms
+curated/sherlock-ru,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,1570556,17946,4.56s,166.62us,0.00ns,167.12us,2.40us,166.42us,200.54us
+curated/sherlock-ru,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,1570556,1324,4.56s,2.26ms,0.00ns,2.27ms,8.36us,2.26ms,2.31ms
+curated/sherlock-ru,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+curated/sherlock-ru,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,1570556,509,4.56s,5.89ms,0.00ns,5.90ms,13.71us,5.87ms,5.97ms
+curated/sherlock-ru,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,1570556,54673,4.56s,54.62us,0.00ns,54.82us,1.25us,54.38us,90.17us
+curated/sherlock-casei-ru,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,1570556,1308,4.56s,2.29ms,0.00ns,2.29ms,8.76us,2.29ms,2.35ms
+curated/sherlock-casei-ru,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,1570556,14055,4.56s,212.75us,0.00ns,213.40us,2.86us,212.25us,271.08us
+curated/sherlock-casei-ru,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,1570556,1308,4.56s,2.29ms,0.00ns,2.29ms,8.40us,2.29ms,2.35ms
+curated/sherlock-casei-ru,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+curated/sherlock-casei-ru,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,1570556,682,4.56s,4.40ms,21.00ns,4.40ms,12.85us,4.37ms,4.46ms
+curated/sherlock-casei-ru,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,1570556,7074,4.56s,422.62us,0.00ns,424.04us,3.87us,421.96us,460.08us
+curated/sherlock-zh,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,813478,2571,4.56s,1.16ms,0.00ns,1.17ms,6.30us,1.16ms,1.21ms
+curated/sherlock-zh,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,813478,37119,4.56s,80.54us,0.00ns,80.77us,1.57us,80.42us,113.79us
+curated/sherlock-zh,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,813478,2571,4.56s,1.16ms,0.00ns,1.17ms,6.38us,1.16ms,1.21ms
+curated/sherlock-zh,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+curated/sherlock-zh,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,813478,2138,4.56s,1.40ms,0.00ns,1.40ms,9.64us,1.38ms,1.46ms
+curated/sherlock-zh,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,813478,115591,4.63s,25.83us,0.00ns,25.90us,786.00ns,25.71us,87.96us
+curated/alt-sherlock-en,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2299,4.56s,1.30ms,0.00ns,1.31ms,6.72us,1.30ms,1.37ms
+curated/alt-sherlock-en,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,28886,4.56s,103.50us,0.00ns,103.82us,1.83us,103.21us,138.54us
+curated/alt-sherlock-en,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,899232,2299,4.56s,1.30ms,0.00ns,1.31ms,6.89us,1.30ms,1.38ms
+curated/alt-sherlock-en,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+curated/alt-sherlock-en,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,899232,3050,4.56s,0.98ms,0.00ns,0.98ms,6.19us,0.98ms,1.04ms
+curated/alt-sherlock-en,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,21158,4.56s,141.29us,0.00ns,141.75us,2.23us,140.83us,179.83us
+curated/alt-sherlock-casei-en,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2229,4.56s,1.34ms,0.00ns,1.35ms,6.75us,1.34ms,1.42ms
+curated/alt-sherlock-casei-en,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,11451,4.56s,261.17us,0.00ns,261.95us,3.06us,259.38us,300.75us
+curated/alt-sherlock-casei-en,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,899232,2228,4.56s,1.34ms,0.00ns,1.35ms,6.72us,1.34ms,1.39ms
+curated/alt-sherlock-casei-en,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+curated/alt-sherlock-casei-en,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,899232,1534,4.56s,1.96ms,0.00ns,1.96ms,9.99us,1.93ms,2.01ms
+curated/alt-sherlock-casei-en,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,2277,4.56s,1.32ms,0.00ns,1.32ms,6.90us,1.31ms,1.37ms
+curated/alt-sherlock-ru,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,1570556,1320,4.56s,2.27ms,0.00ns,2.27ms,8.24us,2.27ms,2.33ms
+curated/alt-sherlock-ru,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,1570556,10488,4.56s,285.12us,0.00ns,286.01us,3.27us,284.62us,327.04us
+curated/alt-sherlock-ru,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,1570556,1320,4.55s,2.27ms,0.00ns,2.27ms,8.63us,2.27ms,2.34ms
+curated/alt-sherlock-ru,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+curated/alt-sherlock-ru,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,1570556,460,4.56s,6.53ms,0.00ns,6.53ms,13.21us,6.51ms,6.61ms
+curated/alt-sherlock-ru,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,1570556,12084,4.56s,247.46us,0.00ns,248.23us,2.96us,247.21us,287.96us
+curated/alt-sherlock-casei-ru,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,1570556,1210,4.56s,2.48ms,0.00ns,2.48ms,9.35us,2.46ms,2.54ms
+curated/alt-sherlock-casei-ru,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,1570556,3478,4.56s,860.25us,0.00ns,862.68us,5.46us,858.96us,904.83us
+curated/alt-sherlock-casei-ru,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,1570556,1209,4.56s,2.48ms,0.00ns,2.48ms,11.11us,2.46ms,2.66ms
+curated/alt-sherlock-casei-ru,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+curated/alt-sherlock-casei-ru,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,1570556,551,4.56s,5.44ms,0.00ns,5.45ms,12.90us,5.43ms,5.51ms
+curated/alt-sherlock-casei-ru,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,1570556,2875,4.56s,1.04ms,0.00ns,1.04ms,5.64us,1.04ms,1.08ms
+curated/alt-sherlock-zh,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,813478,2562,4.56s,1.17ms,0.00ns,1.17ms,6.32us,1.17ms,1.21ms
+curated/alt-sherlock-zh,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,813478,34898,4.56s,85.67us,0.00ns,85.92us,1.66us,85.50us,125.71us
+curated/alt-sherlock-zh,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,813478,2562,4.56s,1.17ms,0.00ns,1.17ms,6.37us,1.17ms,1.22ms
+curated/alt-sherlock-zh,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+curated/alt-sherlock-zh,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,813478,1409,4.56s,2.13ms,0.00ns,2.13ms,10.44us,2.11ms,2.31ms
+curated/alt-sherlock-zh,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,813478,23394,4.56s,127.79us,0.00ns,128.19us,2.04us,127.58us,163.25us
+curated/dictionary-15,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,61436,9285,4.56s,322.17us,0.00ns,323.07us,3.49us,320.79us,360.42us
+curated/dictionary-15,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,61436,31415,4.62s,95.17us,0.00ns,95.45us,1.75us,94.75us,137.38us
+curated/dictionary-15,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,61436,9752,4.56s,306.62us,0.00ns,307.61us,3.40us,305.33us,353.92us
+curated/dictionary-15,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,61436,31394,4.62s,95.21us,0.00ns,95.52us,1.74us,94.83us,133.38us
+curated/dictionary-15,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,61436,7822,4.56s,382.46us,0.00ns,383.50us,3.95us,380.83us,443.62us
+curated/dictionary-15,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,61436,562,4.56s,5.34ms,42.00ns,5.35ms,11.48us,5.33ms,5.40ms
+random/many/words100,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,100010,20913,4.56s,143.00us,0.00ns,143.40us,2.15us,142.79us,176.38us
+random/many/words100,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,100010,20934,4.56s,142.83us,0.00ns,143.26us,2.18us,142.67us,176.75us
+random/many/words100,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,100010,20936,4.56s,142.83us,0.00ns,143.25us,2.20us,142.71us,189.12us
+random/many/words100,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,100010,3660,4.56s,817.71us,0.00ns,819.69us,6.27us,812.96us,864.79us
+random/many/words100,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,100010,6782,4.56s,453.42us,0.00ns,442.34us,20.27us,408.29us,497.62us
+random/many/words100,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,100010,20934,4.56s,142.83us,0.00ns,143.26us,2.25us,142.67us,177.96us
+random/many/words100,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,100010,20911,4.56s,143.00us,0.00ns,143.42us,2.23us,142.79us,208.29us
+random/many/words100,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,100010,20935,4.56s,142.83us,0.00ns,143.25us,2.16us,142.71us,180.79us
+random/many/words100,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,100010,20933,4.56s,142.83us,0.00ns,143.27us,2.18us,142.71us,176.75us
+random/many/words100,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,100010,3550,4.56s,843.00us,0.00ns,845.06us,6.40us,839.12us,886.88us
+random/many/words100,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,100010,7139,4.56s,429.58us,0.00ns,420.19us,14.52us,400.12us,465.96us
+random/many/words100,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,100010,20934,4.56s,142.83us,0.00ns,143.26us,2.24us,142.67us,203.71us
+random/many/words100,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,100010,5637,4.56s,531.17us,0.00ns,532.16us,6.72us,522.92us,614.25us
+random/many/words100,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,100010,5668,4.56s,528.21us,0.00ns,529.30us,6.59us,519.62us,619.38us
+random/many/words100,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,100010,7386,4.56s,405.04us,0.00ns,406.17us,3.86us,403.46us,440.04us
+random/many/words100,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,100010,2407,4.56s,1.24ms,0.00ns,1.25ms,7.14us,1.24ms,1.34ms
+random/many/words5000,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,100010,5669,4.56s,528.21us,0.00ns,529.16us,4.72us,523.79us,572.58us
+random/many/words5000,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,100010,6373,4.56s,469.88us,0.00ns,470.71us,4.64us,465.46us,507.04us
+random/many/words5000,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,100010,6453,4.56s,463.75us,0.00ns,464.88us,4.83us,459.92us,510.21us
+random/many/words5000,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,100010,3214,4.56s,931.29us,0.00ns,933.44us,7.48us,923.58us,0.99ms
+random/many/words5000,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,100010,6510,4.56s,459.54us,0.00ns,460.85us,4.62us,456.04us,510.50us
+random/many/words5000,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,100010,15187,4.68s,196.92us,0.00ns,197.50us,2.77us,195.67us,244.21us
+random/many/words5000,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,100010,6497,4.56s,460.96us,0.00ns,461.74us,4.72us,456.67us,506.46us
+random/many/words5000,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,100010,5898,4.56s,510.00us,0.00ns,508.64us,10.48us,477.67us,559.62us
+random/many/words5000,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,100010,5989,4.56s,500.08us,0.00ns,500.92us,5.29us,484.00us,555.67us
+random/many/words5000,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,100010,3299,4.56s,907.75us,0.00ns,909.55us,7.15us,900.33us,0.97ms
+random/many/words5000,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,100010,6407,4.56s,467.62us,0.00ns,468.23us,4.47us,462.42us,523.25us
+random/many/words5000,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,100010,15170,4.68s,196.83us,0.00ns,197.72us,3.44us,195.33us,266.29us
+random/many/words5000,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,100010,4745,4.56s,630.92us,0.00ns,632.21us,6.69us,623.71us,730.25us
+random/many/words5000,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,100010,4757,4.56s,629.75us,0.00ns,630.69us,6.29us,622.04us,737.21us
+random/many/words5000,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,100010,146,4.56s,20.65ms,1.19us,20.65ms,40.22us,20.52ms,20.76ms
+random/many/words5000,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,100010,48,4.62s,63.55ms,1.71us,63.55ms,36.96us,63.50ms,63.73ms
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10001,552451,4.94s,5.38us,0.00ns,5.38us,329.00ns,5.00us,38.62us
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10001,546342,4.88s,5.58us,0.00ns,5.44us,406.00ns,5.00us,36.50us
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10001,547249,4.88s,5.54us,0.00ns,5.43us,396.00ns,4.96us,36.04us
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,21704,4.55s,137.79us,0.00ns,138.17us,2.23us,135.96us,180.38us
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,131807,4.63s,22.67us,0.00ns,22.71us,742.00ns,22.00us,64.00us
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10001,165203,4.63s,18.08us,0.00ns,18.11us,628.00ns,17.79us,49.04us
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10001,706800,5.00s,4.17us,0.00ns,4.20us,311.00ns,4.00us,33.75us
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10001,552859,4.88s,5.38us,0.00ns,5.38us,332.00ns,5.00us,41.04us
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10001,534322,4.87s,5.58us,0.00ns,5.57us,347.00ns,5.00us,35.29us
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10001,534770,4.87s,5.58us,0.00ns,5.56us,361.00ns,5.00us,36.62us
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,21706,4.56s,137.79us,0.00ns,138.16us,2.21us,136.08us,172.33us
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,131058,4.62s,22.79us,0.00ns,22.84us,740.00ns,21.96us,53.54us
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10001,164283,4.62s,18.17us,0.00ns,18.21us,641.00ns,17.88us,42.92us
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10001,223369,4.68s,13.33us,0.00ns,13.38us,523.00ns,13.21us,44.12us
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10001,223709,4.68s,13.33us,0.00ns,13.36us,531.00ns,13.21us,53.00us
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10001,1000000,4.84s,2.54us,0.00ns,2.56us,230.00ns,2.42us,35.62us
+random/memchr/onebyte-match,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10001,605147,4.87s,4.67us,0.00ns,4.91us,466.00ns,4.50us,35.79us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10001,1000000,930.38ms,125.00ns,0.00ns,122.00ns,54.00ns,1.00ns,23.67us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10001,1000000,0.99s,125.00ns,0.00ns,122.00ns,40.00ns,1.00ns,23.12us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10001,1000000,935.12ms,125.00ns,0.00ns,122.00ns,40.00ns,1.00ns,23.67us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,208848,4.69s,14.29us,0.00ns,14.31us,556.00ns,14.17us,51.04us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,259285,4.74s,11.50us,0.00ns,11.52us,516.00ns,11.33us,42.29us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10001,212480,4.69s,14.21us,0.00ns,14.07us,1.00us,8.71us,39.42us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10001,1000000,1.48s,375.00ns,0.00ns,382.00ns,84.00ns,291.00ns,25.17us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10001,1000000,1.00s,125.00ns,0.00ns,122.00ns,48.00ns,1.00ns,20.17us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10001,1000000,928.57ms,125.00ns,0.00ns,122.00ns,44.00ns,1.00ns,23.79us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10001,1000000,933.79ms,125.00ns,0.00ns,122.00ns,38.00ns,1.00ns,17.54us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,208866,4.68s,14.29us,0.00ns,14.31us,563.00ns,14.17us,57.92us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,259482,4.69s,11.50us,0.00ns,11.51us,491.00ns,11.33us,52.88us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10001,212429,4.69s,14.21us,0.00ns,14.07us,1.00us,8.67us,48.42us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10001,346973,4.75s,8.58us,0.00ns,8.60us,442.00ns,8.46us,40.33us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10001,347004,4.75s,8.58us,0.00ns,8.60us,429.00ns,8.46us,46.04us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10001,1000000,934.48ms,125.00ns,0.00ns,119.00ns,43.00ns,1.00ns,24.08us
+random/memchr/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10001,623275,4.94s,4.71us,0.00ns,4.76us,343.00ns,3.83us,36.25us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10001,524761,4.88s,5.67us,0.00ns,5.67us,341.00ns,5.46us,36.46us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10001,471791,4.88s,6.29us,0.00ns,6.31us,356.00ns,6.08us,39.83us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10001,467187,4.88s,6.38us,0.00ns,6.37us,361.00ns,6.12us,41.58us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,21823,4.56s,137.04us,0.00ns,137.42us,2.18us,135.29us,183.75us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,131699,4.63s,22.67us,0.00ns,22.73us,762.00ns,21.96us,61.29us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10001,164661,4.63s,18.12us,0.00ns,18.17us,644.00ns,17.83us,52.21us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10001,708538,5.00s,4.17us,0.00ns,4.18us,488.00ns,4.00us,37.08us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10001,527921,4.88s,5.62us,0.00ns,5.63us,334.00ns,5.42us,36.83us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10001,467495,4.88s,6.33us,0.00ns,6.37us,364.00ns,6.17us,34.42us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10001,465814,4.88s,6.38us,0.00ns,6.39us,376.00ns,6.12us,38.29us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,21867,4.56s,136.79us,0.00ns,137.14us,2.20us,133.12us,178.88us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,131673,4.63s,22.71us,0.00ns,22.74us,757.00ns,21.92us,53.17us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10001,163806,4.63s,18.25us,0.00ns,18.27us,649.00ns,17.88us,53.71us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10001,223260,4.69s,13.38us,0.00ns,13.39us,542.00ns,13.21us,66.88us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10001,223629,4.69s,13.33us,0.00ns,13.37us,524.00ns,13.21us,38.38us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10001,1000000,4.96s,2.67us,0.00ns,2.68us,225.00ns,2.54us,33.54us
+random/memchr/twobytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10001,304820,4.75s,9.67us,0.00ns,9.79us,588.00ns,9.21us,43.38us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10001,1000000,1.06s,208.00ns,0.00ns,216.00ns,64.00ns,125.00ns,28.42us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10001,1000000,1.17s,208.00ns,0.00ns,216.00ns,55.00ns,125.00ns,23.29us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10001,1000000,1.11s,208.00ns,0.00ns,216.00ns,68.00ns,125.00ns,23.58us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,208854,4.68s,14.29us,0.00ns,14.31us,555.00ns,14.17us,49.79us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,259236,4.69s,11.50us,0.00ns,11.52us,512.00ns,11.33us,49.75us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10001,212485,4.68s,14.21us,0.00ns,14.07us,1.00us,8.75us,48.38us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10001,1000000,1.47s,375.00ns,0.00ns,375.00ns,82.00ns,250.00ns,24.96us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10001,1000000,1.18s,208.00ns,0.00ns,216.00ns,66.00ns,125.00ns,24.25us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10001,1000000,1.17s,208.00ns,0.00ns,216.00ns,66.00ns,125.00ns,32.46us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10001,1000000,1.18s,208.00ns,0.00ns,216.00ns,58.00ns,125.00ns,18.96us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,208832,4.69s,14.29us,0.00ns,14.32us,565.00ns,14.17us,44.92us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,259343,4.69s,11.50us,0.00ns,11.52us,499.00ns,11.33us,44.96us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10001,212472,4.69s,14.21us,0.00ns,14.07us,1.00us,8.67us,47.79us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10001,347001,4.75s,8.58us,0.00ns,8.60us,416.00ns,8.46us,40.83us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10001,346987,4.75s,8.58us,0.00ns,8.60us,425.00ns,8.46us,43.17us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10001,1000000,1.23s,250.00ns,0.00ns,240.00ns,60.00ns,125.00ns,32.21us
+random/memchr/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10001,308702,4.76s,9.62us,0.00ns,9.67us,504.00ns,9.17us,50.75us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10001,489360,4.88s,6.08us,0.00ns,6.08us,359.00ns,5.67us,36.88us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10001,422474,4.81s,7.04us,0.00ns,7.05us,407.00ns,6.79us,39.42us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10001,419665,4.82s,7.08us,0.00ns,7.10us,393.00ns,6.83us,38.50us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,21477,4.56s,139.25us,0.00ns,139.64us,2.15us,137.75us,178.42us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,130976,4.62s,22.83us,0.00ns,22.86us,759.00ns,22.00us,58.79us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10001,165520,4.62s,18.04us,0.00ns,18.08us,624.00ns,17.67us,43.17us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10001,703315,5.00s,4.21us,0.00ns,4.22us,292.00ns,4.00us,29.46us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10001,520447,4.88s,5.71us,0.00ns,5.71us,342.00ns,5.54us,64.96us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10001,425779,4.82s,7.00us,0.00ns,7.00us,386.00ns,6.75us,37.62us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10001,422260,4.82s,7.04us,0.00ns,7.06us,379.00ns,6.79us,36.96us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,21691,4.56s,137.88us,0.00ns,138.26us,2.14us,136.25us,181.75us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,130322,4.62s,22.96us,0.00ns,22.97us,718.00ns,22.21us,55.33us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10001,164433,4.63s,18.17us,0.00ns,18.20us,619.00ns,17.79us,48.67us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10001,223414,4.68s,13.33us,0.00ns,13.38us,530.00ns,13.21us,45.58us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10001,223577,4.63s,13.33us,0.00ns,13.37us,544.00ns,13.21us,44.25us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10001,1000000,5.08s,2.79us,0.00ns,2.81us,237.00ns,2.67us,33.62us
+random/memchr/threebytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10001,201748,4.62s,14.71us,0.00ns,14.82us,705.00ns,14.08us,49.17us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10001,1000000,1.35s,292.00ns,0.00ns,299.00ns,70.00ns,208.00ns,24.79us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10001,1000000,1.29s,292.00ns,0.00ns,299.00ns,82.00ns,208.00ns,25.21us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10001,1000000,1.30s,292.00ns,0.00ns,299.00ns,73.00ns,208.00ns,25.21us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,208838,4.69s,14.29us,0.00ns,14.31us,561.00ns,14.17us,56.38us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,258701,4.69s,11.54us,0.00ns,11.55us,518.00ns,11.33us,42.42us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10001,212336,4.69s,14.21us,0.00ns,14.08us,0.98us,8.75us,45.25us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10001,1000000,1.47s,375.00ns,0.00ns,382.00ns,77.00ns,291.00ns,25.17us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10001,1000000,1.36s,292.00ns,0.00ns,300.00ns,81.00ns,208.00ns,25.25us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10001,1000000,1.35s,292.00ns,0.00ns,299.00ns,85.00ns,208.00ns,29.88us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10001,1000000,1.36s,292.00ns,0.00ns,299.00ns,95.00ns,208.00ns,50.71us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,208857,4.68s,14.29us,0.00ns,14.31us,558.00ns,14.17us,57.58us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,259391,4.68s,11.50us,0.00ns,11.52us,501.00ns,11.33us,52.92us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10001,212356,4.68s,14.21us,0.00ns,14.08us,0.98us,8.75us,45.00us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10001,347051,4.75s,8.58us,0.00ns,8.60us,416.00ns,8.46us,39.67us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10001,346993,4.75s,8.58us,0.00ns,8.60us,440.00ns,8.46us,41.58us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10001,1000000,1.47s,375.00ns,0.00ns,357.00ns,85.00ns,250.00ns,31.46us
+random/memchr/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10001,205765,4.69s,14.46us,0.00ns,14.53us,627.00ns,13.88us,49.96us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10001,169490,4.63s,17.62us,0.00ns,17.65us,628.00ns,17.00us,50.88us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10001,423452,4.81s,6.96us,0.00ns,7.03us,439.00ns,6.62us,32.46us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10001,432921,4.80s,6.92us,0.00ns,6.88us,438.00ns,6.42us,38.58us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,21712,4.55s,137.79us,0.00ns,138.13us,2.15us,135.83us,173.75us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,131360,4.62s,22.79us,0.00ns,22.79us,736.00ns,21.96us,56.00us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10001,164523,4.62s,18.17us,0.00ns,18.18us,626.00ns,17.88us,48.92us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10001,704195,5.01s,4.21us,0.00ns,4.21us,298.00ns,4.04us,35.17us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10001,169325,4.63s,17.62us,0.00ns,17.67us,647.00ns,17.21us,77.29us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10001,165297,4.63s,18.04us,0.00ns,18.10us,709.00ns,16.92us,50.50us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10001,169872,4.63s,17.54us,0.00ns,17.61us,737.00ns,16.58us,48.62us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,21645,4.55s,138.00us,0.00ns,138.55us,2.33us,136.38us,175.17us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,130576,4.63s,22.88us,0.00ns,22.93us,744.00ns,22.00us,54.71us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10001,164102,4.62s,18.21us,0.00ns,18.23us,646.00ns,17.88us,55.00us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10001,223413,4.69s,13.33us,0.00ns,13.38us,534.00ns,13.21us,41.46us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10001,223331,4.69s,13.38us,0.00ns,13.38us,534.00ns,13.21us,40.42us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10001,1000000,5.19s,2.92us,0.00ns,2.92us,244.00ns,2.79us,33.71us
+random/memchr/fourbytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10001,152299,4.63s,19.54us,0.00ns,19.65us,834.00ns,18.67us,56.54us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10001,211519,4.69s,14.21us,0.00ns,14.13us,778.00ns,8.46us,46.38us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10001,1000000,1.47s,375.00ns,0.00ns,381.00ns,87.00ns,291.00ns,25.46us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10001,1000000,1.47s,375.00ns,0.00ns,381.00ns,86.00ns,291.00ns,31.83us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,208836,4.69s,14.29us,0.00ns,14.32us,551.00ns,14.17us,47.58us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,259064,4.69s,11.50us,0.00ns,11.53us,491.00ns,11.33us,43.25us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10001,212451,4.69s,14.21us,0.00ns,14.07us,1.00us,8.71us,70.33us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10001,1000000,1.47s,375.00ns,0.00ns,382.00ns,83.00ns,291.00ns,24.67us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10001,211896,4.69s,14.21us,0.00ns,14.11us,835.00ns,8.46us,44.79us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10001,210495,4.63s,14.21us,0.00ns,14.20us,555.00ns,8.83us,45.92us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10001,210506,4.68s,14.21us,0.00ns,14.20us,565.00ns,9.00us,47.71us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,208853,4.63s,14.29us,0.00ns,14.31us,551.00ns,14.17us,45.25us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,259234,4.69s,11.50us,0.00ns,11.52us,515.00ns,11.33us,49.42us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10001,212488,4.69s,14.21us,0.00ns,14.07us,1.00us,8.71us,50.25us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10001,347008,4.76s,8.58us,0.00ns,8.60us,424.00ns,8.46us,45.38us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10001,346980,4.75s,8.58us,0.00ns,8.60us,436.00ns,8.46us,39.38us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10001,1000000,1.65s,459.00ns,0.00ns,474.00ns,91.00ns,375.00ns,25.38us
+random/memchr/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10001,154521,4.63s,19.29us,0.00ns,19.37us,774.00ns,15.83us,50.79us
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10001,169316,4.63s,17.62us,0.00ns,17.67us,620.00ns,17.04us,47.46us
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10001,356119,4.75s,8.21us,0.00ns,8.37us,912.00ns,7.08us,44.50us
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10001,425723,4.82s,6.96us,0.00ns,7.00us,452.00ns,6.54us,43.17us
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,21492,4.56s,139.17us,0.00ns,139.54us,2.18us,137.79us,179.75us
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,130843,4.63s,22.83us,0.00ns,22.88us,759.00ns,22.17us,58.88us
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10001,164947,4.62s,18.08us,0.00ns,18.14us,670.00ns,17.71us,49.83us
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10001,684728,5.00s,4.33us,0.00ns,4.33us,299.00ns,4.17us,36.25us
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10001,169762,4.62s,17.58us,0.00ns,17.62us,623.00ns,16.96us,52.79us
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10001,165433,4.63s,18.04us,0.00ns,18.09us,716.00ns,16.75us,48.38us
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10001,165587,4.63s,18.04us,0.00ns,18.07us,723.00ns,16.75us,47.92us
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,21494,4.56s,139.17us,0.00ns,139.53us,2.09us,137.62us,173.71us
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,130313,4.63s,22.88us,0.00ns,22.97us,782.00ns,22.17us,57.58us
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10001,164840,4.61s,18.12us,0.00ns,18.15us,619.00ns,17.79us,48.75us
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10001,184822,4.80s,13.38us,0.00ns,16.56us,1.30ms,13.21us,557.92ms
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10001,223545,4.71s,13.33us,0.00ns,13.37us,521.00ns,13.21us,43.83us
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10001,971684,5.19s,3.04us,0.00ns,3.04us,243.00ns,2.92us,36.08us
+random/memchr/fivebytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10001,122437,4.62s,24.33us,0.00ns,24.45us,911.00ns,23.29us,52.04us
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10001,212216,4.68s,14.21us,0.00ns,14.09us,889.00ns,8.25us,42.96us
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10001,1000000,1.35s,375.00ns,0.00ns,381.00ns,89.00ns,291.00ns,25.83us
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10001,1000000,1.48s,375.00ns,0.00ns,381.00ns,83.00ns,291.00ns,25.25us
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,208854,4.69s,14.29us,0.00ns,14.31us,547.00ns,14.17us,50.50us
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,259257,4.69s,11.50us,0.00ns,11.52us,495.00ns,11.33us,43.50us
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10001,213170,4.68s,14.21us,0.00ns,14.03us,1.11us,8.71us,45.79us
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10001,1000000,1.47s,375.00ns,0.00ns,375.00ns,105.00ns,250.00ns,50.75us
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10001,212855,4.68s,14.21us,0.00ns,14.04us,1.06us,8.33us,43.88us
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10001,208445,4.69s,14.21us,0.00ns,14.34us,57.34us,8.75us,26.06ms
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10001,208376,4.67s,14.21us,0.00ns,14.35us,19.22us,8.75us,6.96ms
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,208850,4.69s,14.29us,0.00ns,14.31us,553.00ns,14.17us,46.29us
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,259575,4.69s,11.50us,0.00ns,11.51us,495.00ns,11.33us,47.25us
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10001,212919,4.69s,14.21us,0.00ns,14.04us,1.12us,8.71us,40.96us
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10001,347011,4.75s,8.58us,0.00ns,8.60us,420.00ns,8.46us,47.75us
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10001,347007,4.75s,8.58us,0.00ns,8.60us,417.00ns,8.46us,34.71us
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10001,1000000,1.89s,583.00ns,0.00ns,591.00ns,104.00ns,500.00ns,25.96us
+random/memchr/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10001,123461,4.63s,24.17us,0.00ns,24.25us,869.00ns,23.25us,55.75us
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10001,844619,5.07s,3.50us,0.00ns,3.50us,257.00ns,3.38us,33.42us
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10001,843653,5.06s,3.50us,0.00ns,3.51us,258.00ns,3.38us,34.83us
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10001,635001,4.92s,3.50us,0.00ns,3.80us,70.02us,3.38us,48.32ms
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,59784,4.56s,50.04us,0.00ns,50.13us,1.19us,49.29us,98.38us
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,150839,4.63s,19.79us,0.00ns,19.84us,678.00ns,19.67us,72.58us
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10001,209001,4.69s,14.29us,0.00ns,14.30us,554.00ns,14.17us,48.62us
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10001,1000000,2.72s,1.00us,0.00ns,1.00us,142.00ns,875.00ns,32.00us
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10001,844888,5.00s,3.50us,0.00ns,3.50us,260.00ns,3.38us,37.12us
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10001,843870,5.07s,3.50us,0.00ns,3.51us,268.00ns,3.38us,36.50us
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10001,844114,5.07s,3.50us,0.00ns,3.51us,260.00ns,3.38us,40.92us
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,59907,4.56s,49.96us,0.00ns,50.03us,1.21us,49.21us,80.62us
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,151247,4.63s,19.75us,0.00ns,19.79us,674.00ns,19.58us,55.08us
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10001,207181,4.64s,14.29us,0.00ns,14.43us,41.35us,14.17us,18.00ms
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10001,219570,4.71s,13.42us,0.00ns,13.61us,19.96us,13.25us,7.76ms
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10001,221434,4.68s,13.46us,0.00ns,13.50us,532.00ns,13.29us,49.17us
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10001,822094,5.06s,3.58us,0.00ns,3.60us,264.00ns,3.46us,28.79us
+random/misc/ten-one-prefix,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10001,263936,4.68s,11.25us,0.00ns,11.32us,511.00ns,11.04us,41.88us
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10001,223751,4.68s,13.33us,0.00ns,13.36us,540.00ns,13.12us,45.08us
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10001,223904,4.69s,13.33us,0.00ns,13.35us,532.00ns,13.17us,46.25us
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10001,224627,4.69s,13.29us,0.00ns,13.31us,562.00ns,13.08us,60.08us
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,39488,4.56s,75.67us,0.00ns,75.92us,1.56us,75.04us,115.42us
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,80608,4.56s,37.08us,0.00ns,37.17us,0.96us,36.79us,67.21us
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10001,207385,4.63s,14.29us,0.00ns,14.42us,38.66us,14.17us,17.48ms
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10001,1000000,3.37s,1.04us,0.00ns,1.20us,57.02us,916.00ns,39.06ms
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10001,223541,4.66s,13.38us,0.00ns,13.37us,512.00ns,13.12us,48.88us
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10001,223249,4.69s,13.38us,0.00ns,13.39us,562.00ns,13.17us,45.17us
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10001,217963,4.68s,13.29us,0.00ns,13.71us,1.67us,13.12us,45.00us
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10001,39582,4.55s,75.58us,0.00ns,75.74us,1.58us,74.88us,113.25us
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10001,80229,4.56s,37.21us,0.00ns,37.34us,1.02us,36.88us,70.50us
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10001,209021,4.63s,14.29us,0.00ns,14.30us,546.00ns,14.17us,44.33us
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10001,87821,4.56s,31.33us,0.00ns,34.11us,4.71us,30.04us,70.71us
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10001,96276,4.62s,30.88us,0.00ns,31.11us,1.08us,30.00us,61.79us
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10001,791138,5.00s,3.75us,0.00ns,3.74us,277.00ns,3.62us,34.54us
+random/misc/ten-diff-prefix,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10001,146680,4.62s,14.83us,0.00ns,20.40us,1.47ms,13.46us,560.33ms
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10000,21537,4.55s,145.58us,0.00ns,139.24us,12.74us,86.17us,187.42us
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10000,27349,4.56s,109.62us,0.00ns,109.64us,22.18us,86.08us,158.62us
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10000,26562,4.56s,131.75us,0.00ns,112.89us,22.33us,85.58us,158.04us
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,1018,4.56s,2.96ms,0.00ns,2.95ms,23.24us,2.85ms,3.02ms
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,34591,4.56s,86.54us,0.00ns,86.68us,1.73us,82.79us,126.25us
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10000,44428,4.56s,67.21us,0.00ns,67.47us,1.46us,65.08us,100.54us
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10000,34317,4.56s,92.04us,0.00ns,87.37us,12.98us,53.42us,131.04us
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10000,21674,4.56s,145.75us,0.00ns,138.37us,14.05us,86.92us,173.79us
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10000,26817,4.56s,101.17us,0.00ns,111.82us,18.98us,86.21us,175.54us
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10000,26311,4.56s,101.17us,0.00ns,113.97us,152.42us,86.25us,24.62ms
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,975,4.54s,2.95ms,0.00ns,3.08ms,1.96ms,2.86ms,51.22ms
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,34718,4.56s,86.12us,0.00ns,86.36us,1.57us,84.96us,132.96us
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10000,42834,4.56s,69.75us,0.00ns,69.99us,1.51us,67.21us,107.92us
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10000,87018,4.56s,34.25us,0.00ns,34.43us,1.17us,34.12us,65.96us
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10000,87045,4.62s,34.25us,0.00ns,34.42us,1.13us,34.12us,68.21us
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10000,159998,4.62s,18.75us,0.00ns,18.70us,2.14us,15.58us,74.29us
+same/onebyte-match,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10000,245301,4.69s,12.17us,0.00ns,12.18us,518.00ns,12.04us,43.92us
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10000,1000000,933.50ms,125.00ns,0.00ns,122.00ns,43.00ns,1.00ns,17.83us
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10000,1000000,931.42ms,125.00ns,0.00ns,122.00ns,52.00ns,1.00ns,23.54us
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10000,1000000,880.47ms,125.00ns,0.00ns,126.00ns,43.00ns,41.00ns,17.17us
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,208896,4.69s,14.29us,0.00ns,14.31us,543.00ns,14.17us,45.17us
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,260454,4.69s,11.46us,0.00ns,11.47us,491.00ns,11.33us,56.12us
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10000,197066,5.13s,14.25us,0.00ns,17.13us,1.26ms,9.00us,557.18ms
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10000,1000000,1.54s,375.00ns,0.00ns,449.00ns,31.18us,291.00ns,24.81ms
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10000,1000000,935.89ms,125.00ns,0.00ns,122.00ns,48.00ns,1.00ns,24.54us
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10000,1000000,935.33ms,125.00ns,0.00ns,122.00ns,41.00ns,1.00ns,15.46us
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10000,1000000,935.57ms,125.00ns,0.00ns,122.00ns,39.00ns,1.00ns,23.38us
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,208846,4.69s,14.29us,0.00ns,14.32us,556.00ns,14.17us,44.88us
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,260551,4.69s,11.46us,0.00ns,11.47us,503.00ns,11.33us,42.17us
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10000,210950,4.63s,14.25us,0.00ns,14.17us,878.00ns,9.00us,44.75us
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10000,347099,4.75s,8.58us,0.00ns,8.59us,408.00ns,8.46us,39.33us
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10000,347086,4.75s,8.58us,0.00ns,8.60us,426.00ns,8.46us,39.67us
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10000,1000000,929.90ms,125.00ns,0.00ns,122.00ns,42.00ns,1.00ns,17.17us
+same/onebyte-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10000,622983,4.93s,4.71us,0.00ns,4.77us,332.00ns,3.88us,37.71us
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10000,17779,4.55s,171.58us,0.00ns,168.70us,9.70us,156.21us,206.58us
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10000,28198,4.56s,105.25us,0.00ns,106.34us,2.47us,104.62us,140.46us
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10000,22801,4.64s,108.50us,0.00ns,134.78us,3.69ms,103.46us,557.52ms
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,1029,4.54s,2.92ms,0.00ns,2.92ms,15.26us,2.86ms,2.98ms
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,34565,4.56s,86.50us,0.00ns,86.74us,1.60us,80.79us,120.46us
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10000,44303,4.55s,67.46us,0.00ns,67.66us,1.45us,65.00us,98.42us
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10000,33693,4.56s,94.58us,0.00ns,88.99us,12.94us,53.42us,135.96us
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10000,18148,4.56s,164.79us,0.00ns,165.26us,2.84us,161.58us,202.71us
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10000,26723,4.56s,111.08us,0.00ns,112.21us,2.71us,109.21us,147.00us
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10000,26770,4.56s,110.50us,0.00ns,112.01us,5.07us,106.25us,173.42us
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,1046,4.56s,2.87ms,0.00ns,2.87ms,26.70us,2.77ms,2.94ms
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,34947,4.56s,85.50us,0.00ns,85.79us,1.62us,84.67us,123.96us
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10000,42958,4.56s,69.50us,0.00ns,69.78us,1.64us,66.62us,106.62us
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10000,81338,5.16s,34.29us,0.00ns,36.84us,147.68us,34.12us,24.45ms
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10000,87210,4.56s,34.25us,0.00ns,34.35us,914.00ns,34.12us,69.38us
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10000,156183,4.63s,19.25us,0.00ns,19.16us,1.99us,16.08us,78.04us
+same/twobytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10000,175717,4.63s,16.96us,0.00ns,17.02us,651.00ns,16.00us,54.75us
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10000,1000000,1.12s,208.00ns,0.00ns,216.00ns,70.00ns,125.00ns,24.79us
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10000,1000000,1.12s,208.00ns,0.00ns,216.00ns,60.00ns,125.00ns,24.00us
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10000,1000000,1.12s,208.00ns,0.00ns,216.00ns,69.00ns,125.00ns,30.12us
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,208829,4.69s,14.29us,0.00ns,14.32us,577.00ns,14.17us,44.75us
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,260298,4.69s,11.46us,0.00ns,11.48us,482.00ns,11.33us,42.54us
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10000,210931,4.69s,14.25us,0.00ns,14.17us,862.00ns,9.00us,44.92us
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10000,1000000,1.48s,375.00ns,0.00ns,372.00ns,92.00ns,250.00ns,25.21us
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10000,1000000,1.17s,208.00ns,0.00ns,216.00ns,60.00ns,125.00ns,24.25us
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10000,1000000,1.11s,208.00ns,0.00ns,216.00ns,62.00ns,125.00ns,24.08us
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10000,1000000,1.12s,208.00ns,0.00ns,216.00ns,60.00ns,125.00ns,25.08us
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,208874,4.69s,14.29us,0.00ns,14.31us,557.00ns,14.17us,45.04us
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,199514,4.62s,11.46us,0.00ns,14.99us,1.25ms,11.33us,557.75ms
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10000,210898,4.69s,14.25us,0.00ns,14.18us,863.00ns,8.96us,49.38us
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10000,347084,4.75s,8.58us,0.00ns,8.59us,405.00ns,8.46us,40.96us
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10000,347051,4.75s,8.58us,0.00ns,8.60us,423.00ns,8.46us,38.42us
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10000,1000000,1.18s,250.00ns,0.00ns,240.00ns,77.00ns,125.00ns,29.92us
+same/twobytes-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10000,308582,4.75s,9.62us,0.00ns,9.67us,504.00ns,9.17us,44.50us
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10000,16341,4.56s,182.83us,0.00ns,183.54us,3.25us,177.29us,220.33us
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10000,19116,4.56s,175.88us,0.00ns,156.89us,31.65us,103.00us,206.75us
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10000,18318,4.56s,163.75us,0.00ns,163.73us,4.46us,140.29us,196.54us
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,1029,4.56s,2.91ms,0.00ns,2.92ms,17.02us,2.85ms,2.98ms
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,34453,4.56s,86.79us,0.00ns,87.02us,1.57us,82.08us,121.12us
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10000,34376,4.56s,67.58us,0.00ns,87.22us,3.00ms,64.29us,556.18ms
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10000,33807,4.56s,93.71us,0.00ns,88.69us,12.60us,53.58us,135.04us
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10000,19188,4.56s,155.17us,0.00ns,156.30us,7.35us,140.50us,207.25us
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10000,26132,4.56s,114.00us,0.00ns,114.75us,3.46us,108.33us,151.92us
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10000,21351,4.56s,141.29us,0.00ns,140.45us,31.50us,103.96us,207.33us
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,1055,4.56s,2.84ms,0.00ns,2.84ms,48.09us,2.72ms,2.99ms
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,35081,4.56s,85.21us,0.00ns,85.46us,1.60us,84.12us,120.75us
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10000,42768,4.56s,69.92us,0.00ns,70.09us,1.47us,67.71us,106.83us
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10000,86999,4.56s,34.25us,0.00ns,34.43us,1.22us,34.12us,75.88us
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10000,87000,4.56s,34.25us,0.00ns,34.43us,1.18us,34.12us,60.21us
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10000,154071,4.61s,19.58us,0.00ns,19.42us,47.18us,15.62us,18.48ms
+same/threebytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10000,131501,4.65s,21.67us,0.00ns,22.76us,122.16us,19.96us,27.25ms
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10000,1000000,1.29s,292.00ns,0.00ns,299.00ns,71.00ns,208.00ns,24.42us
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10000,1000000,1.29s,292.00ns,0.00ns,299.00ns,86.00ns,208.00ns,31.29us
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10000,1000000,1.29s,292.00ns,0.00ns,299.00ns,74.00ns,208.00ns,24.96us
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,208859,4.69s,14.29us,0.00ns,14.31us,555.00ns,14.17us,47.21us
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,255931,4.69s,11.75us,0.00ns,11.67us,526.00ns,11.33us,42.67us
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10000,210341,4.69s,14.25us,0.00ns,14.21us,796.00ns,9.12us,46.58us
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10000,1000000,1.42s,375.00ns,0.00ns,372.00ns,85.00ns,250.00ns,24.88us
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10000,1000000,1.30s,292.00ns,0.00ns,299.00ns,80.00ns,208.00ns,24.92us
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10000,1000000,1.30s,292.00ns,0.00ns,299.00ns,81.00ns,208.00ns,24.21us
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10000,1000000,1.29s,292.00ns,0.00ns,299.00ns,83.00ns,208.00ns,25.00us
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,208845,4.69s,14.29us,0.00ns,14.31us,567.00ns,14.17us,45.25us
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,253401,4.69s,11.75us,0.00ns,11.79us,491.00ns,11.67us,44.88us
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10000,210318,4.68s,14.25us,0.00ns,14.21us,799.00ns,9.12us,46.00us
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10000,347082,4.75s,8.58us,0.00ns,8.60us,420.00ns,8.46us,39.96us
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10000,260835,4.70s,8.58us,0.00ns,11.46us,1.10ms,8.46us,557.90ms
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10000,1000000,1.41s,375.00ns,0.00ns,360.00ns,90.00ns,250.00ns,25.08us
+same/threebytes-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10000,205920,4.68s,14.46us,0.00ns,14.52us,613.00ns,13.83us,47.67us
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10000,48562,4.56s,61.42us,0.00ns,61.72us,1.48us,60.21us,95.42us
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10000,23326,4.56s,123.29us,0.00ns,128.56us,14.11us,122.21us,196.92us
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10000,22890,4.56s,123.50us,0.00ns,131.01us,15.52us,122.71us,199.42us
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,1019,4.56s,2.95ms,0.00ns,2.95ms,13.75us,2.90ms,3.01ms
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,34731,4.56s,86.08us,0.00ns,86.32us,1.62us,85.00us,118.38us
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10000,44701,4.56s,66.92us,0.00ns,67.06us,1.42us,64.92us,103.12us
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10000,32806,4.56s,97.08us,0.00ns,91.39us,13.42us,53.38us,127.46us
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10000,47339,4.56s,63.25us,0.00ns,63.32us,1.42us,61.04us,105.25us
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10000,31587,4.54s,71.21us,0.00ns,94.92us,3.14ms,67.46us,556.60ms
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10000,42285,4.56s,70.67us,0.00ns,70.90us,1.49us,68.83us,110.00us
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,1015,4.56s,2.96ms,0.00ns,2.96ms,14.88us,2.88ms,3.02ms
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,35000,4.54s,85.50us,0.00ns,85.66us,1.96us,82.08us,129.46us
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10000,43076,4.55s,69.42us,0.00ns,69.59us,1.45us,67.38us,100.92us
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10000,87019,4.56s,34.25us,0.00ns,34.43us,1.16us,34.12us,65.33us
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10000,87020,4.56s,34.25us,0.00ns,34.43us,1.15us,34.12us,65.21us
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10000,153493,4.63s,19.50us,0.00ns,19.49us,1.34us,16.71us,68.33us
+same/fourbytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10000,111901,4.63s,26.67us,0.00ns,26.76us,873.00ns,24.00us,77.88us
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10000,209460,4.69s,14.25us,0.00ns,14.27us,555.00ns,12.67us,45.50us
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10000,1000000,1.48s,375.00ns,0.00ns,378.00ns,87.00ns,291.00ns,32.04us
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10000,1000000,1.43s,375.00ns,0.00ns,378.00ns,93.00ns,291.00ns,33.21us
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,195145,5.05s,14.29us,0.00ns,15.33us,128.97us,14.17us,42.26ms
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,259917,4.69s,11.46us,0.00ns,11.49us,491.00ns,11.33us,44.17us
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10000,210911,4.68s,14.25us,0.00ns,14.18us,861.00ns,9.00us,51.50us
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10000,1000000,1.48s,375.00ns,0.00ns,375.00ns,86.00ns,250.00ns,24.62us
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10000,209455,4.69s,14.25us,0.00ns,14.28us,558.00ns,13.29us,66.21us
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10000,209623,4.63s,14.25us,0.00ns,14.26us,550.00ns,9.17us,39.21us
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10000,209597,4.68s,14.25us,0.00ns,14.26us,567.00ns,9.00us,47.17us
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,208861,4.68s,14.29us,0.00ns,14.31us,559.00ns,14.17us,47.38us
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,252883,4.68s,11.75us,0.00ns,11.81us,790.00ns,11.67us,55.92us
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10000,210960,4.69s,14.25us,0.00ns,14.17us,864.00ns,9.00us,45.79us
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10000,343872,4.76s,8.58us,0.00ns,8.68us,43.36us,8.46us,25.43ms
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10000,338376,4.74s,8.58us,0.00ns,8.82us,52.20us,8.46us,27.97ms
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10000,1000000,1.66s,459.00ns,0.00ns,474.00ns,99.00ns,375.00ns,25.21us
+same/fourbytes-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10000,154756,4.63s,19.29us,0.00ns,19.34us,806.00ns,15.79us,58.92us
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10000,46941,4.56s,64.17us,0.00ns,63.86us,1.74us,60.79us,91.29us
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10000,21786,4.56s,128.46us,0.00ns,137.65us,19.04us,122.92us,196.75us
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10000,19339,4.56s,156.17us,0.00ns,155.08us,7.34us,135.33us,196.96us
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,1009,4.56s,2.97ms,0.00ns,2.97ms,14.70us,2.93ms,3.04ms
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,35052,4.56s,85.29us,0.00ns,85.53us,1.58us,82.29us,117.96us
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10000,44915,4.56s,66.46us,0.00ns,66.74us,1.49us,64.96us,110.17us
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10000,36073,4.56s,101.21us,0.00ns,83.11us,22.25us,54.00us,125.29us
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10000,47048,4.54s,63.08us,0.00ns,63.71us,80.20us,59.04us,16.14ms
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10000,40990,4.54s,70.75us,0.00ns,73.12us,203.64us,67.12us,36.16ms
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10000,42324,4.56s,70.67us,0.00ns,70.83us,1.49us,68.46us,102.04us
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,1010,4.56s,2.97ms,0.00ns,2.97ms,9.86us,2.94ms,3.04ms
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,34956,4.56s,85.50us,0.00ns,85.77us,1.67us,84.54us,129.12us
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10000,43222,4.56s,69.12us,0.00ns,69.36us,1.48us,66.88us,101.96us
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10000,87011,4.56s,34.25us,0.00ns,34.43us,1.17us,34.12us,64.46us
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10000,87214,4.56s,34.25us,0.00ns,34.35us,926.00ns,34.12us,73.00us
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10000,153962,4.62s,19.71us,0.00ns,19.43us,1.95us,16.29us,73.79us
+same/fivebytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10000,94671,4.62s,31.54us,0.00ns,31.64us,0.97us,30.62us,66.04us
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10000,209445,4.68s,14.25us,0.00ns,14.28us,548.00ns,13.50us,47.29us
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10000,1000000,1.47s,375.00ns,0.00ns,378.00ns,82.00ns,291.00ns,25.12us
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10000,1000000,2.02s,375.00ns,0.00ns,378.00ns,85.00ns,291.00ns,25.12us
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,208860,4.68s,14.29us,0.00ns,14.31us,558.00ns,14.17us,48.25us
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,260276,4.69s,11.46us,0.00ns,11.48us,480.00ns,11.33us,41.29us
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10000,211189,4.63s,14.25us,0.00ns,14.16us,916.00ns,9.00us,45.46us
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10000,1000000,1.47s,375.00ns,0.00ns,383.00ns,97.00ns,291.00ns,31.88us
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10000,209460,4.69s,14.25us,0.00ns,14.27us,531.00ns,13.00us,46.33us
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10000,209578,4.63s,14.25us,0.00ns,14.27us,549.00ns,9.21us,43.50us
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10000,209613,4.69s,14.25us,0.00ns,14.26us,538.00ns,9.21us,44.17us
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,208859,4.63s,14.29us,0.00ns,14.31us,547.00ns,14.17us,47.46us
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,253383,4.68s,11.75us,0.00ns,11.79us,479.00ns,11.67us,42.12us
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10000,211191,4.63s,14.25us,0.00ns,14.16us,915.00ns,9.00us,44.71us
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10000,265088,4.65s,8.58us,0.00ns,11.27us,1.08ms,8.46us,554.67ms
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10000,347063,4.77s,8.58us,0.00ns,8.60us,415.00ns,8.46us,43.38us
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10000,1000000,1.90s,583.00ns,0.00ns,591.00ns,102.00ns,500.00ns,25.42us
+same/fivebytes-nomatch,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10000,123561,4.63s,24.12us,0.00ns,24.23us,861.00ns,19.79us,62.33us
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,10000,276568,4.75s,10.58us,0.00ns,10.80us,1.06us,10.29us,41.42us
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,10000,230171,4.68s,12.83us,0.00ns,12.98us,1.33us,8.96us,47.50us
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,10000,283838,4.69s,9.79us,0.00ns,10.52us,1.73us,9.50us,45.58us
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,9094,4.55s,329.50us,0.00ns,329.85us,5.75us,311.96us,389.67us
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,141082,4.63s,21.12us,0.00ns,21.22us,746.00ns,21.04us,52.79us
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,10000,187261,4.69s,15.88us,0.00ns,15.97us,646.00ns,15.62us,49.42us
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,10000,399859,4.75s,7.38us,0.00ns,7.45us,623.00ns,7.25us,40.79us
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,10000,196732,4.65s,10.54us,0.00ns,15.20us,1.25ms,9.71us,552.37ms
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,10000,254957,4.68s,10.42us,0.00ns,11.72us,2.36us,8.92us,43.79us
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,10000,264519,4.74s,10.50us,0.00ns,11.29us,2.15us,9.17us,44.08us
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,10000,9060,4.56s,330.54us,0.00ns,331.10us,6.29us,313.38us,376.08us
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,10000,141340,4.63s,21.12us,0.00ns,21.18us,680.00ns,21.04us,52.54us
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,10000,185993,4.68s,16.04us,0.00ns,16.08us,660.00ns,15.75us,49.17us
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,10000,109766,4.62s,27.21us,0.00ns,27.28us,797.00ns,27.04us,58.04us
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,10000,109774,4.62s,27.21us,0.00ns,27.28us,780.00ns,27.04us,58.46us
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,10000,743187,5.00s,3.92us,0.00ns,3.98us,528.00ns,3.79us,34.04us
+same/samebytes-match,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,10000,552220,4.88s,5.38us,0.00ns,5.38us,317.00ns,5.25us,30.46us
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,594915,122086,4.60s,18.25us,0.00ns,24.53us,1.65ms,18.08us,576.50ms
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,594915,161594,4.63s,18.46us,0.00ns,18.52us,624.00ns,18.29us,56.25us
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,594915,161999,4.63s,18.42us,0.00ns,18.47us,626.00ns,18.25us,68.88us
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,2190,4.55s,1.37ms,21.00ns,1.37ms,39.73us,1.25ms,1.52ms
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,2888,4.56s,1.04ms,20.00ns,1.04ms,11.38us,1.03ms,1.18ms
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,594915,3499,4.56s,855.04us,0.00ns,857.53us,5.36us,854.88us,914.25us
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,594915,47670,4.56s,62.71us,0.00ns,62.89us,1.34us,62.54us,95.75us
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,594915,164190,4.63s,18.17us,0.00ns,18.22us,617.00ns,17.96us,49.12us
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,594915,153917,4.62s,19.38us,0.00ns,19.44us,707.00ns,19.08us,52.58us
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,594915,158897,4.63s,18.79us,0.00ns,18.83us,644.00ns,18.54us,48.33us
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,2168,4.54s,1.37ms,0.00ns,1.38ms,580.60us,1.25ms,28.34ms
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,2826,4.54s,1.04ms,0.00ns,1.06ms,796.81us,1.03ms,42.83ms
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,594915,3498,4.55s,855.33us,0.00ns,857.80us,5.53us,855.12us,908.38us
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,594915,5650,4.56s,529.42us,0.00ns,530.97us,4.42us,528.62us,578.17us
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,594915,5651,4.56s,529.29us,0.00ns,530.90us,4.39us,528.62us,570.88us
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,594915,77702,4.56s,38.46us,0.00ns,38.56us,0.98us,38.29us,69.12us
+sherlock/name-alt1,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,594915,6942,4.56s,430.96us,1.00ns,432.10us,4.42us,427.92us,478.62us
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,594915,51174,4.56s,58.25us,0.00ns,58.57us,1.40us,57.67us,100.21us
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,594915,47193,4.56s,63.33us,0.00ns,63.52us,1.36us,62.88us,93.17us
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,594915,46222,4.56s,64.71us,0.00ns,64.86us,1.37us,64.17us,102.00us
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,1685,4.56s,1.78ms,0.00ns,1.78ms,34.20us,1.68ms,1.93ms
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,2841,4.56s,1.05ms,0.00ns,1.06ms,6.37us,1.05ms,1.23ms
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,594915,3458,4.56s,865.04us,0.00ns,867.60us,5.36us,864.46us,912.21us
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,594915,41221,4.56s,72.50us,0.00ns,72.73us,1.48us,72.33us,105.83us
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,594915,59664,4.56s,48.96us,0.00ns,50.23us,3.17us,48.17us,88.58us
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,594915,58919,4.56s,50.58us,0.00ns,50.87us,1.24us,49.96us,84.50us
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,594915,58374,4.56s,51.67us,0.00ns,51.34us,88.45us,48.96us,21.29ms
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,1647,4.56s,1.78ms,0.00ns,1.82ms,666.68us,1.68ms,20.48ms
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,2835,4.55s,1.05ms,0.00ns,1.06ms,13.19us,1.05ms,1.23ms
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,594915,3457,4.56s,865.25us,0.00ns,867.85us,5.96us,864.67us,945.29us
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,594915,5408,4.56s,553.04us,0.00ns,554.73us,4.51us,552.04us,613.04us
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,594915,5406,4.56s,553.33us,0.00ns,554.99us,4.55us,552.08us,602.38us
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,594915,68943,4.56s,43.33us,0.00ns,43.46us,1.06us,43.17us,73.50us
+sherlock/name-alt2,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,594915,5914,4.56s,505.79us,0.00ns,507.27us,4.95us,502.12us,554.50us
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,594915,3439,4.56s,869.71us,0.00ns,872.44us,6.13us,869.21us,0.97ms
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,594915,35608,4.56s,83.96us,0.00ns,84.20us,1.59us,83.75us,123.58us
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,594915,35512,4.56s,84.17us,0.00ns,84.43us,1.60us,84.00us,122.17us
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,886,4.56s,2.55ms,21.00ns,3.39ms,18.85ms,2.50ms,560.79ms
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,2713,4.55s,1.10ms,0.00ns,1.11ms,5.85us,1.10ms,1.15ms
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,594915,3442,4.56s,869.29us,0.00ns,871.76us,5.58us,868.17us,928.29us
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,594915,37980,4.56s,78.71us,0.00ns,78.94us,1.58us,78.42us,119.75us
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,594915,3438,4.56s,870.21us,0.00ns,872.68us,5.49us,869.17us,915.46us
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,594915,3441,4.56s,869.33us,0.00ns,871.89us,5.47us,868.38us,914.50us
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,594915,3441,4.56s,869.38us,0.00ns,871.82us,5.47us,868.38us,919.33us
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,1181,4.56s,2.54ms,0.00ns,2.54ms,21.60us,2.49ms,2.61ms
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,2714,4.56s,1.10ms,0.00ns,1.11ms,6.10us,1.10ms,1.16ms
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,594915,3441,4.56s,869.46us,0.00ns,872.02us,5.40us,868.42us,925.29us
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,594915,4713,5.06s,629.50us,0.00ns,636.59us,308.66us,628.08us,21.51ms
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,594915,4750,4.54s,630.17us,0.00ns,631.60us,6.21us,628.38us,796.96us
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,594915,22484,4.56s,132.96us,0.00ns,133.38us,2.10us,132.79us,169.79us
+sherlock/name-alt3,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,594915,1636,4.56s,1.83ms,21.00ns,1.83ms,9.06us,1.82ms,1.89ms
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,594915,52646,4.56s,56.75us,0.00ns,56.94us,1.30us,56.21us,90.54us
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,594915,53227,4.56s,56.08us,0.00ns,56.31us,1.30us,55.58us,90.67us
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,594915,51056,4.56s,58.54us,0.00ns,58.71us,1.33us,56.08us,104.79us
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,1354,4.56s,2.22ms,41.00ns,2.22ms,36.62us,2.12ms,2.34ms
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,2842,4.54s,1.05ms,0.00ns,1.06ms,5.81us,1.05ms,1.10ms
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,594915,3454,4.55s,865.83us,0.00ns,868.51us,5.53us,865.62us,914.62us
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,594915,48624,4.56s,61.46us,0.00ns,61.65us,1.48us,61.25us,141.62us
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,594915,49049,4.59s,44.33us,0.00ns,61.11us,2.61ms,43.04us,575.23ms
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,594915,58610,4.56s,52.46us,0.00ns,51.14us,2.22us,48.38us,99.38us
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,594915,57692,4.55s,50.25us,0.00ns,51.95us,3.18us,48.62us,92.54us
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,1365,4.56s,2.20ms,0.00ns,2.20ms,35.80us,2.08ms,2.34ms
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,2843,4.56s,1.05ms,0.00ns,1.06ms,5.87us,1.05ms,1.10ms
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,594915,3455,4.56s,865.88us,0.00ns,868.41us,5.77us,865.17us,0.99ms
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,594915,5424,4.56s,551.42us,0.00ns,553.10us,6.54us,550.21us,717.29us
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,594915,5425,4.56s,551.50us,0.00ns,553.01us,4.29us,549.92us,610.00us
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,594915,72155,4.56s,41.04us,0.00ns,41.52us,1.14us,40.62us,69.17us
+sherlock/name-alt4,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,594915,5441,4.56s,548.92us,0.00ns,551.37us,7.45us,542.38us,592.96us
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,594915,30772,4.60s,80.17us,0.00ns,98.71us,3.17ms,77.38us,555.68ms
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,594915,38590,4.57s,77.33us,0.00ns,77.69us,1.81us,77.08us,111.88us
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,594915,33585,4.55s,89.04us,0.00ns,89.28us,1.65us,88.33us,122.71us
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,1655,4.56s,1.81ms,0.00ns,1.81ms,24.45us,1.74ms,1.91ms
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,2812,4.56s,1.06ms,0.00ns,1.07ms,11.65us,1.06ms,1.27ms
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,594915,3450,4.56s,867.00us,0.00ns,869.58us,5.61us,866.21us,935.29us
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,594915,39881,4.56s,74.96us,0.00ns,75.17us,1.50us,74.79us,113.00us
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,594915,36868,4.56s,81.08us,0.00ns,81.32us,1.59us,80.58us,119.46us
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,594915,34184,4.56s,87.75us,0.00ns,87.71us,1.62us,85.88us,140.79us
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,594915,35680,4.56s,83.75us,0.00ns,84.03us,1.67us,83.12us,122.12us
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,1666,4.56s,1.80ms,83.00ns,1.80ms,34.18us,1.73ms,2.05ms
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,2111,4.54s,1.06ms,0.00ns,1.42ms,12.04ms,1.06ms,551.40ms
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,594915,3450,4.56s,867.21us,0.00ns,869.70us,5.35us,866.50us,914.12us
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,594915,5293,4.56s,565.04us,0.00ns,566.78us,4.64us,563.92us,623.83us
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,594915,5295,4.56s,565.00us,0.00ns,566.62us,4.42us,563.79us,602.17us
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,594915,48186,4.56s,62.04us,0.00ns,62.21us,1.30us,61.83us,94.58us
+sherlock/name-alt5,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,594915,3762,4.55s,796.17us,0.00ns,797.57us,6.12us,789.25us,841.96us
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,594915,444521,4.82s,6.67us,0.00ns,6.70us,345.00ns,6.58us,39.75us
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,594915,444509,4.81s,6.67us,0.00ns,6.70us,353.00ns,6.58us,37.25us
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,594915,444464,4.82s,6.67us,0.00ns,6.70us,386.00ns,6.58us,63.21us
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,1292,4.55s,2.32ms,21.00ns,2.32ms,16.17us,2.27ms,2.39ms
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,2081,4.52s,1.09ms,0.00ns,1.44ms,12.26ms,1.08ms,557.99ms
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,594915,3517,4.55s,850.33us,0.00ns,852.95us,5.71us,850.00us,901.58us
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,594915,44178,4.56s,67.67us,0.00ns,67.86us,1.41us,67.54us,107.71us
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,594915,444482,4.82s,6.67us,0.00ns,6.70us,360.00ns,6.58us,38.38us
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,594915,444660,4.81s,6.67us,0.00ns,6.70us,347.00ns,6.58us,37.46us
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,594915,444667,4.82s,6.67us,0.00ns,6.70us,346.00ns,6.58us,37.29us
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,1294,4.56s,2.32ms,83.00ns,2.32ms,15.59us,2.28ms,2.40ms
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,2756,4.56s,1.09ms,0.00ns,1.09ms,6.13us,1.08ms,1.13ms
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,594915,3516,4.56s,850.71us,0.00ns,853.29us,5.46us,850.25us,896.46us
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,594915,4813,4.56s,621.67us,0.00ns,623.37us,4.69us,619.17us,659.29us
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,594915,4622,5.03s,621.88us,0.00ns,749.22us,8.19ms,619.25us,556.93ms
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,594915,34074,4.56s,87.67us,0.00ns,87.99us,1.98us,87.50us,137.62us
+sherlock/name-alt6,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,594915,2792,4.56s,1.07ms,0.00ns,1.07ms,7.07us,1.06ms,1.14ms
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,594915,242389,4.69s,12.29us,0.00ns,12.33us,521.00ns,12.21us,42.38us
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,594915,242422,4.68s,12.29us,0.00ns,12.32us,502.00ns,12.21us,44.71us
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,594915,242401,4.69s,12.29us,0.00ns,12.33us,513.00ns,12.21us,42.29us
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,3420,4.55s,874.75us,0.00ns,877.19us,5.29us,873.88us,914.46us
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,2933,4.56s,1.02ms,0.00ns,1.02ms,5.95us,1.02ms,1.08ms
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,594915,3518,4.56s,850.29us,0.00ns,852.88us,5.33us,850.04us,901.92us
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,594915,51135,4.55s,58.46us,0.00ns,58.62us,1.29us,58.29us,97.00us
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,594915,240160,4.69s,12.29us,0.00ns,12.44us,26.10us,11.92us,7.65ms
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,594915,227962,4.77s,12.29us,0.00ns,13.11us,99.14us,11.88us,34.90ms
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,594915,242429,4.68s,12.29us,0.00ns,12.32us,497.00ns,12.21us,43.12us
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,3515,4.55s,851.12us,0.00ns,853.51us,5.48us,849.62us,905.12us
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,2933,4.56s,1.02ms,0.00ns,1.02ms,6.01us,1.02ms,1.08ms
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,594915,3518,4.56s,850.29us,0.00ns,852.83us,5.34us,850.04us,896.96us
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,594915,5871,4.55s,509.42us,0.00ns,510.99us,4.31us,509.29us,545.83us
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,594915,5872,4.56s,509.42us,0.00ns,510.91us,4.27us,509.29us,554.54us
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,594915,81646,4.56s,36.62us,0.00ns,36.69us,941.00ns,36.46us,69.38us
+sherlock/name-alt7,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,594915,23820,4.56s,125.50us,0.00ns,125.90us,2.12us,124.38us,164.21us
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,594915,3354,4.56s,891.96us,0.00ns,894.47us,5.29us,888.50us,0.95ms
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,594915,6952,4.51s,322.79us,0.00ns,431.47us,6.70ms,321.21us,557.71ms
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,594915,9290,4.56s,321.88us,0.00ns,322.89us,3.55us,321.46us,360.83us
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,629,4.56s,4.77ms,0.00ns,4.77ms,12.19us,4.75ms,4.83ms
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,1410,4.56s,2.13ms,0.00ns,2.13ms,8.85us,2.12ms,2.21ms
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,594915,3358,4.56s,891.17us,0.00ns,893.60us,5.34us,888.08us,932.12us
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,594915,9707,4.56s,308.08us,0.00ns,309.04us,3.35us,307.62us,348.92us
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,594915,3354,4.56s,891.96us,0.00ns,894.41us,5.26us,889.29us,934.62us
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,594915,3360,4.56s,890.33us,0.00ns,893.05us,5.82us,886.67us,0.97ms
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,594915,3361,4.56s,890.25us,0.00ns,892.71us,5.56us,886.62us,0.96ms
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,630,4.56s,4.77ms,21.00ns,4.77ms,11.37us,4.75ms,4.82ms
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,1402,4.56s,2.11ms,0.00ns,2.14ms,663.49us,2.11ms,26.95ms
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,594915,3257,4.54s,891.00us,0.00ns,921.23us,710.30us,887.33us,32.71ms
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,594915,1398,4.56s,2.15ms,0.00ns,2.15ms,8.41us,2.13ms,2.19ms
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,594915,1399,4.56s,2.14ms,0.00ns,2.15ms,9.10us,2.13ms,2.20ms
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,594915,2690,4.56s,1.11ms,0.00ns,1.12ms,6.77us,1.11ms,1.17ms
+sherlock/name-nocase1,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,594915,259,4.56s,11.59ms,0.00ns,11.59ms,43.97us,11.47ms,11.72ms
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,594915,3391,4.56s,882.42us,0.00ns,884.90us,5.49us,881.00us,940.46us
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,594915,31816,4.56s,94.00us,0.00ns,94.25us,1.75us,93.67us,127.37us
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,594915,30811,4.56s,97.04us,0.00ns,97.32us,1.76us,96.71us,132.46us
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,820,4.55s,3.66ms,83.00ns,3.66ms,13.76us,3.65ms,3.95ms
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,2014,4.56s,1.49ms,0.00ns,1.49ms,6.83us,1.49ms,1.54ms
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,594915,2564,4.53s,881.65us,20.00ns,1.17ms,10.91ms,879.46us,551.89ms
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,594915,35739,4.56s,83.67us,0.00ns,83.89us,1.54us,83.38us,131.71us
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,594915,3392,4.56s,882.17us,0.00ns,884.58us,5.15us,880.00us,925.08us
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,594915,3395,4.56s,881.29us,0.00ns,883.80us,5.43us,878.75us,927.71us
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,594915,3390,4.56s,881.25us,0.00ns,885.03us,11.15us,878.62us,1.04ms
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,820,4.56s,3.66ms,0.00ns,3.66ms,9.79us,3.65ms,3.72ms
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,2015,4.55s,1.49ms,0.00ns,1.49ms,7.02us,1.48ms,1.56ms
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,594915,3394,4.56s,881.54us,0.00ns,884.09us,5.41us,879.50us,929.00us
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,594915,2549,4.56s,1.18ms,0.00ns,1.18ms,6.55us,1.17ms,1.22ms
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,594915,2549,4.56s,1.18ms,0.00ns,1.18ms,6.65us,1.17ms,1.23ms
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,594915,8129,4.55s,364.88us,0.00ns,369.01us,284.93us,353.67us,26.05ms
+sherlock/name-nocase2,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,594915,726,4.57s,3.96ms,63.00ns,4.13ms,1.99ms,3.89ms,32.40ms
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,594915,3382,4.56s,884.67us,0.00ns,887.15us,5.41us,883.58us,948.50us
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,594915,11579,4.56s,258.29us,0.00ns,259.05us,3.10us,256.29us,294.58us
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,594915,11235,4.56s,266.08us,0.00ns,266.98us,3.12us,265.58us,302.12us
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,783,4.56s,3.83ms,0.00ns,3.84ms,10.16us,3.82ms,3.88ms
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,1917,4.56s,1.56ms,0.00ns,1.57ms,7.39us,1.56ms,1.61ms
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,594915,3383,4.56s,884.58us,0.00ns,886.97us,5.34us,882.04us,928.62us
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,594915,12078,4.56s,247.58us,0.00ns,248.34us,2.94us,246.12us,283.67us
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,594915,3380,4.55s,885.38us,0.00ns,887.73us,5.25us,882.88us,936.08us
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,594915,3385,4.55s,883.83us,0.00ns,886.30us,5.28us,880.83us,933.00us
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,594915,2605,4.59s,884.04us,0.00ns,1.16ms,10.98ms,881.50us,557.86ms
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,783,4.55s,3.83ms,0.00ns,3.83ms,9.80us,3.82ms,3.90ms
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,1918,4.55s,1.56ms,20.00ns,1.56ms,6.89us,1.56ms,1.60ms
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,594915,3381,4.56s,884.29us,0.00ns,887.31us,9.13us,882.00us,1.05ms
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,594915,2265,4.56s,1.32ms,0.00ns,1.32ms,6.89us,1.31ms,1.37ms
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,594915,2266,4.55s,1.32ms,0.00ns,1.32ms,6.85us,1.31ms,1.38ms
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,594915,5748,4.56s,520.50us,0.00ns,521.88us,4.46us,518.62us,612.88us
+sherlock/name-nocase3,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,594915,547,4.56s,5.48ms,0.00ns,5.49ms,31.28us,5.41ms,5.60ms
+sherlock/words5000,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/standard,1.0.5,,594915,776,4.56s,3.87ms,21.00ns,3.87ms,10.32us,3.85ms,3.92ms
+sherlock/words5000,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,594915,787,4.56s,3.81ms,0.00ns,3.82ms,9.72us,3.80ms,3.86ms
+sherlock/words5000,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-longest,1.0.5,,594915,777,4.56s,3.82ms,0.00ns,3.86ms,1.00ms,3.81ms,31.61ms
+sherlock/words5000,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,438,4.57s,6.63ms,62.00ns,6.85ms,2.35ms,6.60ms,43.78ms
+sherlock/words5000,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,783,4.56s,3.83ms,0.00ns,3.84ms,13.88us,3.82ms,4.09ms
+sherlock/words5000,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,594915,1912,4.67s,1.57ms,0.00ns,1.57ms,8.01us,1.56ms,1.68ms
+sherlock/words5000,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/standard,1.0.5,,594915,780,4.55s,3.84ms,0.00ns,3.85ms,34.73us,3.82ms,4.13ms
+sherlock/words5000,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,594915,770,4.55s,3.89ms,0.00ns,3.90ms,10.73us,3.88ms,3.96ms
+sherlock/words5000,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-longest,1.0.5,,594915,772,4.56s,3.88ms,20.00ns,3.89ms,62.08us,3.87ms,4.97ms
+sherlock/words5000,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-noncontiguous/leftmost-first,1.0.5,,594915,454,4.55s,6.61ms,21.00ns,6.61ms,13.25us,6.59ms,6.67ms
+sherlock/words5000,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/nfa-contiguous/leftmost-first,1.0.5,,594915,788,4.56s,3.81ms,21.00ns,3.81ms,10.15us,3.79ms,3.86ms
+sherlock/words5000,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/dfa/leftmost-first,1.0.5,,594915,1909,4.62s,1.57ms,0.00ns,1.57ms,7.81us,1.56ms,1.71ms
+sherlock/words5000,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-first,1.0.0,,594915,690,4.56s,4.35ms,0.00ns,4.35ms,11.66us,4.33ms,4.42ms
+sherlock/words5000,count,0.0.1 (rev f4d84cfc42),daachorse/bytewise/leftmost-longest,1.0.0,,594915,518,4.54s,4.36ms,21.00ns,5.80ms,25.00ms,4.34ms,570.18ms
+sherlock/words5000,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,594915,30,4.61s,101.88ms,855.00ns,101.89ms,51.22us,101.80ms,102.00ms
+sherlock/words5000,count,0.0.1 (rev f4d84cfc42),naive/rust/std,0.1.0,,594915,3,6.18s,1.22s,0.00ns,1.22s,1.22ms,1.22s,1.22s
+teddy/teddy1-1pat-supercommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,887,4.55s,3.38ms,0.00ns,3.38ms,9.30us,3.37ms,3.44ms
+teddy/teddy1-1pat-supercommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,1653,4.56s,1.82ms,0.00ns,1.82ms,11.49us,1.79ms,1.86ms
+teddy/teddy1-1pat-supercommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy1-1pat-supercommon,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,3231,4.56s,925.75us,0.00ns,928.56us,5.67us,925.46us,0.98ms
+teddy/teddy1-1pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,1494,4.56s,2.01ms,0.00ns,2.01ms,8.15us,2.00ms,2.06ms
+teddy/teddy1-1pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,3126,4.56s,0.96ms,0.00ns,0.96ms,11.27us,935.71us,1.03ms
+teddy/teddy1-1pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy1-1pat-common,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,5265,4.56s,568.17us,0.00ns,569.82us,5.19us,565.50us,679.79us
+teddy/teddy1-1pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2328,4.56s,1.29ms,0.00ns,1.29ms,6.66us,1.28ms,1.34ms
+teddy/teddy1-1pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,71144,4.63s,32.12us,0.00ns,42.12us,2.10ms,32.00us,558.43ms
+teddy/teddy1-1pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy1-1pat-uncommon,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,300490,4.76s,9.92us,0.00ns,9.93us,413.00ns,9.79us,42.67us
+teddy/teddy1-2pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,1260,4.56s,2.38ms,21.00ns,2.38ms,8.17us,2.37ms,2.43ms
+teddy/teddy1-2pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,2267,4.56s,1.33ms,0.00ns,1.32ms,11.83us,1.30ms,1.37ms
+teddy/teddy1-2pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy1-2pat-common,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,4056,4.56s,738.46us,0.00ns,739.62us,5.90us,729.88us,782.38us
+teddy/teddy1-2pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2327,4.56s,1.29ms,0.00ns,1.29ms,6.72us,1.28ms,1.34ms
+teddy/teddy1-2pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,93074,4.56s,32.08us,0.00ns,32.18us,877.00ns,31.96us,63.08us
+teddy/teddy1-2pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy1-2pat-uncommon,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,150677,4.62s,19.83us,0.00ns,19.86us,649.00ns,19.71us,52.96us
+teddy/teddy1-8pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,446,4.55s,6.73ms,0.00ns,6.74ms,13.75us,6.71ms,6.80ms
+teddy/teddy1-8pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,646,4.56s,4.65ms,21.00ns,4.65ms,11.09us,4.63ms,4.70ms
+teddy/teddy1-8pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy1-8pat-common,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,786,4.56s,3.79ms,21.00ns,3.82ms,758.24us,3.77ms,25.05ms
+teddy/teddy1-8pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2263,4.56s,1.29ms,0.00ns,1.33ms,719.57us,1.29ms,25.69ms
+teddy/teddy1-8pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,80612,4.56s,37.08us,0.00ns,37.17us,0.95us,36.92us,65.79us
+teddy/teddy1-8pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy1-8pat-uncommon,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,36196,4.56s,82.58us,0.00ns,82.83us,1.57us,82.46us,154.17us
+teddy/teddy1-16pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,314,4.56s,9.58ms,63.00ns,9.58ms,15.24us,9.55ms,9.65ms
+teddy/teddy1-16pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,259,4.56s,11.61ms,0.00ns,11.62ms,17.02us,11.58ms,11.68ms
+teddy/teddy1-16pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy1-16pat-common,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,426,4.56s,7.04ms,0.00ns,7.04ms,18.61us,7.01ms,7.12ms
+teddy/teddy1-16pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2259,4.56s,1.32ms,0.00ns,1.33ms,6.75us,1.32ms,1.38ms
+teddy/teddy1-16pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,2654,4.56s,1.13ms,0.00ns,1.13ms,6.21us,1.13ms,1.17ms
+teddy/teddy1-16pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy1-16pat-uncommon,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,16390,4.56s,182.46us,0.00ns,182.99us,2.39us,182.25us,216.71us
+teddy/teddy1-32pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,296,4.56s,10.14ms,20.00ns,10.15ms,16.09us,10.11ms,10.21ms
+teddy/teddy1-32pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,159,4.54s,14.12ms,0.00ns,18.93ms,46.25ms,14.01ms,594.69ms
+teddy/teddy1-32pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy1-32pat-common,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,340,4.56s,8.82ms,21.00ns,8.82ms,31.23us,8.76ms,9.06ms
+teddy/teddy1-32pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2210,4.56s,1.35ms,0.00ns,1.36ms,6.65us,1.35ms,1.41ms
+teddy/teddy1-32pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,1115,4.56s,2.69ms,0.00ns,2.69ms,9.38us,2.68ms,2.75ms
+teddy/teddy1-32pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy1-32pat-uncommon,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,8094,4.55s,369.58us,0.00ns,370.60us,3.43us,369.25us,408.92us
+teddy/teddy1-48pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,285,4.56s,10.56ms,0.00ns,10.56ms,16.73us,10.53ms,10.61ms
+teddy/teddy1-48pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,173,4.56s,17.37ms,0.00ns,17.37ms,53.33us,17.28ms,17.52ms
+teddy/teddy1-48pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy1-48pat-common,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,291,4.55s,10.34ms,0.00ns,10.34ms,29.21us,10.27ms,10.41ms
+teddy/teddy1-48pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,1876,4.56s,1.60ms,0.00ns,1.60ms,11.39us,1.59ms,1.64ms
+teddy/teddy1-48pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,659,4.56s,4.55ms,0.00ns,4.56ms,10.73us,4.54ms,4.60ms
+teddy/teddy1-48pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy1-48pat-uncommon,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,3436,4.90s,800.71us,1.00ns,0.97ms,9.61ms,782.21us,563.50ms
+teddy/teddy1-64pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,284,4.55s,10.59ms,21.00ns,10.59ms,17.22us,10.55ms,10.64ms
+teddy/teddy1-64pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,164,4.55s,18.29ms,125.00ns,18.29ms,17.76us,18.26ms,18.40ms
+teddy/teddy1-64pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy1-64pat-common,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,283,4.56s,10.60ms,0.00ns,10.61ms,25.61us,10.54ms,10.68ms
+teddy/teddy1-64pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2210,4.56s,1.35ms,0.00ns,1.36ms,7.12us,1.35ms,1.41ms
+teddy/teddy1-64pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,563,4.56s,5.33ms,0.00ns,5.33ms,12.23us,5.32ms,5.39ms
+teddy/teddy1-64pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy1-64pat-uncommon,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,4354,4.56s,686.88us,0.00ns,688.97us,5.36us,686.58us,781.46us
+teddy/teddy2-1pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,1913,4.56s,1.57ms,0.00ns,1.57ms,7.71us,1.56ms,1.65ms
+teddy/teddy2-1pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,7285,4.56s,410.58us,0.00ns,411.79us,3.78us,409.00us,451.46us
+teddy/teddy2-1pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy2-1pat-common,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,11801,4.56s,253.00us,0.00ns,254.19us,3.41us,251.75us,301.54us
+teddy/teddy2-1pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2308,4.56s,1.29ms,0.00ns,1.30ms,513.66us,1.28ms,25.97ms
+teddy/teddy2-1pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,57852,5.08s,48.25us,0.00ns,51.80us,175.96us,48.08us,27.65ms
+teddy/teddy2-1pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy2-1pat-uncommon,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,123248,4.62s,24.17us,0.00ns,24.29us,765.00ns,24.04us,57.88us
+teddy/teddy2-2pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2033,4.56s,1.47ms,0.00ns,1.48ms,7.46us,1.46ms,1.51ms
+teddy/teddy2-2pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,9249,4.56s,323.29us,0.00ns,324.31us,3.41us,322.96us,365.67us
+teddy/teddy2-2pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy2-2pat-common,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,17288,4.56s,174.04us,0.00ns,173.48us,2.94us,169.12us,208.08us
+teddy/teddy2-2pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2328,4.55s,1.29ms,0.00ns,1.29ms,6.48us,1.28ms,1.34ms
+teddy/teddy2-2pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,61960,4.56s,48.25us,0.00ns,48.37us,1.14us,48.08us,86.21us
+teddy/teddy2-2pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy2-2pat-uncommon,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,60104,4.56s,49.62us,0.00ns,49.86us,1.20us,49.50us,91.54us
+teddy/teddy2-8pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,1633,4.56s,1.83ms,0.00ns,1.84ms,9.52us,1.83ms,2.04ms
+teddy/teddy2-8pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,2900,4.56s,1.03ms,0.00ns,1.03ms,6.01us,1.03ms,1.08ms
+teddy/teddy2-8pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy2-8pat-common,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,3832,4.54s,584.29us,0.00ns,782.87us,9.01ms,582.83us,556.39ms
+teddy/teddy2-8pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2326,4.56s,1.29ms,0.00ns,1.29ms,7.25us,1.29ms,1.36ms
+teddy/teddy2-8pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,61761,4.56s,48.38us,0.00ns,48.53us,1.20us,48.25us,83.38us
+teddy/teddy2-8pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy2-8pat-uncommon,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,14894,4.56s,200.71us,0.00ns,201.38us,3.16us,198.58us,236.92us
+teddy/teddy2-16pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,962,4.56s,3.12ms,0.00ns,3.12ms,10.52us,3.11ms,3.18ms
+teddy/teddy2-16pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,980,4.56s,3.06ms,21.00ns,3.06ms,10.19us,3.05ms,3.11ms
+teddy/teddy2-16pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy2-16pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2325,4.56s,1.29ms,0.00ns,1.29ms,7.20us,1.29ms,1.38ms
+teddy/teddy2-16pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,35850,4.56s,83.38us,0.00ns,83.63us,1.68us,83.12us,114.04us
+teddy/teddy2-16pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy2-32pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,795,4.56s,3.77ms,0.00ns,3.78ms,11.31us,3.76ms,3.83ms
+teddy/teddy2-32pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,584,4.56s,5.14ms,0.00ns,5.14ms,12.59us,5.13ms,5.21ms
+teddy/teddy2-32pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy2-32pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2304,4.55s,1.29ms,0.00ns,1.30ms,502.06us,1.29ms,25.39ms
+teddy/teddy2-32pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,2420,4.53s,1.21ms,0.00ns,1.24ms,530.22us,1.20ms,22.70ms
+teddy/teddy2-32pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy2-48pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,714,4.56s,4.20ms,0.00ns,4.20ms,10.81us,4.18ms,4.25ms
+teddy/teddy2-48pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,425,4.56s,7.06ms,0.00ns,7.06ms,13.48us,7.04ms,7.13ms
+teddy/teddy2-48pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy2-48pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2322,4.56s,1.29ms,0.00ns,1.29ms,6.92us,1.29ms,1.40ms
+teddy/teddy2-48pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,1110,4.56s,2.70ms,0.00ns,2.70ms,9.20us,2.69ms,2.75ms
+teddy/teddy2-48pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy2-64pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,635,4.56s,4.73ms,0.00ns,4.73ms,11.48us,4.71ms,4.79ms
+teddy/teddy2-64pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,291,4.56s,10.32ms,0.00ns,10.32ms,16.35us,10.30ms,10.38ms
+teddy/teddy2-64pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy2-64pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2321,4.56s,1.29ms,0.00ns,1.29ms,6.42us,1.29ms,1.33ms
+teddy/teddy2-64pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,673,4.56s,4.46ms,0.00ns,4.46ms,11.24us,4.44ms,4.51ms
+teddy/teddy2-64pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy3-1pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2138,4.56s,1.40ms,20.00ns,1.40ms,6.66us,1.40ms,1.45ms
+teddy/teddy3-1pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,10009,4.54s,222.50us,0.00ns,299.68us,5.58ms,219.50us,555.93ms
+teddy/teddy3-1pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy3-1pat-common,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,15565,4.55s,190.50us,0.00ns,192.69us,6.28us,188.46us,237.17us
+teddy/teddy3-1pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2327,4.56s,1.29ms,0.00ns,1.29ms,6.39us,1.28ms,1.33ms
+teddy/teddy3-1pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,43690,4.56s,68.42us,0.00ns,68.62us,1.51us,68.25us,99.50us
+teddy/teddy3-1pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy3-1pat-uncommon,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,120435,4.63s,24.79us,0.00ns,24.86us,749.00ns,24.67us,55.54us
+teddy/teddy3-2pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,1923,4.56s,1.56ms,0.00ns,1.56ms,7.36us,1.55ms,1.62ms
+teddy/teddy3-2pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,6719,4.56s,445.38us,0.00ns,446.46us,4.01us,443.67us,478.33us
+teddy/teddy3-2pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy3-2pat-common,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,10004,4.56s,299.00us,0.00ns,299.85us,3.53us,296.88us,346.38us
+teddy/teddy3-2pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2327,4.56s,1.29ms,0.00ns,1.29ms,6.67us,1.28ms,1.34ms
+teddy/teddy3-2pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,43632,4.56s,68.42us,0.00ns,68.71us,1.66us,68.25us,100.75us
+teddy/teddy3-2pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy3-2pat-uncommon,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,52919,4.79s,49.62us,0.00ns,60.90us,2.42ms,48.21us,556.91ms
+teddy/teddy3-8pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,1801,4.55s,1.66ms,0.00ns,1.67ms,29.02us,1.66ms,2.06ms
+teddy/teddy3-8pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,4188,4.56s,714.62us,0.00ns,716.44us,5.14us,712.38us,765.29us
+teddy/teddy3-8pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy3-8pat-common,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,4417,4.55s,678.00us,0.00ns,679.22us,5.67us,674.54us,724.79us
+teddy/teddy3-8pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2326,4.56s,1.29ms,20.00ns,1.29ms,6.93us,1.29ms,1.34ms
+teddy/teddy3-8pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,43675,4.56s,68.46us,0.00ns,68.64us,1.42us,68.29us,106.21us
+teddy/teddy3-8pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy3-16pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,1544,4.56s,1.94ms,0.00ns,1.94ms,9.99us,1.94ms,2.14ms
+teddy/teddy3-16pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,2000,4.56s,1.50ms,20.00ns,1.50ms,7.57us,1.48ms,1.56ms
+teddy/teddy3-16pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy3-16pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2325,4.56s,1.29ms,0.00ns,1.29ms,6.44us,1.29ms,1.33ms
+teddy/teddy3-16pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,31079,4.56s,96.17us,0.00ns,96.48us,1.79us,95.92us,130.38us
+teddy/teddy3-16pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy3-32pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,1359,4.51s,2.19ms,0.00ns,2.21ms,725.16us,2.18ms,28.93ms
+teddy/teddy3-32pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,1058,5.00s,2.65ms,20.00ns,2.84ms,1.78ms,2.64ms,38.09ms
+teddy/teddy3-32pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy3-32pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2324,4.56s,1.29ms,0.00ns,1.29ms,6.66us,1.29ms,1.35ms
+teddy/teddy3-32pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,22123,4.56s,135.12us,0.00ns,135.56us,2.06us,134.75us,169.96us
+teddy/teddy3-32pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy3-48pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,1280,4.56s,2.34ms,0.00ns,2.35ms,8.87us,2.34ms,2.40ms
+teddy/teddy3-48pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,717,4.56s,4.19ms,0.00ns,4.19ms,10.62us,4.17ms,4.24ms
+teddy/teddy3-48pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy3-48pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2322,4.56s,1.29ms,0.00ns,1.29ms,6.55us,1.29ms,1.34ms
+teddy/teddy3-48pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,5852,4.55s,510.79us,0.00ns,512.63us,7.06us,507.67us,596.96us
+teddy/teddy3-48pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy3-64pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,1214,4.55s,2.47ms,0.00ns,2.47ms,8.41us,2.46ms,2.52ms
+teddy/teddy3-64pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,438,4.56s,6.93ms,0.00ns,6.86ms,102.64us,6.72ms,7.22ms
+teddy/teddy3-64pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy3-64pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2322,4.56s,1.29ms,0.00ns,1.29ms,6.57us,1.29ms,1.34ms
+teddy/teddy3-64pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,1568,4.54s,1.44ms,0.00ns,1.91ms,14.13ms,1.43ms,558.21ms
+teddy/teddy3-64pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy4-1pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2262,4.55s,1.32ms,0.00ns,1.33ms,7.15us,1.32ms,1.41ms
+teddy/teddy4-1pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,24110,4.56s,124.04us,0.00ns,124.39us,2.00us,123.79us,172.58us
+teddy/teddy4-1pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy4-1pat-common,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,30405,4.56s,96.29us,0.00ns,98.62us,3.74us,94.96us,133.33us
+teddy/teddy4-1pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2327,4.55s,1.29ms,0.00ns,1.29ms,6.49us,1.28ms,1.35ms
+teddy/teddy4-1pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,33841,4.55s,88.38us,0.00ns,88.60us,1.62us,88.21us,119.12us
+teddy/teddy4-1pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy4-1pat-uncommon,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,120515,4.62s,24.79us,0.00ns,24.84us,729.00ns,24.67us,50.58us
+teddy/teddy4-2pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2219,4.56s,1.35ms,0.00ns,1.35ms,6.78us,1.35ms,1.41ms
+teddy/teddy4-2pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,18436,4.56s,162.21us,0.00ns,162.69us,2.35us,161.96us,210.38us
+teddy/teddy4-2pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy4-2pat-common,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,21169,4.56s,141.25us,0.00ns,141.68us,2.23us,140.88us,179.17us
+teddy/teddy4-2pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2306,4.56s,1.29ms,0.00ns,1.30ms,551.04us,1.28ms,27.75ms
+teddy/teddy4-2pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,32963,4.57s,88.33us,0.00ns,90.96us,166.31us,88.21us,23.52ms
+teddy/teddy4-2pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy4-2pat-uncommon,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,61363,4.55s,48.71us,0.00ns,48.84us,1.11us,48.54us,79.17us
+teddy/teddy4-8pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2041,4.56s,1.47ms,0.00ns,1.47ms,7.51us,1.46ms,1.53ms
+teddy/teddy4-8pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,7983,4.56s,374.62us,0.00ns,375.80us,3.75us,374.17us,411.17us
+teddy/teddy4-8pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy4-8pat-common,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,5910,4.56s,506.12us,0.00ns,507.60us,4.45us,504.75us,570.04us
+teddy/teddy4-8pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2323,4.56s,1.29ms,0.00ns,1.29ms,6.65us,1.29ms,1.34ms
+teddy/teddy4-8pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,33247,4.56s,89.92us,0.00ns,90.19us,1.68us,89.79us,131.88us
+teddy/teddy4-8pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy4-8pat-uncommon,count,0.0.1 (rev f4d84cfc42),naive/rust/memchr/memmem,0.1.0,,899232,12897,4.56s,231.96us,0.00ns,232.57us,3.08us,229.17us,267.88us
+teddy/teddy4-16pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,1914,4.56s,1.57ms,20.00ns,1.57ms,9.09us,1.55ms,1.62ms
+teddy/teddy4-16pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,4107,4.56s,728.71us,0.00ns,730.54us,5.17us,725.92us,771.21us
+teddy/teddy4-16pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy4-16pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,1740,4.55s,1.29ms,0.00ns,1.72ms,13.45ms,1.29ms,559.79ms
+teddy/teddy4-16pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,33468,4.55s,89.33us,0.00ns,89.59us,1.66us,89.17us,125.92us
+teddy/teddy4-16pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy4-32pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,1778,4.56s,1.69ms,20.00ns,1.69ms,8.54us,1.68ms,1.74ms
+teddy/teddy4-32pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,2483,4.56s,1.21ms,0.00ns,1.21ms,6.38us,1.20ms,1.26ms
+teddy/teddy4-32pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy4-32pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2324,4.56s,1.29ms,0.00ns,1.29ms,6.67us,1.29ms,1.35ms
+teddy/teddy4-32pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,27503,4.56s,108.71us,0.00ns,109.04us,1.84us,108.54us,144.46us
+teddy/teddy4-32pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy4-48pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,1700,4.56s,1.76ms,0.00ns,1.77ms,7.42us,1.76ms,1.81ms
+teddy/teddy4-48pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,1559,4.56s,1.92ms,0.00ns,1.92ms,7.67us,1.91ms,1.98ms
+teddy/teddy4-48pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy4-48pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2322,4.56s,1.29ms,0.00ns,1.29ms,6.46us,1.29ms,1.34ms
+teddy/teddy4-48pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,18397,4.56s,162.54us,0.00ns,163.03us,2.33us,162.25us,196.42us
+teddy/teddy4-48pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy4-64pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,1349,4.66s,1.84ms,0.00ns,2.30ms,15.27ms,1.82ms,562.43ms
+teddy/teddy4-64pat-common,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,1066,4.51s,2.81ms,0.00ns,2.82ms,8.23us,2.80ms,2.86ms
+teddy/teddy4-64pat-common,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+teddy/teddy4-64pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/dfa/leftmost-first,1.0.5,,899232,2321,4.56s,1.29ms,0.00ns,1.29ms,6.50us,1.29ms,1.35ms
+teddy/teddy4-64pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/packed/leftmost-first,1.0.5,,899232,11497,4.56s,260.12us,0.00ns,260.90us,2.96us,259.62us,305.96us
+teddy/teddy4-64pat-uncommon,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/packed/leftmost-first,1.0.5,"failed to run command for 'rust/old-aho-corasick/packed/leftmost-first', last line of stderr is: Error: could not build packed searcher",,0,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns,0.00ns
+curated/sherlock-en,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,899232,84138,4.56s,35.54us,0.00ns,35.61us,0.97us,35.04us,68.79us
+curated/sherlock-en,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,899232,85035,4.56s,35.12us,0.00ns,35.23us,919.00ns,34.88us,65.88us
+curated/sherlock-casei-en,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,899232,28330,4.56s,105.54us,0.00ns,105.85us,1.78us,105.21us,135.38us
+curated/sherlock-casei-en,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,899232,2307,4.55s,1.30ms,0.00ns,1.30ms,6.41us,1.30ms,1.34ms
+curated/sherlock-ru,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,1570556,49518,4.56s,60.38us,0.00ns,60.54us,1.30us,59.96us,91.25us
+curated/sherlock-ru,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,1570556,49548,4.56s,60.33us,0.00ns,60.49us,1.32us,59.71us,90.46us
+curated/sherlock-casei-ru,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,1570556,9194,4.56s,324.92us,0.00ns,326.26us,6.83us,324.17us,444.67us
+curated/sherlock-casei-ru,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,1570556,9253,4.56s,323.33us,0.00ns,324.19us,3.34us,322.62us,358.00us
+curated/sherlock-zh,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,813478,114006,4.63s,26.21us,0.00ns,26.27us,887.00ns,26.00us,131.38us
+curated/sherlock-zh,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,813478,114059,4.63s,26.21us,0.00ns,26.25us,799.00ns,26.04us,74.50us
+curated/alt-sherlock-en,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,899232,27330,4.56s,109.29us,0.00ns,109.72us,1.94us,109.08us,146.54us
+curated/alt-sherlock-en,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,899232,2300,4.56s,1.30ms,0.00ns,1.30ms,6.73us,1.30ms,1.37ms
+curated/alt-sherlock-casei-en,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,899232,10696,4.56s,279.62us,0.00ns,280.44us,3.17us,278.08us,316.21us
+curated/alt-sherlock-casei-en,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,899232,2229,4.56s,1.34ms,0.00ns,1.35ms,6.83us,1.34ms,1.40ms
+curated/alt-sherlock-ru,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,1570556,10249,4.56s,291.79us,0.00ns,292.68us,3.24us,291.50us,325.79us
+curated/alt-sherlock-ru,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,1570556,1320,4.56s,2.27ms,0.00ns,2.27ms,8.48us,2.27ms,2.32ms
+curated/alt-sherlock-casei-ru,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,1570556,3161,4.56s,946.92us,0.00ns,949.19us,6.28us,943.96us,0.99ms
+curated/alt-sherlock-casei-ru,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,1570556,1210,4.56s,2.48ms,0.00ns,2.48ms,8.42us,2.47ms,2.53ms
+curated/alt-sherlock-zh,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,813478,34282,4.56s,87.21us,0.00ns,87.46us,1.69us,87.04us,129.96us
+curated/alt-sherlock-zh,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,813478,2561,4.55s,1.17ms,0.00ns,1.17ms,5.92us,1.17ms,1.21ms
+curated/dictionary-15,count,0.0.1 (rev f4d84cfc42),rust/aho-corasick/default/leftmost-first,1.0.5,,61436,9664,4.56s,309.62us,0.00ns,310.42us,3.47us,307.75us,345.42us
+curated/dictionary-15,count,0.0.1 (rev f4d84cfc42),rust/old-aho-corasick/default/leftmost-first,1.0.5,,61436,8840,4.56s,338.42us,0.00ns,339.33us,3.41us,335.88us,379.50us
