@@ -48,6 +48,12 @@ pub struct Patterns {
     total_pattern_bytes: usize,
 }
 
+// BREADCRUMBS: I think we want to experiment with a different bucket
+// representation. Basically, each bucket is just a Range<usize> to a single
+// contiguous allocation? Maybe length-prefixed patterns or something? The
+// idea is to try to get rid of the pointer chasing in verification. I don't
+// know that that is the issue, but I suspect it is.
+
 impl Patterns {
     /// Create a new collection of patterns for the given match semantics. The
     /// ID of each pattern is the index of the pattern at which it occurs in
