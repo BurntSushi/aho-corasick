@@ -10,6 +10,7 @@ regex = [' ']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 139_756
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -22,6 +23,7 @@ regex = ['a']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 47_062
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -34,6 +36,7 @@ regex = ['<']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 0
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -46,6 +49,7 @@ regex = ['a', 'b']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 55_518
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -58,6 +62,7 @@ regex = ['<', '>']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 0
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -70,6 +75,7 @@ regex = ['a', 'b', 't', 'e', 'i', 'o', 'c', 'g']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 309_829
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -82,6 +88,7 @@ regex = ['<', '>', '#', '&', '@', '%', '~', '`']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 217
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -97,6 +104,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 555_321
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -112,6 +120,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 1_707
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -129,6 +138,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 640_295
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -146,6 +156,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 3146
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -165,6 +176,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 720_038
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -184,6 +196,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 17_648
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -205,6 +218,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 727_274
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -226,6 +240,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 3_151
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -238,6 +253,7 @@ regex = [' t']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 17_907
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -250,6 +266,7 @@ regex = ['<>']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 0
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -262,6 +279,7 @@ regex = ['at', 'be']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 9_982
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -274,6 +292,7 @@ regex = ['<>', '&&']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 0
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -286,6 +305,7 @@ regex = ['as', 'ie', 'me', 'be', 'oo', 'th', 'if', 'my']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 31_360
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -298,6 +318,7 @@ regex = ['<>', '#&', '@%', '~`', 'ZZ', 'YY', 'WW', 'UU']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 4
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -313,6 +334,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 106_751
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -327,6 +349,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 21
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -343,6 +366,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 145_889
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -359,6 +383,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 42
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -378,6 +403,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 171_422
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -396,6 +422,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 64
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -417,6 +444,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 194_729
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -437,6 +465,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 83
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -448,6 +477,7 @@ regex = ['the']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 7_256
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -460,6 +490,7 @@ regex = ['<&>']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 0
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -472,6 +503,7 @@ regex = ['the', 'you']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 13_529
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -484,6 +516,7 @@ regex = ['<&>', 'ZQY']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 0
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -503,6 +536,7 @@ count = [
   { engine = '.*', count = 21_436 },
 ]
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -515,6 +549,7 @@ regex = ['<&>', 'ZQY', 'ADA', 'QQQ', '@-@', '{;}', '*]$', 'BXU']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 1
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -529,6 +564,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 37_429
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -543,6 +579,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 16
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -559,6 +596,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 51_347
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -575,6 +613,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 35
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -593,6 +632,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 61_132
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -611,6 +651,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 53
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -631,6 +672,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 68_368
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -651,6 +693,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 73
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -662,6 +705,7 @@ regex = ['that']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 1_771
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -674,6 +718,7 @@ regex = ['<&@>']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 0
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -686,6 +731,7 @@ regex = ['that', 'have']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 2_843
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -698,6 +744,7 @@ regex = ['<&@>', 'WXYZ']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 0
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -710,6 +757,7 @@ regex = ['that', 'have', 'this', 'your', 'know', 'with', 'what', 'here']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 9_270
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -722,6 +770,7 @@ regex = ['abut', 'chum', 'dink', 'flop', 'golf', 'hoax', 'isle', 'pear']
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 52
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
   "naive/rust/memchr/memmem",
@@ -737,6 +786,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 15_295
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -751,6 +801,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 16
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -767,6 +818,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 22_523
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -783,6 +835,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 56
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -801,6 +854,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 27_293
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -819,6 +873,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 74
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -839,6 +894,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 30_683
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
@@ -859,6 +915,7 @@ regex = [
 haystack = { path = "opensubtitles/en-sampled.txt" }
 count = 90
 engines = [
+  "rust/aho-corasick/dfa/leftmost-first",
   "rust/aho-corasick/packed/leftmost-first",
   "rust/old-aho-corasick/packed/leftmost-first",
 ]
