@@ -1,5 +1,6 @@
 use core::{
     fmt::Debug,
+    ops::Range,
     panic::{RefUnwindSafe, UnwindSafe},
 };
 
@@ -729,10 +730,12 @@ struct Teddy<const N: usize> {
     ///
     /// A pattern string can be found by its `PatternID`.
     patterns: Arc<Patterns>,
-    /// The allocation of patterns in buckets. This only contains the IDs of
-    /// patterns. In order to do full verification, callers must provide the
-    /// actual patterns when using Teddy.
+    // /// The allocation of patterns in buckets. This only contains the IDs of
+    // /// patterns. In order to do full verification, callers must provide the
+    // /// actual patterns when using Teddy.
     buckets: [Vec<PatternID>; N],
+    bucket_ranges: [Range<usize>; N],
+    contiguous: Box<[u8]>,
 }
 
 impl<const N: usize> Teddy<N> {
@@ -750,8 +753,12 @@ impl<const N: usize> Teddy<N> {
         // allocation below), but nice to not do it.
         let buckets =
             <[Vec<PatternID>; N]>::try_from(vec![vec![]; N]).unwrap();
-        let mut t = Teddy { patterns, buckets };
+        let bucket_ranges =
+            <[Range<usize>; N]>::try_from(vec![0..0; N]).unwrap();
+        let contiguous = vec![].into_boxed_slice();
+        let mut t = Teddy { patterns, buckets, bucket_ranges, contiguous };
 
+        let mut buckets = vec![vec![]; N];
         let mut map: BTreeMap<Box<[u8]>, usize> = BTreeMap::new();
         for (id, pattern) in t.patterns.iter() {
             // We try to be slightly clever in how we assign patterns into
@@ -780,16 +787,33 @@ impl<const N: usize> Teddy<N> {
             // nicer to be able to just stop as soon as a match is found.
             let lonybs = pattern.low_nybbles2(t.mask_len());
             if let Some(&bucket) = map.get(&lonybs) {
-                t.buckets[bucket].push(id);
+                buckets[bucket].push(id);
             } else {
                 // N.B. We assign buckets in reverse because it shouldn't have
                 // any influence on performance, but it does make it harder to
                 // get leftmost match semantics accidentally correct.
                 let bucket = (N - 1) - (id.as_usize() % N);
-                t.buckets[bucket].push(id);
+                buckets[bucket].push(id);
                 map.insert(lonybs, bucket);
             }
         }
+        let mut contiguous = vec![];
+        for (bucket, pids) in buckets.iter().enumerate() {
+            let start = contiguous.len();
+            for pid in pids.iter().copied() {
+                let pattern = t.patterns.get(pid);
+                // OK because the higher level packed API guarantees that no
+                // pattern will be longer than what can fit in a `u8`.
+                let len = u8::try_from(pattern.len()).unwrap();
+                contiguous.push(len);
+                contiguous.extend_from_slice(&pid.as_u32().to_ne_bytes());
+                contiguous.extend_from_slice(pattern.bytes());
+            }
+            let end = contiguous.len();
+            t.bucket_ranges[bucket] = start..end;
+        }
+        t.buckets = <[Vec<PatternID>; N]>::try_from(buckets).unwrap();
+        t.contiguous = contiguous.into_boxed_slice();
         t
     }
 
@@ -837,7 +861,33 @@ impl<const N: usize> Teddy<N> {
         end: *const u8,
         bucket: usize,
     ) -> Option<Match> {
+        use crate::packed::pattern::is_equal_raw;
+
         debug_assert!(bucket < self.buckets.len());
+        let haylen = end.distance(cur);
+        let range = self.bucket_ranges.get_unchecked(bucket).clone();
+        let mut contig = self.contiguous.get_unchecked(range);
+        let mut i = 0;
+        while i < contig.len() {
+            let patlen = usize::from(*contig.get_unchecked(i));
+            i += 1;
+            let pid = PatternID::from_ne_bytes_unchecked(
+                contig.get_unchecked(i..i + 4).try_into().unwrap_unchecked(),
+            );
+            i += 4;
+            let patstart = contig.as_ptr().add(i);
+            i += patlen;
+
+            if patlen > haylen {
+                continue;
+            }
+            if is_equal_raw(patstart, cur, patlen) {
+                let start = cur;
+                let end = start.add(patlen);
+                return Some(Match { pid, start, end });
+            }
+        }
+        /*
         // SAFETY: The caller must ensure that the bucket index is correct.
         for pid in self.buckets.get_unchecked(bucket).iter().copied() {
             // SAFETY: This is safe because we are guaranteed that every
@@ -851,6 +901,7 @@ impl<const N: usize> Teddy<N> {
                 return Some(Match { pid, start, end });
             }
         }
+        */
         None
     }
 

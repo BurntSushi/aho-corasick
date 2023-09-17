@@ -293,26 +293,24 @@ impl Builder {
     /// used as the match.
     ///
     /// If the number of patterns added exceeds the amount supported by packed
-    /// searchers, then the builder will stop accumulating patterns and render
-    /// itself inert. At this point, constructing a searcher will always return
-    /// `None`.
+    /// searchers or if any single pattern is too short (zero length) or too
+    /// long (greater than 255 bytes), then the builder will stop accumulating
+    /// patterns and render itself inert. At this point, constructing a
+    /// searcher will always return `None`.
     pub fn add<P: AsRef<[u8]>>(&mut self, pattern: P) -> &mut Builder {
+        let pattern = pattern.as_ref();
         if self.inert {
             return self;
-        } else if self.patterns.len() >= PATTERN_LIMIT {
+        } else if self.patterns.len() >= PATTERN_LIMIT
+            || pattern.is_empty()
+            || pattern.len() > 255
+        {
             self.inert = true;
             self.patterns.reset();
             return self;
         }
         // Just in case PATTERN_LIMIT increases beyond u16::MAX.
         assert!(self.patterns.len() <= core::u16::MAX as usize);
-
-        let pattern = pattern.as_ref();
-        if pattern.is_empty() {
-            self.inert = true;
-            self.patterns.reset();
-            return self;
-        }
         self.patterns.add(pattern);
         self
     }

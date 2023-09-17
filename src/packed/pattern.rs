@@ -74,9 +74,10 @@ impl Patterns {
 
     /// Add a pattern to this collection.
     ///
-    /// This panics if the pattern given is empty.
+    /// This panics if the pattern given is empty or is longer than 255 bytes.
     pub fn add(&mut self, bytes: &[u8]) {
         assert!(!bytes.is_empty());
+        assert!(bytes.len() <= 255);
         assert!(self.by_id.len() <= u16::MAX as usize);
 
         let id = PatternID::new(self.by_id.len()).unwrap();
@@ -379,7 +380,11 @@ fn is_equal(x: &[u8], y: &[u8]) -> bool {
 /// * The distance being in bounds must not rely on "wrapping around" the
 /// address space.
 #[inline(always)]
-unsafe fn is_equal_raw(mut x: *const u8, mut y: *const u8, n: usize) -> bool {
+pub(crate) unsafe fn is_equal_raw(
+    mut x: *const u8,
+    mut y: *const u8,
+    n: usize,
+) -> bool {
     // If we don't have enough bytes to do 4-byte at a time loads, then
     // handle each possible length specially. Note that I used to have a
     // byte-at-a-time loop here and that turned out to be quite a bit slower
