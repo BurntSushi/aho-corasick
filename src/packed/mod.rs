@@ -99,8 +99,8 @@ implementation detail, here are some common reasons:
   so, but this limit may fluctuate based on available CPU features.
 * The available packed algorithms require CPU features that aren't available.
   For example, currently, this crate only provides packed algorithms for
-  `x86_64`. Therefore, constructing a packed searcher on any other target
-  (e.g., ARM) will always fail.
+  `x86_64` and `aarch64`. Therefore, constructing a packed searcher on any
+  other target will always fail.
 * Zero patterns were given, or one of the patterns given was empty. Packed
   searchers require at least one pattern and that all patterns are non-empty.
 * Something else about the nature of the patterns (typically based on

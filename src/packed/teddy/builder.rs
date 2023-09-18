@@ -97,6 +97,19 @@ impl Builder {
 
     fn build_imp(&self, patterns: Arc<Patterns>) -> Option<Searcher> {
         let patlimit = self.heuristic_pattern_limits;
+        // There's no particular reason why we limit ourselves to little endian
+        // here, but it seems likely that some parts of Teddy as they are
+        // currently written (e.g., the uses of `trailing_zeros`) are likely
+        // wrong on non-little-endian targets. Such things are likely easy to
+        // fix, but at the time of writing (2023/09/18), I actually do not know
+        // how to test this code on a big-endian target. So for now, we're
+        // conservative and just bail out.
+        if !cfg!(target_endian = "little") {
+            debug!("skipping Teddy because target isn't little endian");
+            return None;
+        }
+        // Too many patterns will overwhelm Teddy and likely lead to slow
+        // downs, typically in the verification step.
         if patlimit && patterns.len() > 64 {
             debug!("skipping Teddy because of too many patterns");
             return None;
