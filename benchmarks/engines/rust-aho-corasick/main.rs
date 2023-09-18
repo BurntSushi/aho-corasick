@@ -45,7 +45,7 @@ fn main() -> anyhow::Result<()> {
     let b = Benchmark::from_stdin()
         .context("failed to read KLV data from <stdin>")?;
     let samples = match (b.model.as_str(), engine.as_str()) {
-        // These first 6 configurations are meant to test the default settings
+        // These first 7 configurations are meant to test the default settings
         // on each of {compile, count} x {standard, leftmost-{first,longest}}.
         // We don't also test each of them with {nfa/(non-)?contiguous, dfa}
         // because it would just get ridiculous.
@@ -67,6 +67,10 @@ fn main() -> anyhow::Result<()> {
         ("count", "default/standard") => {
             let ac = builder_ac(&b)?.build(&b.needles)?;
             model_count_ac(&b, &ac)?
+        }
+        ("count", "default/overlapping") => {
+            let ac = builder_ac(&b)?.build(&b.needles)?;
+            model_count_ac_overlapping(&b, &ac)?
         }
         ("count", "default/leftmost-first") => {
             let ac = builder_ac(&b)?
@@ -194,6 +198,15 @@ fn model_count_ac(
 ) -> anyhow::Result<Vec<Sample>> {
     let haystack = &*b.haystack;
     shared::run(b, || Ok(ac.find_iter(haystack).count()))
+}
+
+/// Implements the "count all overlapping matches" model for `AhoCorasick`.
+fn model_count_ac_overlapping(
+    b: &Benchmark,
+    ac: &AhoCorasick,
+) -> anyhow::Result<Vec<Sample>> {
+    let haystack = &*b.haystack;
+    shared::run(b, || Ok(ac.find_overlapping_iter(haystack).count()))
 }
 
 /// Implements the "count all matches" model for packed substring search.

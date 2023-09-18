@@ -1,0 +1,45 @@
+analysis = '''
+This is a WIP for building our a curated set of Aho-Corasick benchmarks.
+The next step is not to actually add more benchmarks, but to hook up more
+Aho-Corasick libraries. There are a lot of them and it's a fair bit of work to
+do.
+'''
+
+[[bench]]
+model = "count"
+name = "sherlock"
+regex = [
+  'Sherlock Holmes',
+  'John Watson',
+  'Irene Adler',
+  'Inspector Lestrade',
+  'Professor Moriarty',
+]
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 714
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/leftmost-first",
+  "daachorse/bytewise/standard",
+  "daachorse/bytewise/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+
+[[bench]]
+model = "count"
+name = "dictionary-15"
+regex = { path = "dictionary/english/length-15.txt", per-line = "pattern" }
+haystack = { path = "opensubtitles/en-sampled.txt" }
+count = 15
+engines = [
+  "rust/aho-corasick/default/standard",
+  "rust/aho-corasick/default/overlapping",
+  "rust/aho-corasick/default/leftmost-first",
+  "daachorse/bytewise/standard",
+  "daachorse/bytewise/overlapping",
+  "daachorse/bytewise/leftmost-first",
+  "naive/rust/memchr/memmem",
+]
+analysis = '''
+Looks for occurrences of 2,663 words of length at least 15.
+'''

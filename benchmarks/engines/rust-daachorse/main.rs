@@ -44,11 +44,18 @@ fn main() -> anyhow::Result<()> {
     let b = Benchmark::from_stdin()
         .context("failed to read KLV data from <stdin>")?;
     let samples = match (b.model.as_str(), engine.as_str()) {
+        ("compile", "bytewise/standard") => {
+            model_compile_bytewise_standard(&b)?
+        }
         ("compile", "bytewise/leftmost-first") => {
             model_compile_bytewise_leftmost(&b, MatchKind::LeftmostFirst)?
         }
         ("compile", "bytewise/leftmost-longest") => {
             model_compile_bytewise_leftmost(&b, MatchKind::LeftmostLongest)?
+        }
+        ("count", "bytewise/standard") => model_count_bytewise_standard(&b)?,
+        ("count", "bytewise/overlapping") => {
+            model_count_bytewise_overlapping(&b)?
         }
         ("count", "bytewise/leftmost-first") => {
             model_count_bytewise_leftmost(&b, MatchKind::LeftmostFirst)?
@@ -72,6 +79,22 @@ fn main() -> anyhow::Result<()> {
 }
 
 /// Implements the "compile a matcher" model for a bytewise daachorse automaton
+/// using "standard" (i.e., what's found in a textbook description of
+/// Aho-Corasick for a non-overlapping search) match semantics.
+fn model_compile_bytewise_standard(
+    b: &Benchmark,
+) -> anyhow::Result<Vec<Sample>> {
+    let haystack = &*b.haystack;
+    shared::run_and_count(
+        b,
+        |ac: daachorse::DoubleArrayAhoCorasick<u32>| {
+            Ok(ac.find_iter(haystack).count())
+        },
+        || compile_bytewise(b, MatchKind::Standard),
+    )
+}
+
+/// Implements the "compile a matcher" model for a bytewise daachorse automaton
 /// using the given match semantics. The match semantics must be either
 /// leftmost-first or leftmost-longest.
 fn model_compile_bytewise_leftmost(
@@ -88,8 +111,30 @@ fn model_compile_bytewise_leftmost(
     )
 }
 
-/// Implements a naive multi-substring algorithm using the `memchr` crate's
-/// `memmem` implementation.
+/// Implements a multi-substring algorithm using daachorse's bytewise
+/// Aho-Corasick automaton. This uses "standard" match semantics.
+fn model_count_bytewise_standard(
+    b: &Benchmark,
+) -> anyhow::Result<Vec<Sample>> {
+    let haystack = &*b.haystack;
+    let ac = compile_bytewise(b, MatchKind::Standard)?;
+    shared::run(b, || Ok(ac.find_iter(haystack).count()))
+}
+
+/// Implements a multi-substring algorithm using daachorse's bytewise
+/// Aho-Corasick automaton. This uses "standard" match semantics and finds all
+/// overlapping matches.
+fn model_count_bytewise_overlapping(
+    b: &Benchmark,
+) -> anyhow::Result<Vec<Sample>> {
+    let haystack = &*b.haystack;
+    let ac = compile_bytewise(b, MatchKind::Standard)?;
+    shared::run(b, || Ok(ac.find_overlapping_iter(haystack).count()))
+}
+
+/// Implements a multi-substring algorithm using daachorse's bytewise
+/// Aho-Corasick automaton. This requires leftmost-first or leftmost-longest
+/// match semantics.
 fn model_count_bytewise_leftmost(
     b: &Benchmark,
     kind: MatchKind,

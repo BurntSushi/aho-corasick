@@ -18,6 +18,22 @@
     args = ["clean"]
 
 [[engine]]
+  name = "rust/aho-corasick/default/overlapping"
+  cwd = "./engines/rust-aho-corasick"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["default/overlapping"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
   name = "rust/aho-corasick/default/leftmost-first"
   cwd = "./engines/rust-aho-corasick"
   [engine.version]
@@ -236,6 +252,38 @@
 # creating this library.
 #
 # Ref: https://github.com/daac-tools/daachorse
+
+[[engine]]
+  name = "daachorse/bytewise/standard"
+  cwd = "./engines/rust-daachorse"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["bytewise/standard"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
+  name = "daachorse/bytewise/overlapping"
+  cwd = "./engines/rust-daachorse"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["bytewise/overlapping"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
 
 [[engine]]
   name = "daachorse/bytewise/leftmost-first"
