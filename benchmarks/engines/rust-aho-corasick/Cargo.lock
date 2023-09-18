@@ -5,17 +5,17 @@ version = 3
 [[package]]
 name = "aho-corasick"
 version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c378d78423fdad8089616f827526ee33c19f2fddbd5de1629152c9593ba4783"
 dependencies = [
- "log",
  "memchr",
 ]
 
 [[package]]
 name = "aho-corasick"
-version = "1.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c378d78423fdad8089616f827526ee33c19f2fddbd5de1629152c9593ba4783"
+version = "1.1.0"
 dependencies = [
+ "log",
  "memchr",
 ]
 
@@ -96,7 +96,7 @@ checksum = "b5e6163cb8c49088c2c36f57875e58ccd8c87c7427f7fbd50ea6710b2f3f2e8f"
 name = "main"
 version = "1.0.5"
 dependencies = [
- "aho-corasick 1.0.5",
+ "aho-corasick 1.1.0",
  "anyhow",
  "env_logger",
  "lexopt",
@@ -115,7 +115,7 @@ version = "1.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "697061221ea1b4a94a624f67d0ae2bfe4e22b8a17b6a192afb11046542cc8c47"
 dependencies = [
- "aho-corasick 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "aho-corasick 1.0.5",
  "memchr",
  "regex-automata",
  "regex-syntax",
@@ -127,7 +127,7 @@ version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2f401f4955220693b56f8ec66ee9c78abffd8d1c4f23dc41a23839eb88f0795"
 dependencies = [
- "aho-corasick 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "aho-corasick 1.0.5",
  "memchr",
  "regex-syntax",
 ]
