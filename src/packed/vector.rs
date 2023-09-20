@@ -320,7 +320,7 @@ pub(crate) trait FatVector: Vector {
 mod x86_64_ssse3 {
     use core::arch::x86_64::*;
 
-    use crate::util::int::{I32, I64, I8};
+    use crate::util::int::{I32, I8};
 
     use super::Vector;
 
@@ -394,12 +394,14 @@ mod x86_64_ssse3 {
             self,
             mut f: impl FnMut(usize, u64) -> Option<T>,
         ) -> Option<T> {
-            let lane = _mm_extract_epi64(self, 0).to_bits();
-            if let Some(t) = f(0, lane) {
+            // We could just use _mm_extract_epi64 here, but that requires
+            // SSE 4.1. It isn't necessarily a problem to just require SSE 4.1,
+            // but everything else works with SSSE3 so we stick to that subset.
+            let lanes: [u64; 2] = core::mem::transmute(self);
+            if let Some(t) = f(0, lanes[0]) {
                 return Some(t);
             }
-            let lane = _mm_extract_epi64(self, 1).to_bits();
-            if let Some(t) = f(1, lane) {
+            if let Some(t) = f(1, lanes[1]) {
                 return Some(t);
             }
             None
