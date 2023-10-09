@@ -567,6 +567,15 @@ impl Builder {
                         if anchored.is_anchored() {
                             oldnextsid = noncontiguous::NFA::DEAD;
                         } else {
+                            // FIXME: This is a perf problem that got worse
+                            // when I changed the non-contiguous NFA to
+                            // use a linked list to represent each state's
+                            // transitions. We decreased memory usage
+                            // (especially peak memory usage) quite a bit, but
+                            // state transitions became quite a bit slower.
+                            // Perhaps the Pareto principle applies here and
+                            // we can use a small cache for very hot failure
+                            // transitions? Not sure.
                             oldnextsid = nnfa.next_state(
                                 Anchored::No,
                                 state.fail(),
