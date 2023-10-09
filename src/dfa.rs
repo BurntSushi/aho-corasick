@@ -566,16 +566,19 @@ impl Builder {
                     if oldnextsid == noncontiguous::NFA::FAIL {
                         if anchored.is_anchored() {
                             oldnextsid = noncontiguous::NFA::DEAD;
+                        } else if state.fail() == noncontiguous::NFA::DEAD {
+                            // This is a special case that avoids following
+                            // DEAD transitions in a non-contiguous NFA.
+                            // Following these transitions is pretty slow
+                            // because the non-contiguous NFA will always use
+                            // a sparse representation for it (because the
+                            // DEAD state is usually treated as a sentinel).
+                            // The *vast* majority of failure states are DEAD
+                            // states, so this winds up being pretty slow if
+                            // we go through the non-contiguous NFA state
+                            // transition logic. Instead, just do it ourselves.
+                            oldnextsid = noncontiguous::NFA::DEAD;
                         } else {
-                            // FIXME: This is a perf problem that got worse
-                            // when I changed the non-contiguous NFA to
-                            // use a linked list to represent each state's
-                            // transitions. We decreased memory usage
-                            // (especially peak memory usage) quite a bit, but
-                            // state transitions became quite a bit slower.
-                            // Perhaps the Pareto principle applies here and
-                            // we can use a small cache for very hot failure
-                            // transitions? Not sure.
                             oldnextsid = nnfa.next_state(
                                 Anchored::No,
                                 state.fail(),
@@ -679,8 +682,17 @@ impl Builder {
                     |byte, class, oldnextsid| {
                         let class = usize::from(class);
                         if oldnextsid == noncontiguous::NFA::FAIL {
-                            dfa.trans[unewsid.as_usize() + class] = nnfa
-                                .next_state(Anchored::No, state.fail(), byte);
+                            let oldnextsid =
+                                if state.fail() == noncontiguous::NFA::DEAD {
+                                    noncontiguous::NFA::DEAD
+                                } else {
+                                    nnfa.next_state(
+                                        Anchored::No,
+                                        state.fail(),
+                                        byte,
+                                    )
+                                };
+                            dfa.trans[unewsid.as_usize() + class] = oldnextsid;
                         } else {
                             dfa.trans[unewsid.as_usize() + class] = oldnextsid;
                             dfa.trans[anewsid.as_usize() + class] = oldnextsid;
