@@ -317,6 +317,42 @@
     bin = "cargo"
     args = ["clean"]
 
+# Engines based on the `jetscii` Rust crate. This is somewhat more appropriately
+# compared with routines in `memchr`, but there is some overlap in use cases
+# with Teddy's packed searcher for multiple single-byte needles.
+
+[[engine]]
+  name = "rust/jetscii/ascii-chars/prebuilt"
+  cwd = "./engines/rust-jetscii"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["ascii-chars-prebuilt"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
+[[engine]]
+  name = "rust/jetscii/ascii-chars/oneshot"
+  cwd = "./engines/rust-jetscii"
+  [engine.version]
+    bin = "./target/release/main"
+    args = ["--version"]
+  [engine.run]
+    bin = "./target/release/main"
+    args = ["ascii-chars-oneshot"]
+  [[engine.build]]
+    bin = "cargo"
+    args = ["build", "--release"]
+  [[engine.clean]]
+    bin = "cargo"
+    args = ["clean"]
+
 # Naive engines. Useful for comparisons and to determine the crossover point
 # where a multi-substring algorithm is beneficial over multi single-substring
 # algorithms. We include both the `memchr` crate and `std`.

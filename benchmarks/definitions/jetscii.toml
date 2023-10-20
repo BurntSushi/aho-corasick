@@ -1,0 +1,174 @@
+analysis = '''
+These benchmarks were ported out of the jetscii crate, specifically from
+[Dr-Emann's PR]. There were some irregularities in the benchmark results, so
+I thought it might be interesting to include it here.
+
+We add "real" variants of each benchmark as well using a small XML data set on
+mental health. The original benchmarks search a haystack consisting entirely of
+`a` repeated, with the last byte corresponding to one of the needle bytes. This
+is useful for measuring pure throughput, but less good for approximating real
+world performance. In this case, for at least `xml-delim3` and `xml-delim5`, it
+seems like an XML haystack would be better suited.
+
+[Dr-Emann's PR]: https://github.com/shepmaster/jetscii/pull/57
+'''
+
+[[bench]]
+model = "count"
+name = "space-repeateda"
+regex = [' ']
+haystack = { contents = "a", repeat = 5_242_880, append = " " }
+count = 1
+engines = [
+  "daachorse/bytewise/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "rust/jetscii/ascii-chars/prebuilt",
+]
+
+[[bench]]
+model = "count"
+name = "xmldelim3-repeateda"
+regex = ['<', '>', '&']
+haystack = { contents = "a", repeat = 5_242_880, append = "&" }
+count = 1
+engines = [
+  "daachorse/bytewise/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "rust/jetscii/ascii-chars/prebuilt",
+]
+
+[[bench]]
+model = "count"
+name = "xmldelim5-repeateda"
+regex = ['<', '>', '&', "'", '"']
+haystack = { contents = "a", repeat = 5_242_880, append = '"' }
+count = 1
+engines = [
+  "daachorse/bytewise/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "rust/jetscii/ascii-chars/prebuilt",
+]
+
+[[bench]]
+model = "count"
+name = "big16-repeateda"
+regex = [
+  'A', 'B', 'C', 'D',
+  'E', 'F', 'G', 'H',
+  'I', 'J', 'K', 'L',
+  'M', 'N', 'O', 'P',
+]
+haystack = { contents = "a", repeat = 5_242_880, append = "P" }
+count = 1
+engines = [
+  "daachorse/bytewise/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "rust/jetscii/ascii-chars/prebuilt",
+]
+
+[[bench]]
+model = "count"
+name = "big16earlyshort-repeateda"
+regex = [
+  'A', 'B', 'C', 'D',
+  'E', 'F', 'G', 'H',
+  'I', 'J', 'K', 'L',
+  'M', 'N', 'O', 'P',
+]
+haystack = { contents = "Pa" }
+count = 1
+engines = [
+  "daachorse/bytewise/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "rust/jetscii/ascii-chars/prebuilt",
+]
+
+[[bench]]
+model = "count"
+name = "big16earlylong-repeateda"
+regex = [
+  'A', 'B', 'C', 'D',
+  'E', 'F', 'G', 'H',
+  'I', 'J', 'K', 'L',
+  'M', 'N', 'O', 'P',
+]
+haystack = { contents = "a", repeat = 14, append = "P" }
+count = 1
+engines = [
+  "daachorse/bytewise/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "rust/jetscii/ascii-chars/prebuilt",
+]
+
+[[bench]]
+model = "count"
+name = "space-mentalhealth"
+regex = [' ']
+haystack = { path = "catalog.data.gov/mental-health-4weeks.xml" }
+count = 1_181_201
+engines = [
+  "daachorse/bytewise/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "rust/jetscii/ascii-chars/prebuilt",
+]
+
+[[bench]]
+model = "count"
+name = "xmldelim3-mentalhealth"
+regex = ['<', '>', '&']
+haystack = { path = "catalog.data.gov/mental-health-4weeks.xml" }
+count = 604_714
+engines = [
+  "daachorse/bytewise/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "rust/jetscii/ascii-chars/prebuilt",
+]
+
+[[bench]]
+model = "count"
+name = "xmldelim5-mentalhealth"
+regex = ['<', '>', '&', "'", '"']
+haystack = { path = "catalog.data.gov/mental-health-4weeks.xml" }
+count = 688_252
+engines = [
+  "daachorse/bytewise/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "rust/jetscii/ascii-chars/prebuilt",
+]
+
+[[bench]]
+model = "count"
+name = "big16-mentalhealth"
+regex = [
+  'A', 'B', 'C', 'D',
+  'E', 'F', 'G', 'H',
+  'I', 'J', 'K', 'L',
+  'M', 'N', 'O', 'P',
+]
+haystack = { path = "catalog.data.gov/mental-health-4weeks.xml" }
+count = 176_447
+engines = [
+  "daachorse/bytewise/leftmost-first",
+  "rust/aho-corasick/dfa/leftmost-first",
+  "rust/aho-corasick/packed/leftmost-first",
+  "rust/old-aho-corasick/packed/leftmost-first",
+  "rust/jetscii/ascii-chars/prebuilt",
+]

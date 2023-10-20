@@ -32,6 +32,21 @@ impl Benchmark {
         Benchmark::read(&raw)
     }
 
+    /// Return single byte needles from this benchmark definition. If any
+    /// needle is more than one byte, then this returns an error.
+    pub fn needle_bytes(&self) -> anyhow::Result<Vec<u8>> {
+        let mut needles = vec![];
+        for needle in self.needles.iter() {
+            anyhow::ensure!(
+                needle.len() == 1,
+                "needle must have length 1 (in bytes) but it has length {}",
+                needle.len(),
+            );
+            needles.push(needle[0]);
+        }
+        Ok(needles)
+    }
+
     fn read(mut raw: &[u8]) -> anyhow::Result<Benchmark> {
         let mut config = Benchmark::default();
         while !raw.is_empty() {
