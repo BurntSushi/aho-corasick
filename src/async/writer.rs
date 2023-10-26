@@ -26,13 +26,13 @@ struct PendingState {
 impl<'a, W, B> AhoCorasickAsyncWriter<'a, W, B>
 where
     W: AsyncWrite,
-    B: AsRef<[u8]>,
+    B: AsRef<[u8]> + 'a,
 {
     pub(crate) fn new(aut: Arc<dyn AcAutomaton>, sink: W, replace_with: &'a [B])
         -> Result<Self, MatchError>
     where
         W: AsyncWrite,
-        B: AsRef<[u8]>,
+        B: AsRef<[u8]> + 'a,
     {
         let sid = aut.start_state(Anchored::No)?;
         Ok(AhoCorasickAsyncWriter {
@@ -61,7 +61,7 @@ where
 impl<'a, W, B> AsyncWrite for AhoCorasickAsyncWriter<'a, W, B>
 where
     W: AsyncWrite,
-    B: AsRef<[u8]>,
+    B: AsRef<[u8]> + 'a,
 {
     fn poll_write(
         self: std::pin::Pin<&mut Self>,

@@ -17,7 +17,7 @@ use crate::{
     },
 };
 
-#[cfg(feature = "async")]
+#[cfg(all(feature = "async", feature = "std"))]
 use crate::r#async::{
     reader::AhoCorasickAsyncReader,
     writer::AhoCorasickAsyncWriter
@@ -1848,19 +1848,39 @@ impl AhoCorasick {
         self.aut.try_stream_replace_all_with(rdr, wtr, replace_with)
     }
 
-    /// Obtain AhoCorasickAsyncReader wrapping the original source.
-    /// Reading from this new reader will yield output with replaced data
+    /// Obtain AhoCorasickAsyncReader wrapping an original AsyncRead source
+    /// Reading from this new reader will yield chunks with patterns already replaced
+    /// Poll will only return Ok(0) if the poll to the original source also returned 0 bytes.
+    /// 
+    /// # Example: basic usage
+    /// 
+    /// ```
+    /// use aho_corasick::AhoCorasick;
+    /// use futures::AsyncReadExt;
+    /// 
+    /// let patterns = &["fox", "brown", "quick"];
+    /// let replacements = &["bear", "white", "slow"];
+    /// let haystack = futures::io::Cursor::new("The quick brown fox.");
+    /// 
+    /// let ac = AhoCorasick::new(patterns).unwrap();
+    /// let mut ac_async_reader = ac.async_reader(haystack, replacements).unwrap();
+    /// let mut result = String::new();
+    /// futures::executor::block_on(async {
+    ///     ac_async_reader.read_to_string(&mut result).await.unwrap();
+    /// });
+    /// assert_eq!(&result, "The slow white bear.");
+    /// ```
     #[cfg(all(feature = "async", feature = "std"))]
-    pub fn get_reader<'a, R, B>(&self, source: R, replace_with: &'a [B])
+    pub fn async_reader<'a, R, B>(&self, source: R, replace_with: &'a [B])
         -> Result<AhoCorasickAsyncReader<'a, R, B>, std::io::Error>
     where
         R: futures::AsyncRead,
-        B: AsRef<[u8]>,
+        B: AsRef<[u8]> + 'a,
     {
         assert_eq!(
             replace_with.len(),
             self.patterns_len(),
-            "Async replacement requires a replacement for every pattern \
+            "async_reader requires a replacement for every pattern \
              in the automaton",
         );
         enforce_anchored_consistency(self.start_kind, Anchored::No)
@@ -1870,19 +1890,46 @@ impl AhoCorasick {
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
     }
 
-    /// Obtain AhoCorasickAsyncWriter wrapping the original sink.
+    /// Obtain AhoCorasickAsyncWriter wrapping an original AsyncWrite sink.
     /// Writing to this new writer will perform the replacements before sending the bytes to your sink
+    /// 
+    /// # Example: basic usage
+    ///
+    /// ```
+    /// use aho_corasick::AhoCorasick;
+    /// use futures::{AsyncReadExt, AsyncWriteExt};
+    /// 
+    /// let patterns = &["fox", "brown", "quick"];
+    /// let replacements = &["bear", "white", "slow"];
+    /// let mut haystack = futures::io::Cursor::new("The quick brown fox.");
+    /// 
+    /// let ac = AhoCorasick::new(patterns).unwrap();
+    /// let mut result: futures::io::Cursor<Vec<u8>> = futures::io::Cursor::new(Vec::new());
+    /// let mut ac_async_writer = ac.async_writer(&mut result, replacements).unwrap();
+    /// futures::executor::block_on(async {
+    ///     let mut buf = [0u8; 10];
+    ///     loop {
+    ///         let bytes_read = haystack.read(&mut buf).await.unwrap();
+    ///         if bytes_read > 0 {
+    ///             ac_async_writer.write(&buf[..bytes_read]).await.unwrap();
+    ///         } else {
+    ///             break;
+    ///         }
+    ///     }
+    /// });
+    /// assert_eq!(&String::from_utf8(result.get_ref().to_vec()).unwrap(), "The slow white bear.");
+    /// ```
     #[cfg(all(feature = "async", feature = "std"))]
-    pub fn get_writer<'a, W, B>(&self, sink: W, replace_with: &'a [B])
+    pub fn async_writer<'a, W, B>(&self, sink: W, replace_with: &'a [B])
         -> Result<AhoCorasickAsyncWriter<'a, W, B>, std::io::Error>
     where
         W: futures::AsyncWrite,
-        B: AsRef<[u8]>,
+        B: AsRef<[u8]> + 'a,
     {
         assert_eq!(
             replace_with.len(),
             self.patterns_len(),
-            "Async replacement requires a replacement for every pattern \
+            "async_writer requires a replacement for every pattern \
              in the automaton",
         );
         enforce_anchored_consistency(self.start_kind, Anchored::No)
@@ -1892,8 +1939,12 @@ impl AhoCorasick {
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
     }
 
-    /// Read all data from the reader, perform the replacements, and write to the writer
-    /// It is implemented using AhoCorasickAsyncWriter, but either works
+    /// Helper method to read everything from the given AsyncRead, perform the replacements
+    /// and write the chunks to the given AsyncWrite. Specify a buffer size which suits your case the best
+    /// 
+    /// This method does nothing more than using an async_writer, an provide a convenient replacement loop
+    /// It could very well be manually implemented by the consumer, but provides an async alternative to 
+    /// the existing try_stream_replace_all
     #[cfg(all(feature = "async", feature = "std"))]
     pub async fn try_async_stream_replace_all<R, W, B>(&self, reader: R, writer: W, replace_with: &[B], buffer_size: usize)
         -> Result<(), std::io::Error>
@@ -1902,11 +1953,17 @@ impl AhoCorasick {
         W: futures::AsyncWrite,
         B: AsRef<[u8]>,
     {
+        assert_eq!(
+            replace_with.len(),
+            self.patterns_len(),
+            "try_async_stream_replace_all requires a replacement for every pattern \
+             in the automaton",
+        );
         enforce_anchored_consistency(self.start_kind, Anchored::No)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
 
         let mut buffer = alloc::vec![b'\0'; buffer_size];
-        let ac_writer = self.get_writer(writer, replace_with)?;
+        let ac_writer = self.async_writer(writer, replace_with)?;
 
         let mut pinned_reader = alloc::boxed::Box::pin(reader);
         let mut pinned_writer = alloc::boxed::Box::pin(ac_writer);

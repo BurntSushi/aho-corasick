@@ -21,7 +21,7 @@ pin_project! {
 impl<'a, R, B> AhoCorasickAsyncReader<'a, R, B>
 where
     R: AsyncRead,
-    B: AsRef<[u8]>,
+    B: AsRef<[u8]> + 'a,
 {
     pub(crate) fn new(aut: Arc<dyn AcAutomaton>, source: R, replace_with: &'a [B]) -> Result<Self, MatchError> {
         let sid = aut.start_state(Anchored::No)?;
@@ -46,8 +46,7 @@ where
     #[inline(always)]
     fn write_to_buffer_overflow_deque(buf: &mut [u8], deque: &mut VecDeque<u8>, idx: &mut usize, char: u8) {
         if *idx < buf.len() {
-            buf[*idx] = char;
-            *idx += 1;
+            Self::write_to_buffer(buf, idx, char);
         } else {
             deque.push_back(char);
         }
@@ -57,7 +56,7 @@ where
 impl<'a, R, B> AsyncRead for AhoCorasickAsyncReader<'a, R, B>
 where
     R: AsyncRead,
-    B: AsRef<[u8]>,
+    B: AsRef<[u8]> + 'a,
 {
     fn poll_read(
         mut self: std::pin::Pin<&mut Self>,
@@ -127,10 +126,14 @@ where
                         if write_idx > 0 {
                             // Something has been written
                             Poll::Ready(Ok(write_idx))
-                        } else if this.potential_buffer.len() > 0 {
-                            // Nothing written, but potential buffer is not empty - request immediate poll again with new buffer
-                            // This case happens when the potential buffer (replacement word length) exceeds the current chunk size while matching the entire chunk :
-                            // nothing can be written yet, but next chunk(s) are needed to determine the outcome (discard as-is, or replace)
+                        } else if size > 0 {
+                            // Special cases handling : a non-empty chunk has been read from the source, however nothing has been written
+                            // Identified cases where this might happen :
+                            // 1. When the pattern exceeds the chunk size, and is fully buffered in potential_buffer waiting to be replaced or discarded
+                            // 2. When the chunk fully matches a pattern, and the replacement is an empty string (very specific)
+                            //
+                            // We cannot respond with Ok(0), which would mean end of read, so we simply request a new poll immediately,
+                            // and proceed reading more chunks from the source
                             cx.waker().wake_by_ref();
                             Poll::Pending
                         } else {
