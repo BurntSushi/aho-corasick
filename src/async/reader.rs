@@ -1,8 +1,10 @@
+use crate::{
+    ahocorasick::AcAutomaton, automaton::StateID, Anchored, MatchError,
+};
+use alloc::{collections::VecDeque, sync::Arc, vec::Vec};
 use core::task::Poll;
-use alloc::{sync::Arc, vec::Vec, collections::VecDeque};
 use futures::AsyncRead;
 use pin_project_lite::pin_project;
-use crate::{ahocorasick::AcAutomaton, Anchored, MatchError, automaton::StateID};
 
 // Wrapper over an AsyncRead. Reading from AhoCorasickAsyncReader polls replaced results
 pin_project! {
@@ -23,7 +25,11 @@ where
     R: AsyncRead,
     B: AsRef<[u8]> + 'a,
 {
-    pub(crate) fn new(aut: Arc<dyn AcAutomaton>, source: R, replace_with: &'a [B]) -> Result<Self, MatchError> {
+    pub(crate) fn new(
+        aut: Arc<dyn AcAutomaton>,
+        source: R,
+        replace_with: &'a [B],
+    ) -> Result<Self, MatchError> {
         let sid = aut.start_state(Anchored::No)?;
         Ok(AhoCorasickAsyncReader {
             source,
@@ -44,7 +50,12 @@ where
     }
     // Helper uniformizing method : writes to the buffer at index, or pushes the char to the deque in case of buffer overflow
     #[inline(always)]
-    fn write_to_buffer_overflow_deque(buf: &mut [u8], deque: &mut VecDeque<u8>, idx: &mut usize, char: u8) {
+    fn write_to_buffer_overflow_deque(
+        buf: &mut [u8],
+        deque: &mut VecDeque<u8>,
+        idx: &mut usize,
+        char: u8,
+    ) {
         if *idx < buf.len() {
             Self::write_to_buffer(buf, idx, char);
         } else {
@@ -71,7 +82,11 @@ where
         while this.pending_write_buffer.len() > 0 {
             // First, write pending buffer if any
             if write_idx < buf.len() {
-                Self::write_to_buffer(buf, &mut write_idx, this.pending_write_buffer.pop_front().unwrap());
+                Self::write_to_buffer(
+                    buf,
+                    &mut write_idx,
+                    this.pending_write_buffer.pop_front().unwrap(),
+                );
             } else {
                 break;
             }
@@ -87,39 +102,84 @@ where
                         if size == 0 {
                             // End reached - discard potential buffer
                             while this.potential_buffer.len() > 0 {
-                                Self::write_to_buffer_overflow_deque(buf, this.pending_write_buffer, &mut write_idx, this.potential_buffer.pop_front().unwrap());
+                                Self::write_to_buffer_overflow_deque(
+                                    buf,
+                                    this.pending_write_buffer,
+                                    &mut write_idx,
+                                    this.potential_buffer.pop_front().unwrap(),
+                                );
                             }
                         }
                         for byte in &this.buffer[..size] {
-                            *this.sid = this.aut.next_state(Anchored::No, *this.sid, *byte);
+                            *this.sid = this.aut.next_state(
+                                Anchored::No,
+                                *this.sid,
+                                *byte,
+                            );
                             if this.aut.is_start(*this.sid) {
                                 // No potential replacements
                                 while this.potential_buffer.len() > 0 {
                                     // At this point potential buffer is discareded (written)
-                                    Self::write_to_buffer_overflow_deque(buf, this.pending_write_buffer, &mut write_idx, this.potential_buffer.pop_front().unwrap());
+                                    Self::write_to_buffer_overflow_deque(
+                                        buf,
+                                        this.pending_write_buffer,
+                                        &mut write_idx,
+                                        this.potential_buffer
+                                            .pop_front()
+                                            .unwrap(),
+                                    );
                                 }
-                                Self::write_to_buffer_overflow_deque(buf, this.pending_write_buffer, &mut write_idx, *byte);
+                                Self::write_to_buffer_overflow_deque(
+                                    buf,
+                                    this.pending_write_buffer,
+                                    &mut write_idx,
+                                    *byte,
+                                );
                             } else {
                                 this.potential_buffer.push_back(*byte);
                                 if this.aut.is_match(*this.sid) {
-                                    let pattern_id = this.aut.match_pattern(*this.sid, 0);
-                                    let pattern_len = this.aut.pattern_len(pattern_id);
+                                    let pattern_id =
+                                        this.aut.match_pattern(*this.sid, 0);
+                                    let pattern_len =
+                                        this.aut.pattern_len(pattern_id);
                                     // Either we followed a potential word all the way down, or we jumped to a different branch following the suffix link
                                     // In the second case, we need to discard (write away) first part of the potential buffer, as it will be bigger than the max match,
                                     // keeping as new potential the last part containing the amount of bytes equal to the new state node depth (equal to the pattern_len)
-                                    while this.potential_buffer.len() > pattern_len {
-                                        Self::write_to_buffer_overflow_deque(buf, this.pending_write_buffer, &mut write_idx, this.potential_buffer.pop_front().unwrap());
+                                    while this.potential_buffer.len()
+                                        > pattern_len
+                                    {
+                                        Self::write_to_buffer_overflow_deque(
+                                            buf,
+                                            this.pending_write_buffer,
+                                            &mut write_idx,
+                                            this.potential_buffer
+                                                .pop_front()
+                                                .unwrap(),
+                                        );
                                     }
 
-                                    let replacement = this.replace_with[pattern_id].as_ref();
+                                    let replacement =
+                                        this.replace_with[pattern_id].as_ref();
                                     // Replacement is given by the automaton node, so we only need to clear the potential buffer
                                     this.potential_buffer.clear();
                                     for replaced_byte in replacement.iter() {
-                                        Self::write_to_buffer_overflow_deque(buf, this.pending_write_buffer, &mut write_idx, *replaced_byte);
+                                        Self::write_to_buffer_overflow_deque(
+                                            buf,
+                                            this.pending_write_buffer,
+                                            &mut write_idx,
+                                            *replaced_byte,
+                                        );
                                     }
                                     // Reset the state after a replacement
-                                    *this.sid = this.aut.start_state(Anchored::No)
-                                        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+                                    *this.sid = this
+                                        .aut
+                                        .start_state(Anchored::No)
+                                        .map_err(|e| {
+                                            std::io::Error::new(
+                                                std::io::ErrorKind::Other,
+                                                e,
+                                            )
+                                        })?;
                                 }
                             }
                         }
@@ -140,12 +200,10 @@ where
                             // Nothing left to write
                             Poll::Ready(Ok(0))
                         }
-                    },
-                    Err(err) => {
-                        Poll::Ready(Err(err))
                     }
+                    Err(err) => Poll::Ready(Err(err)),
                 }
-            },
+            }
             Poll::Pending => {
                 if write_idx > 0 {
                     // While waiting for the source, if some bytes have already been written from pending buffer, we can return them immediately to speed things up

@@ -1,9 +1,12 @@
 use core::str::from_utf8;
 
-use alloc::{vec::Vec, string::ToString};
+use alloc::{string::ToString, vec::Vec};
 use futures::{AsyncReadExt, AsyncWriteExt};
 
-use crate::{AhoCorasick, r#async::tests::test_utils::{BytesAsyncReader, BytesAsyncWriter}};
+use crate::{
+    r#async::tests::test_utils::{BytesAsyncReader, BytesAsyncWriter},
+    AhoCorasick,
+};
 
 mod test_utils;
 
@@ -82,7 +85,7 @@ fn test_async() {
                         let reader = BytesAsyncReader::new(source_string.as_bytes().to_vec(), forced_pending);
                         let mut ac_reader = ac.async_reader(reader, &replacements)
                             .expect("Error get_reader");
-    
+
                         let mut output: Vec<u8> = Vec::new();
                         loop {
                             match ac_reader.read(&mut buf).await {
@@ -108,7 +111,7 @@ fn test_async() {
                         let writer = BytesAsyncWriter::new(forced_pending);
                         let mut ac_writer = ac.async_writer(writer.clone(), &replacements)
                             .expect("Error get_writer");
-    
+
                         loop {
                             match reader.read(&mut buf).await {
                                 Ok(size) => {
@@ -131,7 +134,7 @@ fn test_async() {
                     for forced_pending in [0usize, 2] {
                         let mut reader = BytesAsyncReader::new(source_string.as_bytes().to_vec(), forced_pending);
                         let mut writer = BytesAsyncWriter::new(forced_pending);
-                        
+
                         let result = ac.try_async_stream_replace_all(&mut reader, &mut writer, &replacements, test_buffer_size).await;
                         assert!(result.is_ok());
                         assert_eq!(from_utf8(&writer.sink.borrow()).unwrap_or("<utf8 error>"), expected_output);

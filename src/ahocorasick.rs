@@ -19,8 +19,7 @@ use crate::{
 
 #[cfg(all(feature = "async", feature = "std"))]
 use crate::r#async::{
-    reader::AhoCorasickAsyncReader,
-    writer::AhoCorasickAsyncWriter
+    reader::AhoCorasickAsyncReader, writer::AhoCorasickAsyncWriter,
 };
 
 /// An automaton for searching multiple strings in linear time.
@@ -1851,17 +1850,17 @@ impl AhoCorasick {
     /// Obtain AhoCorasickAsyncReader wrapping an original AsyncRead source
     /// Reading from this new reader will yield chunks with patterns already replaced
     /// Poll will only return Ok(0) if the poll to the original source also returned 0 bytes.
-    /// 
+    ///
     /// # Example: basic usage
-    /// 
+    ///
     /// ```
     /// use aho_corasick::AhoCorasick;
     /// use futures::AsyncReadExt;
-    /// 
+    ///
     /// let patterns = &["fox", "brown", "quick"];
     /// let replacements = &["bear", "white", "slow"];
     /// let haystack = futures::io::Cursor::new("The quick brown fox.");
-    /// 
+    ///
     /// let ac = AhoCorasick::new(patterns).unwrap();
     /// let mut ac_async_reader = ac.async_reader(haystack, replacements).unwrap();
     /// let mut result = String::new();
@@ -1871,8 +1870,11 @@ impl AhoCorasick {
     /// assert_eq!(&result, "The slow white bear.");
     /// ```
     #[cfg(all(feature = "async", feature = "std"))]
-    pub fn async_reader<'a, R, B>(&self, source: R, replace_with: &'a [B])
-        -> Result<AhoCorasickAsyncReader<'a, R, B>, std::io::Error>
+    pub fn async_reader<'a, R, B>(
+        &self,
+        source: R,
+        replace_with: &'a [B],
+    ) -> Result<AhoCorasickAsyncReader<'a, R, B>, std::io::Error>
     where
         R: futures::AsyncRead,
         B: AsRef<[u8]> + 'a,
@@ -1886,23 +1888,27 @@ impl AhoCorasick {
         enforce_anchored_consistency(self.start_kind, Anchored::No)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
 
-        AhoCorasickAsyncReader::new(Arc::clone(&self.aut), source, replace_with)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+        AhoCorasickAsyncReader::new(
+            Arc::clone(&self.aut),
+            source,
+            replace_with,
+        )
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
     }
 
     /// Obtain AhoCorasickAsyncWriter wrapping an original AsyncWrite sink.
     /// Writing to this new writer will perform the replacements before sending the bytes to your sink
-    /// 
+    ///
     /// # Example: basic usage
     ///
     /// ```
     /// use aho_corasick::AhoCorasick;
     /// use futures::{AsyncReadExt, AsyncWriteExt};
-    /// 
+    ///
     /// let patterns = &["fox", "brown", "quick"];
     /// let replacements = &["bear", "white", "slow"];
     /// let mut haystack = futures::io::Cursor::new("The quick brown fox.");
-    /// 
+    ///
     /// let ac = AhoCorasick::new(patterns).unwrap();
     /// let mut result: futures::io::Cursor<Vec<u8>> = futures::io::Cursor::new(Vec::new());
     /// let mut ac_async_writer = ac.async_writer(&mut result, replacements).unwrap();
@@ -1920,8 +1926,11 @@ impl AhoCorasick {
     /// assert_eq!(&String::from_utf8(result.get_ref().to_vec()).unwrap(), "The slow white bear.");
     /// ```
     #[cfg(all(feature = "async", feature = "std"))]
-    pub fn async_writer<'a, W, B>(&self, sink: W, replace_with: &'a [B])
-        -> Result<AhoCorasickAsyncWriter<'a, W, B>, std::io::Error>
+    pub fn async_writer<'a, W, B>(
+        &self,
+        sink: W,
+        replace_with: &'a [B],
+    ) -> Result<AhoCorasickAsyncWriter<'a, W, B>, std::io::Error>
     where
         W: futures::AsyncWrite,
         B: AsRef<[u8]> + 'a,
@@ -1941,13 +1950,18 @@ impl AhoCorasick {
 
     /// Helper method to read everything from the given AsyncRead, perform the replacements
     /// and write the chunks to the given AsyncWrite. Specify a buffer size which suits your case the best
-    /// 
+    ///
     /// This method does nothing more than using an async_writer, an provide a convenient replacement loop
-    /// It could very well be manually implemented by the consumer, but provides an async alternative to 
+    /// It could very well be manually implemented by the consumer, but provides an async alternative to
     /// the existing try_stream_replace_all
     #[cfg(all(feature = "async", feature = "std"))]
-    pub async fn try_async_stream_replace_all<R, W, B>(&self, reader: R, writer: W, replace_with: &[B], buffer_size: usize)
-        -> Result<(), std::io::Error>
+    pub async fn try_async_stream_replace_all<R, W, B>(
+        &self,
+        reader: R,
+        writer: W,
+        replace_with: &[B],
+        buffer_size: usize,
+    ) -> Result<(), std::io::Error>
     where
         R: futures::AsyncRead,
         W: futures::AsyncWrite,
@@ -1968,12 +1982,18 @@ impl AhoCorasick {
         let mut pinned_reader = alloc::boxed::Box::pin(reader);
         let mut pinned_writer = alloc::boxed::Box::pin(ac_writer);
         loop {
-            let bytes_read = futures::AsyncReadExt::read(&mut pinned_reader, &mut buffer).await?;
+            let bytes_read =
+                futures::AsyncReadExt::read(&mut pinned_reader, &mut buffer)
+                    .await?;
             if bytes_read == 0 {
                 futures::AsyncWriteExt::close(&mut pinned_writer).await?;
                 break;
             } else {
-                futures::AsyncWriteExt::write(&mut pinned_writer, &buffer[..bytes_read]).await?;
+                futures::AsyncWriteExt::write(
+                    &mut pinned_writer,
+                    &buffer[..bytes_read],
+                )
+                .await?;
             }
         }
         Ok(())

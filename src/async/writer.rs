@@ -1,8 +1,10 @@
+use crate::{
+    ahocorasick::AcAutomaton, automaton::StateID, Anchored, MatchError,
+};
+use alloc::{collections::VecDeque, sync::Arc, vec::Vec};
 use core::task::Poll;
-use alloc::{sync::Arc, vec::Vec, collections::VecDeque};
 use futures::AsyncWrite;
 use pin_project_lite::pin_project;
-use crate::{ahocorasick::AcAutomaton, MatchError, Anchored, automaton::StateID};
 
 // Wrapper over an AsyncWrite. Writing to AhoCorasickAsyncWriter will write replaced results to the underlying writer
 pin_project! {
@@ -20,7 +22,7 @@ pin_project! {
 
 struct PendingState {
     bytes_to_write: usize, // How much bytes to send from the buffer to the sink
-    bytes_read: usize // How much input bytes have been processed (previous buf.len basically)
+    bytes_read: usize, // How much input bytes have been processed (previous buf.len basically)
 }
 
 impl<'a, W, B> AhoCorasickAsyncWriter<'a, W, B>
@@ -28,8 +30,11 @@ where
     W: AsyncWrite,
     B: AsRef<[u8]> + 'a,
 {
-    pub(crate) fn new(aut: Arc<dyn AcAutomaton>, sink: W, replace_with: &'a [B])
-        -> Result<Self, MatchError>
+    pub(crate) fn new(
+        aut: Arc<dyn AcAutomaton>,
+        sink: W,
+        replace_with: &'a [B],
+    ) -> Result<Self, MatchError>
     where
         W: AsyncWrite,
         B: AsRef<[u8]> + 'a,
@@ -42,16 +47,16 @@ where
             replace_with,
             buffer: Vec::new(),
             potential_buffer: VecDeque::new(),
-            pending_state: None
+            pending_state: None,
         })
     }
-    
+
     /// Writing to the buffer while making rare incremental resizes
     #[inline(always)]
     fn write_to_buffer(buf: &mut Vec<u8>, idx: &mut usize, char: u8) {
         if *idx >= buf.len() {
             // Since this function is called with incremental idx, we simply double current buffer length every time
-            buf.resize(buf.len()*2, b'\0');
+            buf.resize(buf.len() * 2, b'\0');
         }
         buf[*idx] = char;
         *idx += 1;
@@ -70,14 +75,17 @@ where
     ) -> Poll<std::io::Result<usize>> {
         let this = self.project();
         if let Some(pending_state) = this.pending_state.take() {
-            return match this.sink.poll_write(cx, &this.buffer[..pending_state.bytes_to_write]) {
+            return match this
+                .sink
+                .poll_write(cx, &this.buffer[..pending_state.bytes_to_write])
+            {
                 Poll::Ready(_) => Poll::Ready(Ok(pending_state.bytes_read)),
                 Poll::Pending => {
                     // Still not ready : put back PendingState, as it has been taken
                     *this.pending_state = Some(pending_state);
                     Poll::Pending
                 }
-            }
+            };
         }
         if this.buffer.len() < buf.len() + this.potential_buffer.len() {
             // Default buffer length to buf once to avoid incremental size increases & capacity reallocations during the buffer writing process
@@ -90,7 +98,11 @@ where
                 // No potential replacements
                 while this.potential_buffer.len() > 0 {
                     // At this point potential buffer is discareded (written)
-                    Self::write_to_buffer(this.buffer, &mut write_idx, this.potential_buffer.pop_front().unwrap());
+                    Self::write_to_buffer(
+                        this.buffer,
+                        &mut write_idx,
+                        this.potential_buffer.pop_front().unwrap(),
+                    );
                 }
                 Self::write_to_buffer(this.buffer, &mut write_idx, *byte);
             } else {
@@ -102,18 +114,28 @@ where
                     // In the second case, we need to discard (write away) first part of the potential buffer, as it will be bigger than the max match,
                     // keeping as new potential the last part containing the amount of bytes equal to the new state node depth (equal to the pattern_len)
                     while this.potential_buffer.len() > pattern_len {
-                        Self::write_to_buffer(this.buffer, &mut write_idx, this.potential_buffer.pop_front().unwrap());
+                        Self::write_to_buffer(
+                            this.buffer,
+                            &mut write_idx,
+                            this.potential_buffer.pop_front().unwrap(),
+                        );
                     }
 
                     let replacement = this.replace_with[pattern_id].as_ref();
                     // Replacement is given by the automaton node, so we only need to clear the potential buffer
                     this.potential_buffer.clear();
                     for replaced_byte in replacement.iter() {
-                        Self::write_to_buffer(this.buffer, &mut write_idx, *replaced_byte);
+                        Self::write_to_buffer(
+                            this.buffer,
+                            &mut write_idx,
+                            *replaced_byte,
+                        );
                     }
                     // Reset the state after a replacement
-                    *this.sid = this.aut.start_state(Anchored::No)
-                        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+                    *this.sid =
+                        this.aut.start_state(Anchored::No).map_err(|e| {
+                            std::io::Error::new(std::io::ErrorKind::Other, e)
+                        })?;
                 }
             }
         }
@@ -129,10 +151,10 @@ where
                     // and on the next call at the beginning of this poll_write, this Pending state is handled
                     *this.pending_state = Some(PendingState {
                         bytes_to_write: write_idx,
-                        bytes_read: buf.len()
+                        bytes_read: buf.len(),
                     });
                     Poll::Pending
-                },
+                }
             }
         } else if this.potential_buffer.len() > 0 {
             // Nothing written, but potential buffer is not empty - request immediate poll again with new buffer by saying we have accepted the buffer fully
@@ -149,25 +171,31 @@ where
         }
     }
 
-    fn poll_flush(self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<std::io::Result<()>> {
+    fn poll_flush(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> Poll<std::io::Result<()>> {
         // Nothing special to do here
         self.project().sink.poll_flush(cx)
     }
 
-    fn poll_close(self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<std::io::Result<()>> {
+    fn poll_close(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> Poll<std::io::Result<()>> {
         let this = self.project();
         if this.potential_buffer.len() > 0 {
             // We have to ensure that potential buffer bytes are written, in case there was a beginning of a match at the end of the stream
             this.potential_buffer.make_contiguous();
-            match this.sink.poll_write(cx, this.potential_buffer.as_slices().0) {
+            match this.sink.poll_write(cx, this.potential_buffer.as_slices().0)
+            {
                 Poll::Ready(_) => {
                     // Bytes have been written : empty potential_buffer, and ask for the next call to poll_close
                     this.potential_buffer.clear();
                     cx.waker().wake_by_ref();
                     Poll::Pending
-
-                },
-                Poll::Pending => Poll::Pending // The last bytes can't be written yet, so poll_close will be called again when sink.poll_write is ready to make progress
+                }
+                Poll::Pending => Poll::Pending, // The last bytes can't be written yet, so poll_close will be called again when sink.poll_write is ready to make progress
             }
         } else {
             this.sink.poll_close(cx)

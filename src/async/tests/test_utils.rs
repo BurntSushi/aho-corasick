@@ -1,6 +1,6 @@
-use core::{task::Poll, cell::RefCell};
+use core::{cell::RefCell, task::Poll};
 
-use alloc::{vec::Vec, rc::Rc};
+use alloc::{rc::Rc, vec::Vec};
 use futures::{AsyncRead, AsyncWrite};
 
 /// Simple AsyncReader from a Vec<u8>
@@ -20,12 +20,7 @@ pub struct BytesAsyncWriter {
 
 impl BytesAsyncReader {
     pub fn new(source: Vec<u8>, forced_pending: usize) -> Self {
-        Self {
-            source,
-            cursor: 0,
-            forced_pending,
-            forced_pending_counter: 0
-        }
+        Self { source, cursor: 0, forced_pending, forced_pending_counter: 0 }
     }
 }
 
@@ -64,7 +59,7 @@ impl BytesAsyncWriter {
         Self {
             sink: Rc::new(RefCell::new(Vec::new())),
             forced_pending,
-            forced_pending_counter: 0
+            forced_pending_counter: 0,
         }
     }
 }
@@ -74,7 +69,7 @@ impl Clone for BytesAsyncWriter {
         Self {
             sink: Rc::clone(&self.sink),
             forced_pending: self.forced_pending,
-            forced_pending_counter: 0
+            forced_pending_counter: 0,
         }
     }
 }
@@ -95,11 +90,17 @@ impl AsyncWrite for BytesAsyncWriter {
         Poll::Ready(Ok(buf.len()))
     }
 
-    fn poll_flush(self: std::pin::Pin<&mut Self>, _cx: &mut std::task::Context<'_>) -> Poll<std::io::Result<()>> {
+    fn poll_flush(
+        self: std::pin::Pin<&mut Self>,
+        _cx: &mut std::task::Context<'_>,
+    ) -> Poll<std::io::Result<()>> {
         Poll::Ready(Ok(()))
     }
 
-    fn poll_close(self: std::pin::Pin<&mut Self>, _cx: &mut std::task::Context<'_>) -> Poll<std::io::Result<()>> {
+    fn poll_close(
+        self: std::pin::Pin<&mut Self>,
+        _cx: &mut std::task::Context<'_>,
+    ) -> Poll<std::io::Result<()>> {
         Poll::Ready(Ok(()))
     }
 }
