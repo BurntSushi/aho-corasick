@@ -1919,6 +1919,7 @@ impl AhoCorasick {
     ///         if bytes_read > 0 {
     ///             ac_async_writer.write(&buf[..bytes_read]).await.unwrap();
     ///         } else {
+    ///             ac_async_writer.close().await.unwrap();
     ///             break;
     ///         }
     ///     }
