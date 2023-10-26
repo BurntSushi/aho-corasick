@@ -20,7 +20,7 @@ name = "aho_corasick"
 [features]
 default = ["std", "perf-literal"]
 std = ["memchr?/std"]
-async = ["futures", "pin-project-lite"]
+async = ["dep:futures", "dep:pin-project-lite"]
 
 # Enables prefilter optimizations that depend on external crates.
 perf-literal = ["dep:memchr"]
