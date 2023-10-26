@@ -271,6 +271,9 @@ mod tests;
 // mod transducer;
 pub(crate) mod util;
 
+#[cfg(all(feature = "async", feature = "std"))]
+pub(crate) mod r#async;
+
 #[cfg(test)]
 mod testoibits {
     use std::panic::{RefUnwindSafe, UnwindSafe};

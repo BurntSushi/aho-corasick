@@ -17,6 +17,12 @@ use crate::{
     },
 };
 
+#[cfg(feature = "async")]
+use crate::r#async::{
+    reader::AhoCorasickAsyncReader,
+    writer::AhoCorasickAsyncWriter
+};
+
 /// An automaton for searching multiple strings in linear time.
 ///
 /// The `AhoCorasick` type supports a few basic ways of constructing an
@@ -1841,6 +1847,80 @@ impl AhoCorasick {
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         self.aut.try_stream_replace_all_with(rdr, wtr, replace_with)
     }
+
+    /// Obtain AhoCorasickAsyncReader wrapping the original source.
+    /// Reading from this new reader will yield output with replaced data
+    #[cfg(all(feature = "async", feature = "std"))]
+    pub fn get_reader<'a, R, B>(&self, source: R, replace_with: &'a [B])
+        -> Result<AhoCorasickAsyncReader<'a, R, B>, std::io::Error>
+    where
+        R: futures::AsyncRead,
+        B: AsRef<[u8]>,
+    {
+        assert_eq!(
+            replace_with.len(),
+            self.patterns_len(),
+            "Async replacement requires a replacement for every pattern \
+             in the automaton",
+        );
+        enforce_anchored_consistency(self.start_kind, Anchored::No)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+
+        AhoCorasickAsyncReader::new(Arc::clone(&self.aut), source, replace_with)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+
+    /// Obtain AhoCorasickAsyncWriter wrapping the original sink.
+    /// Writing to this new writer will perform the replacements before sending the bytes to your sink
+    #[cfg(all(feature = "async", feature = "std"))]
+    pub fn get_writer<'a, W, B>(&self, sink: W, replace_with: &'a [B])
+        -> Result<AhoCorasickAsyncWriter<'a, W, B>, std::io::Error>
+    where
+        W: futures::AsyncWrite,
+        B: AsRef<[u8]>,
+    {
+        assert_eq!(
+            replace_with.len(),
+            self.patterns_len(),
+            "Async replacement requires a replacement for every pattern \
+             in the automaton",
+        );
+        enforce_anchored_consistency(self.start_kind, Anchored::No)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+
+        AhoCorasickAsyncWriter::new(Arc::clone(&self.aut), sink, replace_with)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+
+    /// Read all data from the reader, perform the replacements, and write to the writer
+    /// It is implemented using AhoCorasickAsyncWriter, but either works
+    #[cfg(all(feature = "async", feature = "std"))]
+    pub async fn try_async_stream_replace_all<R, W, B>(&self, reader: R, writer: W, replace_with: &[B], buffer_size: usize)
+        -> Result<(), std::io::Error>
+    where
+        R: futures::AsyncRead,
+        W: futures::AsyncWrite,
+        B: AsRef<[u8]>,
+    {
+        enforce_anchored_consistency(self.start_kind, Anchored::No)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+
+        let mut buffer = alloc::vec![b'\0'; buffer_size];
+        let ac_writer = self.get_writer(writer, replace_with)?;
+
+        let mut pinned_reader = alloc::boxed::Box::pin(reader);
+        let mut pinned_writer = alloc::boxed::Box::pin(ac_writer);
+        loop {
+            let bytes_read = futures::AsyncReadExt::read(&mut pinned_reader, &mut buffer).await?;
+            if bytes_read == 0 {
+                futures::AsyncWriteExt::close(&mut pinned_writer).await?;
+                break;
+            } else {
+                futures::AsyncWriteExt::write(&mut pinned_writer, &buffer[..bytes_read]).await?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// Routines for querying information about the Aho-Corasick automaton.
@@ -2640,7 +2720,7 @@ pub enum AhoCorasickKind {
 /// there is no borrowed data. Without these, the main `AhoCorasick` type would
 /// not be able to meaningfully impl `Debug` or the marker traits without also
 /// requiring that all impls of `Automaton` do so, which would be not great.
-trait AcAutomaton:
+pub(crate) trait AcAutomaton:
     Automaton + Debug + Send + Sync + UnwindSafe + RefUnwindSafe + 'static
 {
 }

@@ -20,6 +20,7 @@ name = "aho_corasick"
 [features]
 default = ["std", "perf-literal"]
 std = ["memchr?/std"]
+async = ["futures", "pin-project-lite"]
 
 # Enables prefilter optimizations that depend on external crates.
 perf-literal = ["dep:memchr"]
@@ -50,6 +51,8 @@ logging = ["dep:log"]
 [dependencies]
 log = { version = "0.4.17", optional = true }
 memchr = { version = "2.4.0", default-features = false, optional = true }
+futures = { version = "0.3.28", optional = true }
+pin-project-lite = { version = "0.2.13", optional = true }
 
 [dev-dependencies]
 doc-comment = "0.3.3"
