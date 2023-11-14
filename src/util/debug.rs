@@ -15,7 +15,7 @@ impl core::fmt::Debug for DebugByte {
         let mut len = 0;
         for (i, mut b) in core::ascii::escape_default(self.0).enumerate() {
             // capitalize \xab to \xAB
-            if i >= 2 && b'a' <= b && b <= b'f' {
+            if i >= 2 && (b'a'..=b'f').contains(&b) {
                 b -= 32;
             }
             bytes[len] = b;

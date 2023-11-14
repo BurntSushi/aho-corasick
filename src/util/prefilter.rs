@@ -330,7 +330,7 @@ struct Packed(packed::Searcher);
 impl PrefilterI for Packed {
     fn find_in(&self, haystack: &[u8], span: Span) -> Candidate {
         self.0
-            .find_in(&haystack, span)
+            .find_in(haystack, span)
             .map_or(Candidate::None, Candidate::Match)
     }
 }
@@ -478,7 +478,7 @@ impl core::fmt::Debug for RareByteOffsets {
 
 /// Offsets associated with an occurrence of a "rare" byte in any of the
 /// patterns used to construct a single Aho-Corasick automaton.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 struct RareByteOffset {
     /// The maximum offset at which a particular byte occurs from the start
     /// of any pattern. This is used as a shift amount. That is, when an
@@ -494,12 +494,6 @@ struct RareByteOffset {
     /// Using a `u8` here means that if we ever see a pattern that's longer
     /// than 255 bytes, then the entire rare byte prefilter is disabled.
     max: u8,
-}
-
-impl Default for RareByteOffset {
-    fn default() -> RareByteOffset {
-        RareByteOffset { max: 0 }
-    }
 }
 
 impl RareByteOffset {
@@ -549,7 +543,7 @@ impl RareBytesBuilder {
             let (mut bytes, mut len) = ([0; 3], 0);
             for b in 0..=255 {
                 if builder.rare_set.contains(b) {
-                    bytes[len] = b as u8;
+                    bytes[len] = b;
                     len += 1;
                 }
             }
@@ -604,7 +598,7 @@ impl RareBytesBuilder {
             self.available = false;
             return;
         }
-        let mut rarest = match bytes.get(0) {
+        let mut rarest = match bytes.first() {
             None => return,
             Some(&b) => (b, freq_rank(b)),
         };
@@ -835,7 +829,7 @@ impl StartBytesBuilder {
         if self.count > 3 {
             return;
         }
-        if let Some(&byte) = bytes.get(0) {
+        if let Some(&byte) = bytes.first() {
             self.add_one_byte(byte);
             if self.ascii_case_insensitive {
                 self.add_one_byte(opposite_ascii_case(byte));
@@ -907,9 +901,9 @@ impl PrefilterI for StartBytesThree {
 /// e.g., Given `b'A'`, this returns `b'a'`, and given `b'a'`, this returns
 /// `b'A'`. If a non-ASCII letter is given, then the given byte is returned.
 pub(crate) fn opposite_ascii_case(b: u8) -> u8 {
-    if b'A' <= b && b <= b'Z' {
+    if b.is_ascii_uppercase() {
         b.to_ascii_lowercase()
-    } else if b'a' <= b && b <= b'z' {
+    } else if b.is_ascii_lowercase() {
         b.to_ascii_uppercase()
     } else {
         b

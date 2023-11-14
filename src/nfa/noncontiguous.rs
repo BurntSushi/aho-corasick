@@ -1737,7 +1737,7 @@ impl core::fmt::Debug for NFA {
                 }
             }
 
-            write!(f, "\n")?;
+            writeln!(f)?;
             if self.is_match(sid) {
                 write!(f, "         matches: ")?;
                 for (i, pid) in self.iter_matches(sid).enumerate() {
@@ -1746,7 +1746,7 @@ impl core::fmt::Debug for NFA {
                     }
                     write!(f, "{}", pid.as_usize())?;
                 }
-                write!(f, "\n")?;
+                writeln!(f)?;
             }
         }
         writeln!(f, "match kind: {:?}", self.match_kind)?;

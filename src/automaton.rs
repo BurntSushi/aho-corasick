@@ -556,10 +556,10 @@ pub unsafe trait Automaton: private::Sealed {
     /// [`AhoCorasick::try_stream_find_iter`](crate::AhoCorasick::try_stream_find_iter)
     /// for more documentation and examples.
     #[cfg(feature = "std")]
-    fn try_stream_find_iter<'a, R: std::io::Read>(
-        &'a self,
+    fn try_stream_find_iter<R: std::io::Read>(
+        &self,
         rdr: R,
-    ) -> Result<StreamFindIter<'a, Self, R>, MatchError>
+    ) -> Result<StreamFindIter<'_, Self, R>, MatchError>
     where
         Self: Sized,
     {
@@ -1272,12 +1272,10 @@ pub(crate) fn try_find_fwd<A: Automaton + ?Sized>(
         } else {
             try_find_fwd_imp(aut, input, Some(pre), Anchored::No, false)
         }
+    } else if earliest {
+        try_find_fwd_imp(aut, input, None, Anchored::No, true)
     } else {
-        if earliest {
-            try_find_fwd_imp(aut, input, None, Anchored::No, true)
-        } else {
-            try_find_fwd_imp(aut, input, None, Anchored::No, false)
-        }
+        try_find_fwd_imp(aut, input, None, Anchored::No, false)
     }
 }
 
@@ -1585,7 +1583,7 @@ pub(crate) fn sparse_transitions<'a>(
 ) -> impl Iterator<Item = (u8, u8, StateID)> + 'a {
     let mut cur: Option<(u8, u8, StateID)> = None;
     core::iter::from_fn(move || {
-        while let Some((class, next)) = it.next() {
+        for (class, next) in it.by_ref() {
             let (prev_start, prev_end, prev_next) = match cur {
                 Some(x) => x,
                 None => {

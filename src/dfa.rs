@@ -352,7 +352,7 @@ impl core::fmt::Debug for DFA {
                     )?;
                 }
             }
-            write!(f, "\n")?;
+            writeln!(f)?;
             if self.is_match(sid) {
                 write!(f, " matches: ")?;
                 for i in 0..self.match_len(sid) {
@@ -362,7 +362,7 @@ impl core::fmt::Debug for DFA {
                     let pid = self.match_pattern(sid, i);
                     write!(f, "{}", pid.as_usize())?;
                 }
-                write!(f, "\n")?;
+                writeln!(f)?;
             }
         }
         writeln!(f, "match kind: {:?}", self.match_kind)?;
@@ -434,7 +434,7 @@ impl Builder {
     ) -> Result<DFA, BuildError> {
         debug!("building DFA");
         let byte_classes = if self.byte_classes {
-            nnfa.byte_classes().clone()
+            *nnfa.byte_classes()
         } else {
             ByteClasses::singletons()
         };
@@ -494,7 +494,7 @@ impl Builder {
             matches: vec![vec![]; num_match_states],
             matches_memory_usage: 0,
             pattern_lens: nnfa.pattern_lens_raw().to_vec(),
-            prefilter: nnfa.prefilter().map(|p| p.clone()),
+            prefilter: nnfa.prefilter().cloned(),
             match_kind: nnfa.match_kind(),
             state_len,
             alphabet_len: byte_classes.alphabet_len(),
@@ -564,9 +564,9 @@ impl Builder {
                 &dfa.byte_classes,
                 |byte, class, mut oldnextsid| {
                     if oldnextsid == noncontiguous::NFA::FAIL {
-                        if anchored.is_anchored() {
-                            oldnextsid = noncontiguous::NFA::DEAD;
-                        } else if state.fail() == noncontiguous::NFA::DEAD {
+                        if anchored.is_anchored()
+                            || state.fail() == noncontiguous::NFA::DEAD
+                        {
                             // This is a special case that avoids following
                             // DEAD transitions in a non-contiguous NFA.
                             // Following these transitions is pretty slow
@@ -701,7 +701,7 @@ impl Builder {
                 );
             }
         }
-        for i in 0..dfa.state_len {
+        for (i, _) in is_anchored.iter().enumerate().take(dfa.state_len) {
             let sid = i << stride2;
             if is_anchored[i] {
                 for next in dfa.trans[sid..][..stride].iter_mut() {
