@@ -903,10 +903,10 @@ impl AhoCorasick {
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
     #[cfg(feature = "std")]
-    pub fn stream_find_iter<R: std::io::Read>(
-        &self,
+    pub fn stream_find_iter<'a, R: std::io::Read>(
+        &'a self,
         rdr: R,
-    ) -> StreamFindIter<'_, R> {
+    ) -> StreamFindIter<'a, R> {
         self.try_stream_find_iter(rdr)
             .expect("AhoCorasick::try_stream_find_iter should not fail")
     }
@@ -1674,10 +1674,10 @@ impl AhoCorasick {
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
     #[cfg(feature = "std")]
-    pub fn try_stream_find_iter<R: std::io::Read>(
-        &self,
+    pub fn try_stream_find_iter<'a, R: std::io::Read>(
+        &'a self,
         rdr: R,
-    ) -> Result<StreamFindIter<'_, R>, MatchError> {
+    ) -> Result<StreamFindIter<'a, R>, MatchError> {
         enforce_anchored_consistency(self.start_kind, Anchored::No)?;
         self.aut.try_stream_find_iter(rdr).map(StreamFindIter)
     }

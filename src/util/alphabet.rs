@@ -146,7 +146,12 @@ impl<'a> Iterator for ByteClassElements<'a> {
     type Item = u8;
 
     fn next(&mut self) -> Option<u8> {
-        self.bytes.by_ref().find(|&byte| self.class == self.classes.get(byte))
+        while let Some(byte) = self.bytes.next() {
+            if self.class == self.classes.get(byte) {
+                return Some(byte);
+            }
+        }
+        None
     }
 }
 
