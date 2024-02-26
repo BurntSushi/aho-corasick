@@ -89,6 +89,7 @@ pub(crate) trait Vector:
     ///
     /// Callers must ensure that this is okay to call in the current target for
     /// the current CPU.
+    #[allow(dead_code)] // unused, but useful enough to keep around?
     unsafe fn or(self, vector2: Self) -> Self;
 
     /// Shift each 8-bit lane in this vector to the right by the number of
