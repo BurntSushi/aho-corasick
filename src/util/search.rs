@@ -1,5 +1,8 @@
 use core::ops::{Range, RangeBounds};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::util::primitives::PatternID;
 
 /// The configuration and the haystack to use for an Aho-Corasick search.
@@ -1049,6 +1052,7 @@ impl Match {
 /// POSIX regex alternations.
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum MatchKind {
     /// Use standard match semantics, which support overlapping matches. When
     /// used with non-overlapping matches, matches are reported as they are
@@ -1130,6 +1134,7 @@ impl MatchKind {
 ///
 /// `AhoCorasick` by default only supports unanchored searches.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum StartKind {
     /// Support both anchored and unanchored searches.
     Both,

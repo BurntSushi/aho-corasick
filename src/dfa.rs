@@ -8,6 +8,8 @@ when one needs access to the [`Automaton`] trait implementation.
 */
 
 use alloc::{vec, vec::Vec};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use crate::{
     automaton::Automaton,
@@ -88,6 +90,7 @@ use crate::{
 /// It is also possible to implement your own version of `try_find`. See the
 /// [`Automaton`] documentation for an example.
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DFA {
     /// The DFA transition table. IDs in this table are pre-multiplied. So
     /// instead of the IDs being 0, 1, 2, 3, ..., they are 0*stride, 1*stride,
@@ -104,6 +107,7 @@ pub struct DFA {
     /// of a match.
     pattern_lens: Vec<SmallIndex>,
     /// A prefilter for accelerating searches, if one exists.
+    #[cfg_attr(feature = "serde", serde(skip))]
     prefilter: Option<Prefilter>,
     /// The match semantics built into this DFA.
     match_kind: MatchKind,

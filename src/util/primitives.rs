@@ -29,6 +29,8 @@ either a 32-bit integer or a `usize` (e.g., on 16-bit targets).
 #![allow(dead_code)]
 
 use alloc::vec::Vec;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use crate::util::int::{Usize, U16, U32, U64};
 
@@ -92,6 +94,7 @@ use crate::util::int::{Usize, U16, U32, U64};
 #[derive(
     Clone, Copy, Debug, Default, Eq, Hash, PartialEq, PartialOrd, Ord,
 )]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[repr(transparent)]
 pub(crate) struct SmallIndex(u32);
 
@@ -709,6 +712,7 @@ macro_rules! index_type_impls {
 /// invalid value can be done in entirely safe code. This may in turn result in
 /// panics or silent logical errors.
 #[derive(Clone, Copy, Default, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[repr(transparent)]
 pub struct PatternID(SmallIndex);
 
@@ -730,6 +734,7 @@ pub struct PatternID(SmallIndex);
 /// invalid value can be done in entirely safe code. This may in turn result in
 /// panics or silent logical errors.
 #[derive(Clone, Copy, Default, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[repr(transparent)]
 pub struct StateID(SmallIndex);
 

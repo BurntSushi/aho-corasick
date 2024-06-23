@@ -3,7 +3,17 @@ use core::{
     panic::{RefUnwindSafe, UnwindSafe},
 };
 
+#[cfg(feature = "serde")]
+use alloc::fmt;
 use alloc::{string::String, sync::Arc, vec::Vec};
+#[cfg(feature = "serde")]
+use serde::{
+    de::{self, MapAccess, Visitor},
+    ser::SerializeStruct,
+    Deserialize, Deserializer, Serialize,
+};
+#[cfg(feature = "serde")]
+use std::any::Any;
 
 use crate::{
     automaton::{self, Automaton, OverlappingState},
@@ -211,6 +221,188 @@ pub struct AhoCorasick {
     /// was asked for (and vice versa), even if the underlying automaton
     /// supports it.
     start_kind: StartKind,
+}
+
+#[cfg(feature = "serde")]
+impl Serialize for AhoCorasick {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self.kind {
+            AhoCorasickKind::DFA => {
+                let dfa = self
+                    .aut
+                    .as_ref()
+                    .as_any()
+                    .downcast_ref::<dfa::DFA>()
+                    .unwrap();
+                let mut s = serializer.serialize_struct("AhoCorasick", 3)?;
+                s.serialize_field("kind", &self.kind)?;
+                s.serialize_field("start_kind", &self.start_kind)?;
+                s.serialize_field("aut", dfa)?;
+                s.end()
+            }
+            AhoCorasickKind::NoncontiguousNFA => {
+                let nfa = self
+                    .aut
+                    .as_ref()
+                    .as_any()
+                    .downcast_ref::<noncontiguous::NFA>()
+                    .unwrap();
+                let mut s = serializer.serialize_struct("AhoCorasick", 3)?;
+                s.serialize_field("kind", &self.kind)?;
+                s.serialize_field("start_kind", &self.start_kind)?;
+                s.serialize_field("aut", nfa)?;
+                s.end()
+            }
+            AhoCorasickKind::ContiguousNFA => {
+                let nfa = self
+                    .aut
+                    .as_ref()
+                    .as_any()
+                    .downcast_ref::<contiguous::NFA>()
+                    .unwrap();
+                let mut s = serializer.serialize_struct("AhoCorasick", 3)?;
+                s.serialize_field("kind", &self.kind)?;
+                s.serialize_field("start_kind", &self.start_kind)?;
+                s.serialize_field("aut", nfa)?;
+                s.end()
+            }
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+mod des {
+    use super::*;
+
+    pub const FIELDS: &'static [&'static str] = &["aut", "kind", "start_kind"];
+
+    enum Field {
+        Aut,
+        Kind,
+        StartKind,
+    }
+
+    struct FieldVisitor;
+
+    impl<'de> Visitor<'de> for FieldVisitor {
+        type Value = Field;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("`aut`, `kind`, or `start_kind`")
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<Field, E>
+        where
+            E: de::Error,
+        {
+            match value {
+                "aut" => Ok(Field::Aut),
+                "kind" => Ok(Field::Kind),
+                "start_kind" => Ok(Field::StartKind),
+                _ => Err(de::Error::unknown_field(value, FIELDS)),
+            }
+        }
+    }
+
+    impl<'de> Deserialize<'de> for Field {
+        fn deserialize<D>(deserializer: D) -> Result<Field, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            deserializer.deserialize_identifier(FieldVisitor)
+        }
+    }
+
+    pub struct AhoCorasickVisitor;
+
+    impl<'de> Visitor<'de> for AhoCorasickVisitor {
+        type Value = AhoCorasick;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("struct AhoCorasick")
+        }
+
+        fn visit_map<V>(self, mut map: V) -> Result<AhoCorasick, V::Error>
+        where
+            V: MapAccess<'de>,
+        {
+            let mut aut: Option<Arc<dyn AcAutomaton>> = None;
+            let mut kind = None;
+            let mut start_kind = None;
+
+            while let Some(key) = map.next_key()? {
+                match key {
+                    Field::Kind => {
+                        if kind.is_some() {
+                            return Err(de::Error::duplicate_field("kind"));
+                        }
+                        kind = Some(map.next_value()?);
+                    }
+                    Field::StartKind => {
+                        if start_kind.is_some() {
+                            return Err(de::Error::duplicate_field(
+                                "start_kind",
+                            ));
+                        }
+                        start_kind = Some(map.next_value()?);
+                    }
+                    Field::Aut => {
+                        if aut.is_some() {
+                            return Err(de::Error::duplicate_field("aut"));
+                        }
+                        aut = match kind {
+                            None => {
+                                return Err(de::Error::missing_field("kind"));
+                            }
+                            Some(AhoCorasickKind::DFA) => {
+                                let val: dfa::DFA = map.next_value()?;
+                                Some(Arc::new(val))
+                            }
+                            Some(AhoCorasickKind::NoncontiguousNFA) => {
+                                let val: noncontiguous::NFA =
+                                    map.next_value()?;
+                                Some(Arc::new(val))
+                            }
+                            Some(AhoCorasickKind::ContiguousNFA) => {
+                                let val: contiguous::NFA = map.next_value()?;
+                                Some(Arc::new(val))
+                            }
+                        };
+                    }
+                }
+            }
+
+            let aut: Arc<dyn AcAutomaton> =
+                aut.ok_or_else(|| de::Error::missing_field("aut"))?;
+            let kind: AhoCorasickKind =
+                kind.ok_or_else(|| de::Error::missing_field("kind"))?;
+            let start_kind: StartKind = start_kind
+                .ok_or_else(|| de::Error::missing_field("start_kind"))?;
+
+            // Here you can implement different logic based on the kind
+            // For example, you might create different `AcAutomaton` implementations
+            // and cast `aut` accordingly
+
+            Ok(AhoCorasick { aut, kind, start_kind })
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for AhoCorasick {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_struct(
+            "AhoCorasick",
+            des::FIELDS,
+            des::AhoCorasickVisitor,
+        )
+    }
 }
 
 /// Convenience constructors for an Aho-Corasick searcher. To configure the
@@ -2623,6 +2815,25 @@ impl AhoCorasickBuilder {
 /// [`AhoCorasickBuilder::start_kind`] method. Its documentation goes into more
 /// detail about each choice.
 #[non_exhaustive]
+#[cfg(feature = "serde")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub enum AhoCorasickKind {
+    /// Use a noncontiguous NFA.
+    NoncontiguousNFA,
+    /// Use a contiguous NFA.
+    ContiguousNFA,
+    /// Use a DFA. Warning: DFAs typically use a large amount of memory.
+    DFA,
+}
+
+/// The type of Aho-Corasick implementation to use in an [`AhoCorasick`]
+/// searcher.
+///
+/// This is principally used as an input to the
+/// [`AhoCorasickBuilder::start_kind`] method. Its documentation goes into more
+/// detail about each choice.
+#[non_exhaustive]
+#[cfg(not(feature = "serde"))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AhoCorasickKind {
     /// Use a noncontiguous NFA.
@@ -2643,11 +2854,18 @@ pub enum AhoCorasickKind {
 trait AcAutomaton:
     Automaton + Debug + Send + Sync + UnwindSafe + RefUnwindSafe + 'static
 {
+    #[cfg(feature = "serde")]
+    fn as_any(&self) -> &dyn Any;
 }
 
-impl<A> AcAutomaton for A where
-    A: Automaton + Debug + Send + Sync + UnwindSafe + RefUnwindSafe + 'static
+impl<A> AcAutomaton for A
+where
+    A: Automaton + Debug + Send + Sync + UnwindSafe + RefUnwindSafe + 'static,
 {
+    #[cfg(feature = "serde")]
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 impl crate::automaton::private::Sealed for Arc<dyn AcAutomaton> {}

@@ -12,6 +12,8 @@ use alloc::{
     vec,
     vec::Vec,
 };
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use crate::{
     automaton::Automaton,
@@ -79,6 +81,7 @@ use crate::{
 /// It is also possible to implement your own version of `try_find`. See the
 /// [`Automaton`] documentation for an example.
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct NFA {
     /// The match semantics built into this NFA.
     match_kind: MatchKind,
@@ -139,6 +142,7 @@ pub struct NFA {
     /// patterns in this automaton.
     pattern_lens: Vec<SmallIndex>,
     /// A prefilter for quickly skipping to candidate matches, if pertinent.
+    #[cfg_attr(feature = "serde", serde(skip))]
     prefilter: Option<Prefilter>,
     /// A set of equivalence classes in terms of bytes. We compute this while
     /// building the NFA, but don't use it in the NFA's states. Instead, we
@@ -707,6 +711,7 @@ unsafe impl Automaton for NFA {
 /// cases where there exists no other transition for the current input byte
 /// and the matches implied by visiting this state (if any).
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub(crate) struct State {
     /// A pointer to `NFA::trans` corresponding to the head of a linked list
     /// containing all of the transitions for this state.
@@ -767,6 +772,7 @@ impl State {
 
 /// A single transition in a non-contiguous NFA.
 #[derive(Clone, Copy, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[repr(packed)]
 pub(crate) struct Transition {
     byte: u8,
@@ -805,6 +811,7 @@ impl core::fmt::Debug for Transition {
 
 /// A single match in a non-contiguous NFA.
 #[derive(Clone, Copy, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 struct Match {
     pid: PatternID,
     link: StateID,

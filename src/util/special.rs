@@ -1,3 +1,6 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::util::primitives::StateID;
 
 /// A collection of sentinel state IDs for Aho-Corasick automata.
@@ -7,6 +10,7 @@ use crate::util::primitives::StateID;
 /// particular order, we can determine the type of a state simply by looking at
 /// its ID.
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub(crate) struct Special {
     /// The maximum ID of all the "special" states. This corresponds either to
     /// start_anchored_id when a prefilter is active and max_match_id when a

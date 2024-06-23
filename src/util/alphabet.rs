@@ -9,6 +9,73 @@ use crate::util::int::Usize;
 #[derive(Clone, Copy)]
 pub(crate) struct ByteClasses([u8; 256]);
 
+#[cfg(feature = "serde")]
+mod ser {
+    use alloc::vec::Vec;
+    use std::{fmt, marker::PhantomData};
+
+    use serde::{
+        de::{self, SeqAccess, Visitor},
+        Deserialize, Serialize,
+    };
+
+    use super::ByteClasses;
+
+    struct ArrayVisitor {
+        // Literally nothing (a "phantom"), but stops Rust complaining about the "unused" T parameter
+        _marker: PhantomData<[u8]>,
+    }
+
+    impl Serialize for ByteClasses {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            self.0.serialize(serializer)
+        }
+    }
+
+    impl<'de> Visitor<'de> for ArrayVisitor {
+        type Value = ByteClasses;
+
+        /// Format a message stating we expect an array of size `N`
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            write!(formatter, "an array of size 256")
+        }
+
+        /// Process a sequence into an array
+        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        where
+            A: SeqAccess<'de>,
+        {
+            // Build a temporary container to hold our data as we deserialize it
+            // We can't rely on a Default<T> implementation, so we can't use an array here
+            let mut arr = Vec::with_capacity(256);
+
+            while let Some(val) = seq.next_element()? {
+                arr.push(val);
+            }
+
+            // We can convert a Vec into an array via TryInto, which will fail if the length of the Vec
+            // doesn't match that of the array.
+            match arr.try_into() {
+                Ok(arr) => Ok(ByteClasses(arr)),
+                Err(arr) => Err(de::Error::invalid_length(arr.len(), &self)),
+            }
+        }
+    }
+
+    impl<'de> Deserialize<'de> for ByteClasses {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            deserializer
+                .deserialize_tuple(256, ArrayVisitor { _marker: PhantomData })
+        }
+    }
+}
+
 impl ByteClasses {
     /// Creates a new set of equivalence classes where all bytes are mapped to
     /// the same class.
