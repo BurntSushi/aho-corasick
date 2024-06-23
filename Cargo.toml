@@ -56,7 +56,7 @@ serde = { version = "1.0.203", features = ["derive"], optional = true }
 
 [dev-dependencies]
 doc-comment = "0.3.3"
-sonic-rs = "0.3.7"
+rmp-serde = "1.3.0"
 # fst = "0.4.5"
 
 [package.metadata.docs.rs]

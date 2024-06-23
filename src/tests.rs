@@ -676,8 +676,8 @@ macro_rules! testconfig {
                     .prefilter(false)
                     .build(test.patterns)
                     .unwrap();
-                let ac_bytes = sonic_rs::to_string(&ac).unwrap();
-                let ac: AhoCorasick = sonic_rs::from_str(&ac_bytes).unwrap();
+                let ac_bytes = rmp_serde::to_vec(&ac).unwrap();
+                let ac: AhoCorasick = rmp_serde::from_slice(&ac_bytes).unwrap();
                 ac.try_find_iter(input).unwrap().collect()
             });
         }
@@ -704,8 +704,8 @@ macro_rules! testconfig {
                     .prefilter(false)
                     .build(test.patterns)
                     .unwrap();
-                let ac_bytes = sonic_rs::to_string(&ac).unwrap();
-                let ac: AhoCorasick = sonic_rs::from_str(&ac_bytes).unwrap();
+                let ac_bytes = rmp_serde::to_vec(&ac).unwrap();
+                let ac: AhoCorasick = rmp_serde::from_slice(&ac_bytes).unwrap();
                 ac.find_overlapping_iter(test.haystack).collect()
             });
         }
@@ -741,8 +741,8 @@ macro_rules! testconfig {
                     .prefilter(false)
                     .build(test.patterns)
                     .unwrap();
-                let ac_bytes = sonic_rs::to_string(&ac).unwrap();
-                let ac: AhoCorasick = sonic_rs::from_str(&ac_bytes).unwrap();
+                let ac_bytes = rmp_serde::to_vec(&ac).unwrap();
+                let ac: AhoCorasick = rmp_serde::from_slice(&ac_bytes).unwrap();
                 ac.stream_find_iter(buf)
                     .map(|result| result.unwrap())
                     .collect()
@@ -771,8 +771,8 @@ macro_rules! testconfig {
                     .prefilter(false)
                     .build(test.patterns)
                     .unwrap();
-                let ac_bytes = sonic_rs::to_string(&ac).unwrap();
-                let ac: AhoCorasick = sonic_rs::from_str(&ac_bytes).unwrap();
+                let ac_bytes = rmp_serde::to_vec(&ac).unwrap();
+                let ac: AhoCorasick = rmp_serde::from_slice(&ac_bytes).unwrap();
                 ac.find_iter(test.haystack).collect()
             });
         }
