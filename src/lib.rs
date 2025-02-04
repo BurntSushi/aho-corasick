@@ -238,6 +238,8 @@ doc_comment::doctest!("../README.md");
 
 #[cfg(feature = "std")]
 pub use crate::ahocorasick::StreamFindIter;
+#[cfg(feature = "std")]
+pub use crate::automaton::ReplacingReader;
 pub use crate::{
     ahocorasick::{
         AhoCorasick, AhoCorasickBuilder, AhoCorasickKind, FindIter,

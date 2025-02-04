@@ -6,7 +6,7 @@ use core::{
 use alloc::{string::String, sync::Arc, vec::Vec};
 
 use crate::{
-    automaton::{self, Automaton, OverlappingState},
+    automaton::{self, Automaton, OverlappingState, ReplacingReader},
     dfa,
     nfa::{contiguous, noncontiguous},
     util::{
@@ -1840,6 +1840,176 @@ impl AhoCorasick {
         enforce_anchored_consistency(self.start_kind, Anchored::No)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         self.aut.try_stream_replace_all_with(rdr, wtr, replace_with)
+    }
+
+    /// Create a reader that replaces all matches of this automaton while
+    /// reading from the given reader. Matches correspond to the same
+    /// matches as reported by [`AhoCorasick::try_find_iter`].
+    ///
+    /// Replacements are determined by the index of the matching pattern. For
+    /// example, if the pattern with index `2` is found, then it is replaced by
+    /// `replace_with[2]`.
+    ///
+    /// If there was a problem reading from the given reader then the corresponding
+    /// `io::Error` is returned and all replacement is stopped.
+    ///
+    /// When searching a stream, an internal buffer is used. Therefore, callers
+    /// should avoiding providing a buffered reader, if possible.
+    ///
+    /// Note that there is currently no infallible version of this routine.
+    ///
+    /// # Memory usage
+    ///
+    /// In general, searching streams will use a constant amount of memory for
+    /// its internal buffer. The one requirement is that the internal buffer
+    /// must be at least the size of the longest possible match. In most use
+    /// cases, the default buffer size will be much larger than any individual
+    /// match.
+    ///
+    /// # Errors
+    ///
+    /// This returns an error when this Aho-Corasick searcher does not support
+    /// the default `Input` configuration. More specifically, this occurs only
+    /// when the Aho-Corasick searcher does not support unanchored searches
+    /// since this stream searching routine always does an unanchored search.
+    ///
+    /// This also returns an error if the searcher does not support stream
+    /// searches. Only searchers built with [`MatchKind::Standard`] semantics
+    /// support stream searches.
+    ///
+    /// # Example: basic usage
+    ///
+    /// ```
+    /// use std::io::Read;
+    /// use aho_corasick::AhoCorasick;
+    ///
+    /// let patterns = &["fox", "brown", "quick"];
+    /// let haystack = "The quick brown fox.";
+    /// let replace_with = &["sloth", "grey", "slow"];
+    ///
+    /// let ac = AhoCorasick::new(patterns).unwrap();
+    /// let mut result = vec![];
+    /// let mut reader = ac.try_to_replacing_reader(
+    ///     haystack.as_bytes(),
+    ///     replace_with,
+    /// )?;
+    /// reader.read_to_end(&mut result)?;
+    /// assert_eq!(b"The slow grey sloth.".to_vec(), result);
+    ///
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
+    //
+    // NOTE: We are forced to annotate `self` with the lifetime as well,
+    //       even though we shouldn't have to. This has to do with the
+    //       [`Automaton::try_to_replacing_reader`] RPIT which insists on
+    //       capturing the type parameter `Self` from the trait, thus
+    //       capturing its lifetime too.
+    //
+    //       There's the `use<>` syntax now but that would bump MSRV a lot.
+    //       There's also the `Captures<>` trick but it's ugly.
+    //
+    //       There's probably nothing wrong with the current workaround though,
+    //       apart from being ugly and confusing. While the lifetime of
+    //       `self` and `replace_with` are not really tied to each other,
+    //       the reader does use both and expects them to live for its duration.
+    //
+    //       The difference is that the reader would typically need to live
+    //       as long as the lifetime of `self` and the lifetime of `replace_with`
+    //       and expressing that with a single lifetime that both `self` and `replace_with`
+    //       must outlive is just simpler.
+    #[cfg(feature = "std")]
+    pub fn try_to_replacing_reader<'a, R, B>(
+        &'a self,
+        rdr: R,
+        replace_with: &'a [B],
+    ) -> std::io::Result<
+        ReplacingReader<
+            'a,
+            impl Automaton,
+            R,
+            impl FnMut(&Match, &[u8]) -> std::io::Result<&'a [u8]>,
+        >,
+    >
+    where
+        R: std::io::Read,
+        B: AsRef<[u8]>,
+    {
+        enforce_anchored_consistency(self.start_kind, Anchored::No)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        self.aut.try_to_replacing_reader(rdr, replace_with)
+    }
+
+    /// Create a reader that replaces all matches of this automaton found
+    /// using the given closure while reading from the given reader.
+    /// Matches correspond to the same matches as reported by
+    /// [`AhoCorasick::try_find_iter`].
+    ///
+    /// The closure accepts two parameters: the match found and the text of
+    /// the match.
+    ///
+    /// If there was a problem reading from the given reader or producing replacements,
+    /// then the corresponding `io::Error` is returned and all replacement is stopped.
+    ///
+    /// When searching a stream, an internal buffer is used. Therefore, callers
+    /// should avoiding providing a buffered reader, if possible.
+    ///
+    /// Note that there is currently no infallible version of this routine.
+    ///
+    /// # Memory usage
+    ///
+    /// In general, searching streams will use a constant amount of memory for
+    /// its internal buffer. The one requirement is that the internal buffer
+    /// must be at least the size of the longest possible match. In most use
+    /// cases, the default buffer size will be much larger than any individual
+    /// match.
+    ///
+    /// # Errors
+    ///
+    /// This returns an error when this Aho-Corasick searcher does not support
+    /// the default `Input` configuration. More specifically, this occurs only
+    /// when the Aho-Corasick searcher does not support unanchored searches
+    /// since this stream searching routine always does an unanchored search.
+    ///
+    /// This also returns an error if the searcher does not support stream
+    /// searches. Only searchers built with [`MatchKind::Standard`] semantics
+    /// support stream searches.
+    ///
+    /// # Example: basic usage
+    ///
+    /// ```
+    /// use std::io::Read;
+    /// use aho_corasick::AhoCorasick;
+    ///
+    /// let patterns = &["fox", "brown", "quick"];
+    /// let haystack = "The quick brown fox.";
+    ///
+    /// let ac = AhoCorasick::new(patterns).unwrap();
+    /// let mut result = vec![];
+    /// let mut reader = ac.try_to_replacing_reader_with(
+    ///     haystack.as_bytes(),
+    ///     |mat, _,| {
+    ///         Ok(mat.pattern().as_usize().to_string())
+    ///     },
+    /// )?;
+    /// reader.read_to_end(&mut result)?;
+    /// assert_eq!(b"The 2 1 0.".to_vec(), result);
+    ///
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
+    #[cfg(feature = "std")]
+    pub fn try_to_replacing_reader_with<R, F, B>(
+        &self,
+        rdr: R,
+        replace_with: F,
+    ) -> std::io::Result<ReplacingReader<'_, impl Automaton, R, F>>
+    where
+        R: std::io::Read,
+        F: FnMut(&Match, &[u8]) -> std::io::Result<B>,
+        B: AsRef<[u8]>,
+    {
+        enforce_anchored_consistency(self.start_kind, Anchored::No)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        self.aut.try_to_replacing_reader_with(rdr, replace_with)
     }
 }
 

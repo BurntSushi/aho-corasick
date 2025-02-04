@@ -6,6 +6,8 @@ Aho-Corasick automaton. It also provides access to lower level APIs that
 permit walking the state transitions of an Aho-Corasick automaton manually.
 */
 
+use core::ops::Range;
+
 use alloc::{string::String, vec::Vec};
 
 use crate::util::{
@@ -634,6 +636,63 @@ pub unsafe trait Automaton: private::Sealed {
         }
         Ok(())
     }
+
+    /// Creates a reader that replaces all non-overlapping matches in `rdr` with
+    /// strings from `replace_with` depending on the pattern that matched.
+    /// The `replace_with` slice must have length equal to `Automaton::patterns_len`.
+    ///
+    /// See
+    /// [`AhoCorasick::try_to_replacing_reader`](crate::AhoCorasick::try_to_replacing_reader)
+    /// for more documentation and examples.
+    #[cfg(feature = "std")]
+    fn try_to_replacing_reader<'a, R, B>(
+        &self,
+        rdr: R,
+        replace_with: &'a [B],
+    ) -> std::io::Result<
+        ReplacingReader<
+            '_,
+            Self,
+            R,
+            impl FnMut(&Match, &[u8]) -> std::io::Result<&'a [u8]>,
+        >,
+    >
+    where
+        Self: Sized,
+        R: std::io::Read,
+        B: AsRef<[u8]>,
+    {
+        assert_eq!(
+            replace_with.len(),
+            self.patterns_len(),
+            "replacing reader requires a replacement for every pattern \
+             in the automaton",
+        );
+        self.try_to_replacing_reader_with(rdr, |mat, _| {
+            Ok(replace_with[mat.pattern()].as_ref())
+        })
+    }
+
+    /// Creates a reader that replaces all non-overlapping matches in `rdr` by
+    /// calling the `replace_with` closure given.
+    ///
+    /// See
+    /// [`AhoCorasick::try_to_replacing_reader_with`](crate::AhoCorasick::try_to_replacing_reader_with)
+    /// for more documentation and examples.
+    #[cfg(feature = "std")]
+    fn try_to_replacing_reader_with<R, F, B>(
+        &self,
+        rdr: R,
+        replace_with: F,
+    ) -> std::io::Result<ReplacingReader<'_, Self, R, F>>
+    where
+        Self: Sized,
+        R: std::io::Read,
+        F: FnMut(&Match, &[u8]) -> std::io::Result<B>,
+        B: AsRef<[u8]>,
+    {
+        ReplacingReader::new(self, rdr, replace_with)
+    }
 }
 
 // SAFETY: This just defers to the underlying 'AcAutomaton' and thus inherits
@@ -1114,7 +1173,7 @@ impl<'a, A: Automaton, R: std::io::Read> StreamChunkIter<'a, A, R> {
         })
     }
 
-    fn next(&mut self) -> Option<std::io::Result<StreamChunk>> {
+    fn next_range(&mut self) -> Option<std::io::Result<StreamChunkRange>> {
         // This code is pretty gnarly. It IS simpler than the equivalent code
         // in the previous aho-corasick release, in part because we inline
         // automaton traversal here and also in part because we have abdicated
@@ -1134,22 +1193,19 @@ impl<'a, A: Automaton, R: std::io::Read> StreamChunkIter<'a, A, R> {
         loop {
             if self.aut.is_match(self.sid) {
                 let mat = self.get_match();
-                if let Some(r) = self.get_non_match_chunk(mat) {
-                    self.buffer_reported_pos += r.len();
-                    let bytes = &self.buf.buffer()[r];
-                    return Some(Ok(StreamChunk::NonMatch { bytes }));
+                if let Some(range) = self.get_non_match_chunk(mat) {
+                    self.buffer_reported_pos += range.len();
+                    return Some(Ok(StreamChunkRange::NonMatch { range }));
                 }
                 self.sid = self.start;
                 let r = self.get_match_chunk(mat);
                 self.buffer_reported_pos += r.len();
-                let bytes = &self.buf.buffer()[r];
-                return Some(Ok(StreamChunk::Match { bytes, mat }));
+                return Some(Ok(StreamChunkRange::Match { range: r, mat }));
             }
             if self.buffer_pos >= self.buf.buffer().len() {
-                if let Some(r) = self.get_pre_roll_non_match_chunk() {
-                    self.buffer_reported_pos += r.len();
-                    let bytes = &self.buf.buffer()[r];
-                    return Some(Ok(StreamChunk::NonMatch { bytes }));
+                if let Some(range) = self.get_pre_roll_non_match_chunk() {
+                    self.buffer_reported_pos += range.len();
+                    return Some(Ok(StreamChunkRange::NonMatch { range }));
                 }
                 if self.buf.buffer().len() >= self.buf.min_buffer_len() {
                     self.buffer_pos = self.buf.min_buffer_len();
@@ -1163,10 +1219,11 @@ impl<'a, A: Automaton, R: std::io::Read> StreamChunkIter<'a, A, R> {
                     Ok(false) => {
                         // We've hit EOF, but if there are still some
                         // unreported bytes remaining, return them now.
-                        if let Some(r) = self.get_eof_non_match_chunk() {
-                            self.buffer_reported_pos += r.len();
-                            let bytes = &self.buf.buffer()[r];
-                            return Some(Ok(StreamChunk::NonMatch { bytes }));
+                        if let Some(range) = self.get_eof_non_match_chunk() {
+                            self.buffer_reported_pos += range.len();
+                            return Some(Ok(StreamChunkRange::NonMatch {
+                                range,
+                            }));
                         }
                         // We've reported everything!
                         return None;
@@ -1183,6 +1240,17 @@ impl<'a, A: Automaton, R: std::io::Read> StreamChunkIter<'a, A, R> {
             }
             self.buffer_pos += self.absolute_pos - start;
         }
+    }
+
+    fn next(&mut self) -> Option<std::io::Result<StreamChunk>> {
+        Some(self.next_range()?.map(|r| match r {
+            StreamChunkRange::NonMatch { range } => {
+                StreamChunk::NonMatch { bytes: &self.buf.buffer()[range] }
+            }
+            StreamChunkRange::Match { range, mat } => {
+                StreamChunk::Match { bytes: &self.buf.buffer()[range], mat }
+            }
+        }))
     }
 
     /// Return a match chunk for the given match. It is assumed that the match
@@ -1253,6 +1321,156 @@ enum StreamChunk<'r> {
     NonMatch { bytes: &'r [u8] },
     /// A chunk that precisely contains a match.
     Match { bytes: &'r [u8], mat: Match },
+}
+
+/// A single chunk range yielded by the stream chunk iterator.
+/// This type differs from [`StreamChunk`] because it does not
+/// carry the actual chunk bytes (or their lifetime) and instead
+/// provides the buffer range that can be used to retrieve the bytes.
+///
+/// This makes the [`ReplacingReader`] possible.
+#[cfg(feature = "std")]
+#[derive(Debug)]
+enum StreamChunkRange {
+    /// A chunk range that does not contain any matches.
+    NonMatch { range: Range<usize> },
+    /// A chunk range that precisely contains a match.
+    Match { range: Range<usize>, mat: Match },
+}
+
+/// A wrapper reader that replaces matches found in the provided reader as
+/// data gets streamed. An internal buffer is used when searching the data stream
+/// the given reader, therefore, callers should avoiding providing a buffered
+/// reader, if possible.
+///
+/// See
+/// [`AhoCorasick::try_to_replacing_reader`](crate::AhoCorasick::try_to_replacing_reader)
+/// and
+/// [`AhoCorasick::try_to_replacing_reader_with`](crate::AhoCorasick::try_to_replacing_reader_with)
+/// for more documentation and examples.
+#[cfg(feature = "std")]
+#[derive(Debug)]
+pub struct ReplacingReader<'a, A, R, F> {
+    chunk_iter: StreamChunkIter<'a, A, R>,
+    replace_with: F,
+    state: ReaderState,
+}
+
+impl<'a, A, R, F, B> ReplacingReader<'a, A, R, F>
+where
+    A: Automaton,
+    R: std::io::Read,
+    F: FnMut(&Match, &[u8]) -> std::io::Result<B>,
+    B: AsRef<[u8]>,
+{
+    fn new(aut: &'a A, rdr: R, replace_with: F) -> std::io::Result<Self> {
+        let chunk_iter = StreamChunkIter::new(aut, rdr).map_err(|e| {
+            let kind = std::io::ErrorKind::Other;
+            std::io::Error::new(kind, e)
+        })?;
+
+        Ok(Self { chunk_iter, replace_with, state: ReaderState::Read })
+    }
+
+    /// Unwraps this reader, returning the underlying reader.
+    ///
+    /// Note that any leftover data in the internal buffer is lost.
+    /// Therefore, a following read from the underlying reader may lead to data loss.
+    pub fn into_inner(self) -> R {
+        self.chunk_iter.rdr
+    }
+
+    /// Gets a reference to the underlying reader.
+    ///
+    /// It is inadvisable to directly read from the underlying reader.
+    pub fn get_ref(&self) -> &R {
+        &self.chunk_iter.rdr
+    }
+
+    /// Gets a mutable reference to the underlying reader.
+    ///
+    /// It is inadvisable to directly read from the underlying reader.
+    pub fn get_mut(&mut self) -> &mut R {
+        &mut self.chunk_iter.rdr
+    }
+}
+
+impl<'a, A, R, F, B> std::io::Read for ReplacingReader<'a, A, R, F>
+where
+    A: Automaton,
+    R: std::io::Read,
+    F: FnMut(&Match, &[u8]) -> std::io::Result<B>,
+    B: AsRef<[u8]>,
+{
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        let mut written = 0;
+
+        loop {
+            match &mut self.state {
+                ReaderState::Read => {
+                    let Some(range) = self.chunk_iter.next_range() else {
+                        // EOF was reached
+                        self.state = ReaderState::End;
+                        continue;
+                    };
+
+                    self.state = match range? {
+                        StreamChunkRange::NonMatch { range } => {
+                            ReaderState::Consume { range }
+                        }
+                        StreamChunkRange::Match { range, mat } => {
+                            ReaderState::Replace { range, mat, offset: 0 }
+                        }
+                    };
+                }
+                ReaderState::Consume { range } => {
+                    let amt = (&self.chunk_iter.buf.buffer()
+                        [range.start..range.end])
+                        .read(&mut buf[written..])?;
+
+                    written += amt;
+                    range.start += amt;
+
+                    // Fetch a new chunk if we finished reading this one.
+                    if Range::is_empty(range) {
+                        self.state = ReaderState::Read;
+                    }
+                }
+
+                ReaderState::Replace { range, mat, offset } => {
+                    let replacement = (self.replace_with)(
+                        mat,
+                        &self.chunk_iter.buf.buffer()[range.start..range.end],
+                    )?;
+
+                    let amt = (&replacement.as_ref()[*offset..])
+                        .read(&mut buf[written..])?;
+
+                    written += amt;
+                    *offset += amt;
+
+                    // Fetch a new chunk if we finished reading this one.
+                    if *offset >= replacement.as_ref().len() {
+                        self.state = ReaderState::Read;
+                    }
+                }
+                ReaderState::End => return Ok(written),
+            }
+
+            // Return if we filled the read buffer so we get a new one.
+            if written >= buf.len() {
+                return Ok(written);
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
+enum ReaderState {
+    Read,
+    Consume { range: Range<usize> },
+    Replace { range: Range<usize>, mat: Match, offset: usize },
+    End,
 }
 
 #[inline(never)]
