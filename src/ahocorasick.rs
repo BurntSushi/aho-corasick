@@ -6,7 +6,7 @@ use core::{
 use alloc::{string::String, sync::Arc, vec::Vec};
 
 use crate::{
-    automaton::{self, Automaton, OverlappingState, ReplacingReader},
+    automaton::{self, Automaton, OverlappingState},
     dfa,
     nfa::{contiguous, noncontiguous},
     util::{
@@ -1904,7 +1904,7 @@ impl AhoCorasick {
         rdr: R,
         replace_with: &'a [B],
     ) -> std::io::Result<
-        ReplacingReader<
+        automaton::ReplacingReader<
             '_,
             impl Automaton,
             R,
@@ -1992,7 +1992,7 @@ impl AhoCorasick {
         &self,
         rdr: R,
         replace_with: F,
-    ) -> std::io::Result<ReplacingReader<'_, impl Automaton, R, F>>
+    ) -> std::io::Result<automaton::ReplacingReader<'_, impl Automaton, R, F>>
     where
         R: std::io::Read,
         F: FnMut(&Match, &[u8]) -> std::io::Result<B>,

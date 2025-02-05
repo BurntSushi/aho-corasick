@@ -6,8 +6,6 @@ Aho-Corasick automaton. It also provides access to lower level APIs that
 permit walking the state transitions of an Aho-Corasick automaton manually.
 */
 
-use core::ops::Range;
-
 use alloc::{string::String, vec::Vec};
 
 use crate::util::{
@@ -1333,9 +1331,9 @@ enum StreamChunk<'r> {
 #[derive(Debug)]
 enum StreamChunkRange {
     /// A chunk range that does not contain any matches.
-    NonMatch { range: Range<usize> },
+    NonMatch { range: core::ops::Range<usize> },
     /// A chunk range that precisely contains a match.
-    Match { range: Range<usize>, mat: Match },
+    Match { range: core::ops::Range<usize>, mat: Match },
 }
 
 /// A wrapper reader that replaces matches found in the provided reader as
@@ -1356,6 +1354,7 @@ pub struct ReplacingReader<'a, A, R, F> {
     state: ReaderState,
 }
 
+#[cfg(feature = "std")]
 impl<'a, A, R, F, B> ReplacingReader<'a, A, R, F>
 where
     A: Automaton,
@@ -1395,6 +1394,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<'a, A, R, F, B> std::io::Read for ReplacingReader<'a, A, R, F>
 where
     A: Automaton,
@@ -1429,7 +1429,7 @@ where
                     range.start += amt;
 
                     // Fetch a new chunk if we finished reading this one.
-                    if Range::is_empty(range) {
+                    if core::ops::Range::is_empty(range) {
                         self.state = ReaderState::Read;
                     }
                 }
@@ -1462,11 +1462,12 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 #[derive(Debug)]
 enum ReaderState {
     Read,
-    Consume { range: Range<usize> },
-    Replace { range: Range<usize>, mat: Match, offset: usize },
+    Consume { range: core::ops::Range<usize> },
+    Replace { range: core::ops::Range<usize>, mat: Match, offset: usize },
     End,
 }
 
