@@ -1408,19 +1408,16 @@ where
         loop {
             match &mut self.state {
                 ReaderState::Read => {
-                    let Some(range) = self.chunk_iter.next_range() else {
-                        // EOF was reached
-                        self.state = ReaderState::End;
-                        continue;
-                    };
-
-                    self.state = match range? {
-                        StreamChunkRange::NonMatch { range } => {
+                    self.state = match self.chunk_iter.next_range() {
+                        Some(Ok(StreamChunkRange::NonMatch { range })) => {
                             ReaderState::Consume { range }
                         }
-                        StreamChunkRange::Match { range, mat } => {
+                        Some(Ok(StreamChunkRange::Match { range, mat })) => {
                             ReaderState::Replace { range, mat, offset: 0 }
                         }
+                        // EOF was reached
+                        None => ReaderState::End,
+                        Some(Err(e)) => return Err(e),
                     };
                 }
                 ReaderState::Consume { range } => {
