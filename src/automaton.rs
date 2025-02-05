@@ -637,41 +637,41 @@ pub unsafe trait Automaton: private::Sealed {
         Ok(())
     }
 
-    /// Creates a reader that replaces all non-overlapping matches in `rdr` with
-    /// strings from `replace_with` depending on the pattern that matched.
-    /// The `replace_with` slice must have length equal to `Automaton::patterns_len`.
-    ///
-    /// See
-    /// [`AhoCorasick::try_to_replacing_reader`](crate::AhoCorasick::try_to_replacing_reader)
-    /// for more documentation and examples.
-    #[cfg(feature = "std")]
-    fn try_to_replacing_reader<'a, R, B>(
-        &self,
-        rdr: R,
-        replace_with: &'a [B],
-    ) -> std::io::Result<
-        ReplacingReader<
-            '_,
-            Self,
-            R,
-            impl FnMut(&Match, &[u8]) -> std::io::Result<&'a [u8]>,
-        >,
-    >
-    where
-        Self: Sized,
-        R: std::io::Read,
-        B: AsRef<[u8]>,
-    {
-        assert_eq!(
-            replace_with.len(),
-            self.patterns_len(),
-            "replacing reader requires a replacement for every pattern \
-             in the automaton",
-        );
-        self.try_to_replacing_reader_with(rdr, |mat, _| {
-            Ok(replace_with[mat.pattern()].as_ref())
-        })
-    }
+    // /// Creates a reader that replaces all non-overlapping matches in `rdr` with
+    // /// strings from `replace_with` depending on the pattern that matched.
+    // /// The `replace_with` slice must have length equal to `Automaton::patterns_len`.
+    // ///
+    // /// See
+    // /// [`AhoCorasick::try_to_replacing_reader`](crate::AhoCorasick::try_to_replacing_reader)
+    // /// for more documentation and examples.
+    // #[cfg(feature = "std")]
+    // fn try_to_replacing_reader<'a, R, B>(
+    //     &self,
+    //     rdr: R,
+    //     replace_with: &'a [B],
+    // ) -> std::io::Result<
+    //     ReplacingReader<
+    //         '_,
+    //         Self,
+    //         R,
+    //         impl FnMut(&Match, &[u8]) -> std::io::Result<&'a [u8]>,
+    //     >,
+    // >
+    // where
+    //     Self: Sized,
+    //     R: std::io::Read,
+    //     B: AsRef<[u8]>,
+    // {
+    //     assert_eq!(
+    //         replace_with.len(),
+    //         self.patterns_len(),
+    //         "replacing reader requires a replacement for every pattern \
+    //          in the automaton",
+    //     );
+    //     self.try_to_replacing_reader_with(rdr, |mat, _| {
+    //         Ok(replace_with[mat.pattern()].as_ref())
+    //     })
+    // }
 
     /// Creates a reader that replaces all non-overlapping matches in `rdr` by
     /// calling the `replace_with` closure given.

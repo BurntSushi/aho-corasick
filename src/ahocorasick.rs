@@ -1898,45 +1898,36 @@ impl AhoCorasick {
     ///
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
-    //
-    // NOTE: We are forced to annotate `self` with the lifetime as well,
-    //       even though we shouldn't have to. This has to do with the
-    //       [`Automaton::try_to_replacing_reader`] RPIT which insists on
-    //       capturing the type parameter `Self` from the trait, thus
-    //       capturing its lifetime too.
-    //
-    //       There's the `use<>` syntax now but that would bump MSRV a lot.
-    //       There's also the `Captures<>` trick but it's ugly.
-    //
-    //       There's probably nothing wrong with the current workaround though,
-    //       apart from being ugly and confusing. While the lifetime of
-    //       `self` and `replace_with` are not really tied to each other,
-    //       the reader does use both and expects them to live for its duration.
-    //
-    //       The difference is that the reader would typically need to live
-    //       as long as the lifetime of `self` and the lifetime of `replace_with`
-    //       and expressing that with a single lifetime that both `self` and `replace_with`
-    //       must outlive is just simpler.
     #[cfg(feature = "std")]
     pub fn try_to_replacing_reader<'a, R, B>(
-        &'a self,
+        &self,
         rdr: R,
         replace_with: &'a [B],
     ) -> std::io::Result<
         ReplacingReader<
-            'a,
+            '_,
             impl Automaton,
             R,
             impl FnMut(&Match, &[u8]) -> std::io::Result<&'a [u8]>,
         >,
     >
     where
-        R: std::io::Read,
+        R: std::io::Read + 'a,
         B: AsRef<[u8]>,
     {
+        assert_eq!(
+            replace_with.len(),
+            self.patterns_len(),
+            "replacing reader requires a replacement for every pattern \
+                 in the automaton",
+        );
+
         enforce_anchored_consistency(self.start_kind, Anchored::No)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
-        self.aut.try_to_replacing_reader(rdr, replace_with)
+
+        self.aut.try_to_replacing_reader_with(rdr, |mat, _| {
+            Ok(replace_with[mat.pattern()].as_ref())
+        })
     }
 
     /// Create a reader that replaces all matches of this automaton found
