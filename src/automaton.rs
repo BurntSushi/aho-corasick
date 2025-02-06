@@ -1286,7 +1286,7 @@ enum StreamChunk<'r> {
 }
 
 /// A single chunk range yielded by the stream chunk iterator.
-/// 
+///
 /// This type differs from [`StreamChunk`] because it does not
 /// carry the actual chunk bytes (or their lifetime) and instead
 /// provides the buffer range that can be used to retrieve the bytes.
