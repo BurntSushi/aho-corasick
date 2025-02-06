@@ -1286,6 +1286,7 @@ enum StreamChunk<'r> {
 }
 
 /// A single chunk range yielded by the stream chunk iterator.
+/// 
 /// This type differs from [`StreamChunk`] because it does not
 /// carry the actual chunk bytes (or their lifetime) and instead
 /// provides the buffer range that can be used to retrieve the bytes.
@@ -1300,8 +1301,9 @@ enum StreamChunkRange {
     Match { range: core::ops::Range<usize>, mat: Match },
 }
 
-/// A wrapper reader that replaces matches found in the provided reader as
-/// data gets streamed. An internal buffer is used when searching the data stream
+/// A reader that replaces matches found in a stream.
+///
+/// An internal buffer is used when searching the data stream
 /// the given reader, therefore, callers should avoiding providing a buffered
 /// reader, if possible.
 ///

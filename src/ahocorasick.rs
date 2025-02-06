@@ -2184,8 +2184,9 @@ impl<'a, R: std::io::Read> Iterator for StreamFindIter<'a, R> {
     }
 }
 
-/// A wrapper reader that replaces matches found in the provided reader as
-/// data gets streamed. An internal buffer is used when searching the data stream
+/// A reader that replaces matches found in a stream.
+///
+/// An internal buffer is used when searching the data stream
 /// the given reader, therefore, callers should avoiding providing a buffered
 /// reader, if possible.
 ///
@@ -2198,6 +2199,7 @@ pub struct ReplacingReader<'a, R, F>(
     automaton::ReplacingReader<'a, Arc<dyn AcAutomaton>, R, F>,
 );
 
+#[cfg(feature = "std")]
 impl<'a, R, F, B> ReplacingReader<'a, R, F>
 where
     R: std::io::Read,
