@@ -1899,11 +1899,11 @@ impl AhoCorasick {
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
     #[cfg(feature = "std")]
-    pub fn try_to_replacing_reader_with<R, F, B>(
-        &self,
+    pub fn try_to_replacing_reader_with<'a, R, F, B>(
+        &'a self,
         rdr: R,
         replace_with: F,
-    ) -> std::io::Result<automaton::ReplacingReader<'_, impl Automaton, R, F>>
+    ) -> std::io::Result<ReplacingReader<'a, R, F>>
     where
         R: std::io::Read,
         F: FnMut(&Match, &[u8]) -> std::io::Result<B>,
@@ -1911,7 +1911,9 @@ impl AhoCorasick {
     {
         enforce_anchored_consistency(self.start_kind, Anchored::No)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
-        self.aut.try_to_replacing_reader_with(rdr, replace_with)
+        self.aut
+            .try_to_replacing_reader_with(rdr, replace_with)
+            .map(ReplacingReader)
     }
 }
 
@@ -2179,6 +2181,61 @@ impl<'a, R: std::io::Read> Iterator for StreamFindIter<'a, R> {
 
     fn next(&mut self) -> Option<Result<Match, std::io::Error>> {
         self.0.next()
+    }
+}
+
+/// A wrapper reader that replaces matches found in the provided reader as
+/// data gets streamed. An internal buffer is used when searching the data stream
+/// the given reader, therefore, callers should avoiding providing a buffered
+/// reader, if possible.
+///
+/// See
+/// [`AhoCorasick::try_to_replacing_reader_with`](crate::AhoCorasick::try_to_replacing_reader_with)
+/// for more documentation and examples.
+#[cfg(feature = "std")]
+#[derive(Debug)]
+pub struct ReplacingReader<'a, R, F>(
+    automaton::ReplacingReader<'a, Arc<dyn AcAutomaton>, R, F>,
+);
+
+impl<'a, R, F, B> ReplacingReader<'a, R, F>
+where
+    R: std::io::Read,
+    F: FnMut(&Match, &[u8]) -> std::io::Result<B>,
+    B: AsRef<[u8]>,
+{
+    /// Unwraps this reader, returning the underlying reader.
+    ///
+    /// Note that any leftover data in the internal buffer is lost.
+    /// Therefore, a following read from the underlying reader may lead to data loss.
+    pub fn into_inner(self) -> R {
+        self.0.into_inner()
+    }
+
+    /// Gets a reference to the underlying reader.
+    ///
+    /// It is inadvisable to directly read from the underlying reader.
+    pub fn get_ref(&self) -> &R {
+        self.0.get_ref()
+    }
+
+    /// Gets a mutable reference to the underlying reader.
+    ///
+    /// It is inadvisable to directly read from the underlying reader.
+    pub fn get_mut(&mut self) -> &mut R {
+        self.0.get_mut()
+    }
+}
+
+#[cfg(feature = "std")]
+impl<'a, R, F, B> std::io::Read for ReplacingReader<'a, R, F>
+where
+    R: std::io::Read,
+    F: FnMut(&Match, &[u8]) -> std::io::Result<B>,
+    B: AsRef<[u8]>,
+{
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        self.0.read(buf)
     }
 }
 

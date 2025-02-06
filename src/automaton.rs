@@ -642,11 +642,11 @@ pub unsafe trait Automaton: private::Sealed {
     /// [`AhoCorasick::try_to_replacing_reader_with`](crate::AhoCorasick::try_to_replacing_reader_with)
     /// for more documentation and examples.
     #[cfg(feature = "std")]
-    fn try_to_replacing_reader_with<R, F, B>(
-        &self,
+    fn try_to_replacing_reader_with<'a, R, F, B>(
+        &'a self,
         rdr: R,
         replace_with: F,
-    ) -> std::io::Result<ReplacingReader<'_, Self, R, F>>
+    ) -> std::io::Result<ReplacingReader<'a, Self, R, F>>
     where
         Self: Sized,
         R: std::io::Read,

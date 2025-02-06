@@ -237,9 +237,7 @@ extern crate std;
 doc_comment::doctest!("../README.md");
 
 #[cfg(feature = "std")]
-pub use crate::ahocorasick::StreamFindIter;
-#[cfg(feature = "std")]
-pub use crate::automaton::ReplacingReader;
+pub use crate::ahocorasick::{ReplacingReader, StreamFindIter};
 pub use crate::{
     ahocorasick::{
         AhoCorasick, AhoCorasickBuilder, AhoCorasickKind, FindIter,
