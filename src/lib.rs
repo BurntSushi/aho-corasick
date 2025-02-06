@@ -117,7 +117,7 @@ assert_eq!(b"The slow grey sloth.".to_vec(), result);
 This example shows how to execute a search and replace on a stream while piping
 data to a writer without loading the entire stream into memory first. This is
 advantageous over combining [`AhoCorasick::try_to_replacing_reader_with`] and
-[`std::io::copy`] because it avoids double buffering.
+something like [`std::io::copy`] because it avoids double buffering.
 
 ```
 # #[cfg(feature = "std")] {
