@@ -19,7 +19,7 @@ use crate::{
 ///
 /// This crate uses prefilters in the core search implementations to accelerate
 /// common cases. They typically only apply to cases where there are a small
-/// number of patterns (less than 100 or so), but when they do, thoughput can
+/// number of patterns (less than 100 or so), but when they do, throughput can
 /// be boosted considerably, perhaps by an order of magnitude. When a prefilter
 /// is active, it is used whenever a search enters an automaton's start state.
 ///
