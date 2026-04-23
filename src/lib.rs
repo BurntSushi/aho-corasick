@@ -86,6 +86,41 @@ loading the entire stream into memory first.
 
 ```
 # #[cfg(feature = "std")] {
+use std::io::Read;
+use aho_corasick::AhoCorasick;
+
+# fn example() -> Result<(), std::io::Error> {
+let patterns = &["fox", "brown", "quick"];
+let replace_with = &["sloth", "grey", "slow"];
+
+// In a real example, this might be `std::fs::File` instead. All you need to
+// do is supply a `std::io::Read` implementation.
+let rdr = "The quick brown fox.";
+
+let ac = AhoCorasick::new(patterns).unwrap();
+let mut reader = ac.try_to_replacing_reader_with(
+    rdr.as_bytes(),
+    |mat, _bytes| Ok(replace_with[mat.pattern()])
+)?;
+
+// Similarly, a real scenario could involve passing the reader to a function
+// instead. Anything that accepts a `std::io::Read` implementation would do.
+let result = reader.bytes().collect::<Result<Vec<_>, _>>().unwrap();
+assert_eq!(b"The slow grey sloth.".to_vec(), result);
+
+# Ok(()) }; example().unwrap()
+# }
+```
+
+# Example: writing a stream while replacing matches
+
+This example shows how to execute a search and replace on a stream while piping
+data to a writer without loading the entire stream into memory first. This is
+advantageous over combining [`AhoCorasick::try_to_replacing_reader_with`] and
+something like [`std::io::copy`] because it avoids double buffering.
+
+```
+# #[cfg(feature = "std")] {
 use aho_corasick::AhoCorasick;
 
 # fn example() -> Result<(), std::io::Error> {
@@ -237,7 +272,7 @@ extern crate std;
 doc_comment::doctest!("../README.md");
 
 #[cfg(feature = "std")]
-pub use crate::ahocorasick::StreamFindIter;
+pub use crate::ahocorasick::{ReplacingReader, StreamFindIter};
 pub use crate::{
     ahocorasick::{
         AhoCorasick, AhoCorasickBuilder, AhoCorasickKind, FindIter,
