@@ -274,6 +274,52 @@ override this automatic selection via the `AhoCorasickBuilder::start_kind`
 configuration.)
 
 
+# Contiguous NFA dense rows
+
+The contiguous NFA uses a hybrid state encoding. Most states are sparse, some
+states with exactly one transition use a special one-transition encoding, and
+states near the start state are dense. A dense row has one transition slot for
+each byte equivalence class, which means search can find the next state with a
+single indexed load once the input byte has been mapped to its class.
+
+Dense rows are still part of an NFA, so a missing transition normally means
+"follow the failure transition and try the same byte again." In the encoded
+contiguous NFA, this is represented with a `FAIL` sentinel in the dense row.
+When search sees that sentinel, it jumps to the state's failure state and loops.
+This keeps construction cheap, but it means hot dense rows can still pay NFA
+failure-loop costs for common bytes that are not explicit transitions out of
+the current state.
+
+For top-level `AhoCorasick` values that only support unanchored searches, dense
+rows avoid that search-time cost by resolving missing dense transitions during
+construction. Instead of writing `FAIL` into each missing dense slot, the
+builder follows the failure links exactly as the search loop would and writes
+the resolved state ID directly. Explicit transitions are left unchanged. The
+result is not a full DFA, since sparse and one-transition rows still keep the
+usual NFA behavior, but dense rows behave more like DFA rows for unanchored
+searches. This removes many failure transitions from the hot search loop
+without increasing automaton heap usage for rows that were already dense.
+
+This optimization is deliberately not applied to automatons that must support
+anchored searches. In an anchored search, a missing transition cannot be
+resolved by falling back to the start state and continuing elsewhere in the
+haystack; that would turn an anchored prefix check into an unanchored search.
+Consequently, `StartKind::Anchored` and `StartKind::Both` keep the old dense
+row encoding with explicit `FAIL` sentinels. The low-level contiguous NFA
+builder also keeps its historical default; the failureless dense-row choice is
+made by the top-level `AhoCorasickBuilder` only when `StartKind::Unanchored`
+is in use.
+
+The trade-off is build time. Resolving a missing dense transition requires
+following failure links during construction for each missing byte class in each
+dense row. This does not add a second table and does not make already-dense
+rows larger, but it shifts some of the work that was previously paid during
+search into automaton construction. This is worthwhile for workloads where an
+automaton is searched many times or over large haystacks, especially when
+benchmarks show many dense-row `FAIL` hits. It is a less obvious win for
+short-lived automatons that are built once and searched only briefly.
+
+
 # More DFA tricks
 
 As described in the previous section, one of the downsides of using a DFA
