@@ -18,12 +18,24 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
+    #[cfg(feature = "perf-stats")]
+    if args.perf_stats {
+        aho_corasick::nfa::contiguous::perf_stats::reset();
+    }
+
     let start = Instant::now();
     let count = ac.find_iter(&haystack).count();
     println!("match count: {}", count);
 
     let count_time = Instant::now().duration_since(start);
     eprintln!("count time: {:?}", count_time);
+    #[cfg(feature = "perf-stats")]
+    if args.perf_stats {
+        eprintln!(
+            "contiguous NFA perf stats:\n{}",
+            aho_corasick::nfa::contiguous::perf_stats::snapshot()
+        );
+    }
     Ok(())
 }
 
@@ -36,17 +48,23 @@ struct Args {
     kind: Option<AhoCorasickKind>,
     ascii_casei: bool,
     dense_depth: usize,
+    #[cfg(any(feature = "perf-stats", feature = "perf-experiments"))]
+    dense_transition_threshold: Option<usize>,
+    #[cfg(any(feature = "perf-stats", feature = "perf-experiments"))]
+    failureless_dense_rows: Option<bool>,
     no_prefilter: bool,
     no_classes: bool,
     no_search: bool,
     debug: bool,
+    #[cfg(feature = "perf-stats")]
+    perf_stats: bool,
 }
 
 impl Args {
     fn parse() -> anyhow::Result<Args> {
         use clap::{crate_authors, crate_version, App, Arg};
 
-        let parsed = App::new("Search using aho-corasick")
+        let app = App::new("Search using aho-corasick")
             .author(crate_authors!())
             .version(crate_version!())
             .max_term_width(100)
@@ -94,8 +112,27 @@ impl Args {
             )
             .arg(Arg::with_name("no-classes").long("no-classes").short("C"))
             .arg(Arg::with_name("no-search").long("no-search"))
-            .arg(Arg::with_name("debug").long("debug"))
-            .get_matches();
+            .arg(Arg::with_name("debug").long("debug"));
+        #[cfg(feature = "perf-stats")]
+        let app = app.arg(Arg::with_name("perf-stats").long("perf-stats"));
+        #[cfg(any(feature = "perf-stats", feature = "perf-experiments"))]
+        let app = app.arg(
+            Arg::with_name("dense-transition-threshold")
+                .long("dense-transition-threshold")
+                .takes_value(true),
+        );
+        #[cfg(any(feature = "perf-stats", feature = "perf-experiments"))]
+        let app = app.arg(
+            Arg::with_name("failureless-dense-rows")
+                .long("failureless-dense-rows"),
+        );
+        #[cfg(any(feature = "perf-stats", feature = "perf-experiments"))]
+        let app = app.arg(
+            Arg::with_name("no-failureless-dense-rows")
+                .long("no-failureless-dense-rows")
+                .conflicts_with("failureless-dense-rows"),
+        );
+        let parsed = app.get_matches();
 
         let dictionary =
             PathBuf::from(parsed.value_of_os("dictionary").unwrap());
@@ -120,7 +157,20 @@ impl Args {
             _ => unreachable!(),
         };
         let dense_depth = parsed.value_of("dense-depth").unwrap().parse()?;
-
+        #[cfg(any(feature = "perf-stats", feature = "perf-experiments"))]
+        let dense_transition_threshold = parsed
+            .value_of("dense-transition-threshold")
+            .map(str::parse)
+            .transpose()?;
+        #[cfg(any(feature = "perf-stats", feature = "perf-experiments"))]
+        let failureless_dense_rows =
+            if parsed.is_present("failureless-dense-rows") {
+                Some(true)
+            } else if parsed.is_present("no-failureless-dense-rows") {
+                Some(false)
+            } else {
+                None
+            };
         Ok(Args {
             dictionary,
             haystack,
@@ -128,11 +178,17 @@ impl Args {
             start_kind,
             kind,
             dense_depth,
+            #[cfg(any(feature = "perf-stats", feature = "perf-experiments"))]
+            dense_transition_threshold,
+            #[cfg(any(feature = "perf-stats", feature = "perf-experiments"))]
+            failureless_dense_rows,
             ascii_casei: parsed.is_present("ascii-case-insensitive"),
             no_prefilter: parsed.is_present("no-prefilter"),
             no_classes: parsed.is_present("no-classes"),
             no_search: parsed.is_present("no-search"),
             debug: parsed.is_present("debug"),
+            #[cfg(feature = "perf-stats")]
+            perf_stats: parsed.is_present("perf-stats"),
         })
     }
 
@@ -143,15 +199,22 @@ impl Args {
         eprintln!("pattern read time: {:?}", read_time);
 
         let start = Instant::now();
-        let ac = AhoCorasick::builder()
+        let mut builder = AhoCorasick::builder();
+        builder
             .match_kind(self.match_kind)
             .start_kind(self.start_kind)
             .kind(self.kind)
             .ascii_case_insensitive(self.ascii_casei)
             .dense_depth(self.dense_depth)
             .prefilter(!self.no_prefilter)
-            .byte_classes(!self.no_classes)
-            .build(patterns.lines())?;
+            .byte_classes(!self.no_classes);
+        #[cfg(any(feature = "perf-stats", feature = "perf-experiments"))]
+        builder.dense_transition_threshold(self.dense_transition_threshold);
+        #[cfg(any(feature = "perf-stats", feature = "perf-experiments"))]
+        if let Some(yes) = self.failureless_dense_rows {
+            builder.failureless_dense_rows(yes);
+        }
+        let ac = builder.build(patterns.lines())?;
         let build_time = Instant::now().duration_since(start);
         eprintln!("automaton build time: {:?}", build_time);
         Ok(ac)

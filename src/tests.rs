@@ -1510,6 +1510,81 @@ fn unanchored_not_allowed_even_if_technically_available() {
     assert!(ac.try_find(Input::new("foo").anchored(Anchored::No)).is_err());
 }
 
+#[cfg(feature = "perf-experiments")]
+#[test]
+fn failureless_dense_rows_preserve_anchored_semantics() {
+    for &start_kind in &[StartKind::Anchored, StartKind::Both] {
+        let mut control = AhoCorasick::builder();
+        control
+            .kind(Some(AhoCorasickKind::ContiguousNFA))
+            .start_kind(start_kind);
+        let control = control.build(&["b"]).unwrap();
+
+        let mut candidate = AhoCorasick::builder();
+        candidate
+            .kind(Some(AhoCorasickKind::ContiguousNFA))
+            .start_kind(start_kind)
+            .failureless_dense_rows(true);
+        let candidate = candidate.build(&["b"]).unwrap();
+
+        let input = || Input::new("ab").anchored(Anchored::Yes);
+        assert_eq!(
+            control.try_find(input()).unwrap(),
+            candidate.try_find(input()).unwrap(),
+            "start kind: {:?}",
+            start_kind,
+        );
+        assert_eq!(None, candidate.try_find(input()).unwrap());
+
+        if start_kind == StartKind::Both {
+            let input = || Input::new("ab").anchored(Anchored::No);
+            assert_eq!(
+                control.try_find(input()).unwrap(),
+                candidate.try_find(input()).unwrap(),
+            );
+            assert_eq!(
+                Some(Match::must(0, 1..2)),
+                candidate.try_find(input()).unwrap(),
+            );
+        }
+    }
+}
+
+#[cfg(feature = "perf-experiments")]
+#[test]
+fn failureless_dense_rows_preserve_unanchored_results() {
+    for &byte_classes in &[true, false] {
+        let mut control = AhoCorasick::builder();
+        control
+            .kind(Some(AhoCorasickKind::ContiguousNFA))
+            .start_kind(StartKind::Unanchored)
+            .byte_classes(byte_classes)
+            .prefilter(false)
+            .failureless_dense_rows(false);
+        let control = control.build(&["bc", "abcd", "bcd", "z"]).unwrap();
+
+        let mut candidate = AhoCorasick::builder();
+        candidate
+            .kind(Some(AhoCorasickKind::ContiguousNFA))
+            .start_kind(StartKind::Unanchored)
+            .byte_classes(byte_classes)
+            .prefilter(false)
+            .failureless_dense_rows(true);
+        let candidate = candidate.build(&["bc", "abcd", "bcd", "z"]).unwrap();
+
+        let haystack = "xxabcdzbc";
+        let control_matches: Vec<Match> =
+            control.find_iter(haystack).collect();
+        let candidate_matches: Vec<Match> =
+            candidate.find_iter(haystack).collect();
+        assert_eq!(
+            control_matches, candidate_matches,
+            "byte classes: {}",
+            byte_classes,
+        );
+    }
+}
+
 // This tests that a prefilter does not cause a search to report a match
 // outside the bounds provided by the caller.
 //

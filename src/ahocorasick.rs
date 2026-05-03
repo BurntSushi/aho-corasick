@@ -2144,6 +2144,8 @@ pub struct AhoCorasickBuilder {
     dfa: dfa::Builder,
     kind: Option<AhoCorasickKind>,
     start_kind: StartKind,
+    #[cfg(any(feature = "perf-stats", feature = "perf-experiments"))]
+    failureless_dense_rows: Option<bool>,
 }
 
 impl AhoCorasickBuilder {
@@ -2199,8 +2201,7 @@ impl AhoCorasickBuilder {
                 }
                 Some(AhoCorasickKind::ContiguousNFA) => {
                     debug!("forcefully chose contiguous NFA");
-                    let cnfa =
-                        self.nfa_contiguous.build_from_noncontiguous(&nfa)?;
+                    let cnfa = self.build_contiguous_nfa(&nfa)?;
                     (Arc::new(cnfa), AhoCorasickKind::ContiguousNFA)
                 }
                 Some(AhoCorasickKind::DFA) => {
@@ -2248,7 +2249,7 @@ impl AhoCorasickBuilder {
         // contiguous NFA is mostly just reshuffling data from a noncontiguous
         // NFA, so it isn't too expensive, especially relative to building a
         // noncontiguous NFA in the first place.
-        match self.nfa_contiguous.build_from_noncontiguous(&nfa) {
+        match self.build_contiguous_nfa(&nfa) {
             Ok(nfa) => {
                 debug!("chose contiguous NFA");
                 return (Arc::new(nfa), AhoCorasickKind::ContiguousNFA);
@@ -2264,6 +2265,21 @@ impl AhoCorasickBuilder {
         }
         debug!("chose non-contiguous NFA");
         (Arc::new(nfa), AhoCorasickKind::NoncontiguousNFA)
+    }
+
+    fn build_contiguous_nfa(
+        &self,
+        nfa: &noncontiguous::NFA,
+    ) -> Result<contiguous::NFA, BuildError> {
+        let mut builder = self.nfa_contiguous.clone();
+        let supports_failureless =
+            matches!(self.start_kind, StartKind::Unanchored);
+        let failureless = supports_failureless;
+        #[cfg(any(feature = "perf-stats", feature = "perf-experiments"))]
+        let failureless = self.failureless_dense_rows.unwrap_or(failureless)
+            && supports_failureless;
+        builder.failureless_dense_rows(failureless);
+        builder.build_from_noncontiguous(nfa)
     }
 
     /// Set the desired match semantics.
@@ -2587,6 +2603,28 @@ impl AhoCorasickBuilder {
     pub fn dense_depth(&mut self, depth: usize) -> &mut AhoCorasickBuilder {
         self.nfa_noncontiguous.dense_depth(depth);
         self.nfa_contiguous.dense_depth(depth);
+        self
+    }
+
+    /// Set a transition-count threshold for dense contiguous NFA rows.
+    #[cfg(any(feature = "perf-stats", feature = "perf-experiments"))]
+    #[doc(hidden)]
+    pub fn dense_transition_threshold(
+        &mut self,
+        threshold: Option<usize>,
+    ) -> &mut AhoCorasickBuilder {
+        self.nfa_contiguous.dense_transition_threshold(threshold);
+        self
+    }
+
+    /// Resolve missing dense contiguous NFA row transitions during build.
+    #[cfg(any(feature = "perf-stats", feature = "perf-experiments"))]
+    #[doc(hidden)]
+    pub fn failureless_dense_rows(
+        &mut self,
+        yes: bool,
+    ) -> &mut AhoCorasickBuilder {
+        self.failureless_dense_rows = Some(yes);
         self
     }
 

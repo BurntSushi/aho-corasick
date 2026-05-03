@@ -223,6 +223,12 @@ this crate can be used without the standard library.
   A no-op compatibility feature for build configurations that explicitly
   request allocation support. This crate always requires `alloc` when `std` is
   disabled.
+* **perf-experiments** -
+  Enables internal benchmarking knobs for performance experiments. This is
+  disabled by default.
+* **perf-stats** -
+  Enables internal counters for contiguous NFA transition profiling. This is
+  intended for benchmarking and is disabled by default.
 * **logging** -
   Enables a dependency on the `log` crate and emits messages to aide in
   diagnostics. This feature is disabled by default.
