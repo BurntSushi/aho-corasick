@@ -40,9 +40,9 @@ let matches: Vec<PatternID> = searcher
     .collect();
 assert_eq!(vec![PatternID::ZERO], matches);
 # Some(()) }
-# if cfg!(all(feature = "std", any(
+# if cfg!(any(
 #     target_arch = "x86_64", target_arch = "aarch64",
-# ))) {
+# )) {
 #     example().unwrap()
 # } else {
 #     assert!(example().is_none());
@@ -68,9 +68,9 @@ let matches: Vec<PatternID> = searcher
     .collect();
 assert_eq!(vec![PatternID::must(1)], matches);
 # Some(()) }
-# if cfg!(all(feature = "std", any(
+# if cfg!(any(
 #     target_arch = "x86_64", target_arch = "aarch64",
-# ))) {
+# )) {
 #     example().unwrap()
 # } else {
 #     assert!(example().is_none());

@@ -193,7 +193,7 @@ impl<'a, T: private::Sealed + ?Sized> private::Sealed for &'a T {}
 ///     .unwrap();
 /// assert_eq!(Some(Match::must(0, 0..7)), find(&nfa, b"samwise")?);
 ///
-/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// # Ok::<(), aho_corasick::MatchError>(())
 /// ```
 pub unsafe trait Automaton: private::Sealed {
     /// Returns the starting state for the given anchor mode.

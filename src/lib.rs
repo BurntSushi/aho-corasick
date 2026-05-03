@@ -219,6 +219,10 @@ this crate can be used without the standard library.
   Aho-Corasick for large numbers of patterns or otherwise can abide lower
   throughput when searching with a small number of patterns, then it is
   reasonable to disable this feature.
+* **alloc** -
+  A no-op compatibility feature for build configurations that explicitly
+  request allocation support. This crate always requires `alloc` when `std` is
+  disabled.
 * **logging** -
   Enables a dependency on the `log` crate and emits messages to aide in
   diagnostics. This feature is disabled by default.

@@ -19,6 +19,7 @@ name = "aho_corasick"
 
 [features]
 default = ["std", "perf-literal"]
+alloc = []
 std = ["memchr?/std"]
 
 # Enables prefilter optimizations that depend on external crates.

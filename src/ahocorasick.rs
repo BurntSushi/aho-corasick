@@ -399,7 +399,10 @@ impl AhoCorasick {
     /// // The correct leftmost-longest match here is 'abcd', but since we
     /// // told the search to quit as soon as it knows a match has occurred,
     /// // we get a different match back.
+    /// #[cfg(feature = "perf-literal")]
     /// assert_eq!("b", &haystack[mat.start()..mat.end()]);
+    /// #[cfg(not(feature = "perf-literal"))]
+    /// assert_eq!("abcd", &haystack[mat.start()..mat.end()]);
     /// ```
     pub fn find<'h, I: Into<Input<'h>>>(&self, input: I) -> Option<Match> {
         self.try_find(input)
@@ -948,7 +951,7 @@ impl AhoCorasick {
     /// let mat = ac.try_find(haystack)?.expect("should have a match");
     /// assert_eq!("abc", &haystack[mat.span()]);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     ///
     /// # Example: anchored leftmost-first searching
@@ -971,7 +974,7 @@ impl AhoCorasick {
     /// let input = Input::new(haystack).anchored(Anchored::Yes);
     /// assert_eq!(None, ac.try_find(input)?);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     ///
     /// If the beginning of the search is changed to where a match begins, then
@@ -992,7 +995,7 @@ impl AhoCorasick {
     /// let mat = ac.try_find(input)?.expect("should have a match");
     /// assert_eq!("abc", &haystack[mat.span()]);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     ///
     /// # Example: earliest leftmost-first searching
@@ -1014,9 +1017,12 @@ impl AhoCorasick {
     ///     .unwrap();
     /// let input = Input::new(haystack).earliest(true);
     /// let mat = ac.try_find(input)?.expect("should have a match");
+    /// #[cfg(feature = "perf-literal")]
     /// assert_eq!("b", &haystack[mat.span()]);
+    /// #[cfg(not(feature = "perf-literal"))]
+    /// assert_eq!("abc", &haystack[mat.span()]);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     pub fn try_find<'h, I: Into<Input<'h>>>(
         &self,
@@ -1087,7 +1093,7 @@ impl AhoCorasick {
     /// ac.try_find_overlapping(haystack, &mut state)?;
     /// assert_eq!(None, state.get_match());
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     ///
     /// # Example: implementing your own overlapping iteration
@@ -1135,7 +1141,7 @@ impl AhoCorasick {
     /// ];
     /// assert_eq!(expected, matches);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     ///
     /// # Example: anchored iteration
@@ -1179,7 +1185,7 @@ impl AhoCorasick {
     /// ];
     /// assert_eq!(expected, matches);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     pub fn try_find_overlapping<'h, I: Into<Input<'h>>>(
         &self,
@@ -1235,7 +1241,7 @@ impl AhoCorasick {
     ///     PatternID::must(0),
     /// ], matches);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     ///
     /// # Example: anchored leftmost-first searching
@@ -1270,7 +1276,7 @@ impl AhoCorasick {
     ///     // anchored.
     /// ], matches);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     pub fn try_find_iter<'a, 'h, I: Into<Input<'h>>>(
         &'a self,
@@ -1322,7 +1328,7 @@ impl AhoCorasick {
     ///     PatternID::must(1),
     /// ], matches);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     ///
     /// # Example: anchored overlapping search returns an error
@@ -1345,7 +1351,7 @@ impl AhoCorasick {
     /// let input = Input::new(haystack).anchored(Anchored::Yes);
     /// assert!(ac.try_find_overlapping_iter(input).is_err());
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     pub fn try_find_overlapping_iter<'a, 'h, I: Into<Input<'h>>>(
         &'a self,
@@ -1391,7 +1397,7 @@ impl AhoCorasick {
     /// let result = ac.try_replace_all(haystack, &["x", "y", "z"])?;
     /// assert_eq!("x the z to the xage", result);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     pub fn try_replace_all<B>(
         &self,
@@ -1442,7 +1448,7 @@ impl AhoCorasick {
     /// let result = ac.try_replace_all_bytes(haystack, &["x", "y", "z"])?;
     /// assert_eq!(b"x the z to the xage".to_vec(), result);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     pub fn try_replace_all_bytes<B>(
         &self,
@@ -1498,7 +1504,7 @@ impl AhoCorasick {
     /// })?;
     /// assert_eq!("0 the 2 to the 0age", result);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     ///
     /// Stopping the replacement by returning `false` (continued from the
@@ -1519,7 +1525,7 @@ impl AhoCorasick {
     /// })?;
     /// assert_eq!("0 the 2 to the appendage", result);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     pub fn try_replace_all_with<F>(
         &self,
@@ -1574,7 +1580,7 @@ impl AhoCorasick {
     /// })?;
     /// assert_eq!(b"0 the 2 to the 0age".to_vec(), result);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     ///
     /// Stopping the replacement by returning `false` (continued from the
@@ -1595,7 +1601,7 @@ impl AhoCorasick {
     /// })?;
     /// assert_eq!(b"0 the 2 to the appendage".to_vec(), result);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     pub fn try_replace_all_with_bytes<F>(
         &self,
@@ -2404,7 +2410,7 @@ impl AhoCorasickBuilder {
     /// let input = Input::new("abcd").anchored(Anchored::Yes);
     /// assert_eq!(Some(Match::must(1, 0..3)), ac.try_find(input)?);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     ///
     /// # Example: unanchored and anchored searches
@@ -2432,7 +2438,7 @@ impl AhoCorasickBuilder {
     /// let input = Input::new("abcd").anchored(Anchored::Yes);
     /// assert_eq!(Some(Match::must(1, 0..3)), ac.try_find(input)?);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     pub fn start_kind(&mut self, kind: StartKind) -> &mut AhoCorasickBuilder {
         self.dfa.start_kind(kind);
