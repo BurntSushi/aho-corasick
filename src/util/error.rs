@@ -257,3 +257,90 @@ impl core::fmt::Display for MatchError {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use alloc::format;
+    use alloc::string::ToString;
+    use super::*;
+
+    #[test]
+    fn build_error_state_id_overflow_display() {
+        let err = BuildError::state_id_overflow(100, 101);
+        assert_eq!(
+            err.to_string(),
+            "state identifier overflow: failed to create state ID \
+             from 101, which exceeds the max of 100"
+        );
+    }
+
+    #[test]
+    fn build_error_pattern_id_overflow_display() {
+        let err = BuildError::pattern_id_overflow(100, 101);
+        assert_eq!(
+            err.to_string(),
+            "pattern identifier overflow: failed to create pattern ID \
+             from 101, which exceeds the max of 100"
+        );
+    }
+
+    #[test]
+    fn build_error_pattern_too_long_display() {
+        let pid = PatternID::new(5).unwrap();
+        let err = BuildError::pattern_too_long(pid, 100);
+        assert_eq!(
+            err.to_string(),
+            format!(
+                "pattern 5 with length 100 exceeds \
+                 the maximum pattern length of {}",
+                SmallIndex::MAX.as_usize(),
+            )
+        );
+    }
+
+    #[test]
+    fn match_error_invalid_input_anchored_display() {
+        let err = MatchError::invalid_input_anchored();
+        assert_eq!(
+            err.to_string(),
+            "anchored searches are not supported or enabled"
+        );
+    }
+
+    #[test]
+    fn match_error_invalid_input_unanchored_display() {
+        let err = MatchError::invalid_input_unanchored();
+        assert_eq!(
+            err.to_string(),
+            "unanchored searches are not supported or enabled"
+        );
+    }
+
+    #[test]
+    fn match_error_unsupported_stream_display() {
+        let err = MatchError::unsupported_stream(MatchKind::LeftmostFirst);
+        assert_eq!(
+            err.to_string(),
+            "match kind LeftmostFirst does not support stream searching"
+        );
+    }
+
+    #[test]
+    fn match_error_unsupported_overlapping_display() {
+        let err = MatchError::unsupported_overlapping(MatchKind::LeftmostLongest);
+        assert_eq!(
+            err.to_string(),
+            "match kind LeftmostLongest does not support overlapping searches"
+        );
+    }
+
+    #[test]
+    fn match_error_unsupported_empty_display() {
+        let err = MatchError::unsupported_empty();
+        assert_eq!(
+            err.to_string(),
+            "matching with an empty pattern string is not \
+             supported for this operation"
+        );
+    }
+}

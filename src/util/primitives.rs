@@ -757,3 +757,146 @@ pub(crate) trait IteratorIndexExt: Iterator {
 }
 
 impl<I: Iterator> IteratorIndexExt for I {}
+
+#[cfg(test)]
+mod tests {
+    use alloc::format;
+    use alloc::string::ToString;
+    use super::*;
+
+    #[test]
+    fn pattern_id_new_zero() {
+        let pid = PatternID::new(0).unwrap();
+        assert_eq!(pid.as_usize(), 0);
+        assert_eq!(pid.as_u32(), 0);
+        assert_eq!(pid.as_u64(), 0);
+        assert_eq!(pid.as_i32(), 0);
+    }
+
+    #[test]
+    fn pattern_id_new_max() {
+        let max = PatternID::MAX.as_usize();
+        let pid = PatternID::new(max).unwrap();
+        assert_eq!(pid.as_usize(), max);
+        assert_eq!(pid, PatternID::MAX);
+    }
+
+    #[test]
+    fn pattern_id_new_overflow() {
+        assert!(PatternID::new(PatternID::LIMIT).is_err());
+    }
+
+    #[test]
+    fn pattern_id_try_from_u32_max() {
+        let max = PatternID::MAX.as_u32();
+        let pid = PatternID::try_from(max).unwrap();
+        assert_eq!(pid, PatternID::MAX);
+    }
+
+    #[test]
+    fn pattern_id_try_from_u32_overflow() {
+        let over = PatternID::MAX.as_u32().wrapping_add(1);
+        assert!(PatternID::try_from(over).is_err());
+    }
+
+    #[test]
+    fn pattern_id_from_ne_bytes_roundtrip() {
+        let pid = PatternID::new(12345).unwrap();
+        let bytes = pid.to_ne_bytes();
+        let pid2 = PatternID::from_ne_bytes(bytes).unwrap();
+        assert_eq!(pid, pid2);
+    }
+
+    #[test]
+    fn pattern_id_from_ne_bytes_max() {
+        let bytes = PatternID::MAX.to_ne_bytes();
+        let pid = PatternID::from_ne_bytes(bytes).unwrap();
+        assert_eq!(pid, PatternID::MAX);
+    }
+
+    #[test]
+    fn pattern_id_from_ne_bytes_overflow() {
+        let mut bytes = PatternID::MAX.to_ne_bytes();
+        bytes[0] = bytes[0].wrapping_add(1);
+        assert!(PatternID::from_ne_bytes(bytes).is_err());
+    }
+
+    #[test]
+    fn pattern_id_error_display() {
+        let err = PatternID::new(PatternID::LIMIT).unwrap_err();
+        let expected = format!(
+            "failed to create PatternID from {}, which exceeds PatternID({})",
+            PatternID::LIMIT as u64,
+            PatternID::MAX.as_u32(),
+        );
+        assert_eq!(err.to_string(), expected);
+    }
+
+    #[test]
+    fn state_id_new_zero() {
+        let sid = StateID::new(0).unwrap();
+        assert_eq!(sid.as_usize(), 0);
+        assert_eq!(sid.as_u32(), 0);
+        assert_eq!(sid.as_u64(), 0);
+        assert_eq!(sid.as_i32(), 0);
+    }
+
+    #[test]
+    fn state_id_new_max() {
+        let max = StateID::MAX.as_usize();
+        let sid = StateID::new(max).unwrap();
+        assert_eq!(sid.as_usize(), max);
+        assert_eq!(sid, StateID::MAX);
+    }
+
+    #[test]
+    fn state_id_new_overflow() {
+        assert!(StateID::new(StateID::LIMIT).is_err());
+    }
+
+    #[test]
+    fn state_id_try_from_u32_max() {
+        let max = StateID::MAX.as_u32();
+        let sid = StateID::try_from(max).unwrap();
+        assert_eq!(sid, StateID::MAX);
+    }
+
+    #[test]
+    fn state_id_try_from_u32_overflow() {
+        let over = StateID::MAX.as_u32().wrapping_add(1);
+        assert!(StateID::try_from(over).is_err());
+    }
+
+    #[test]
+    fn state_id_from_ne_bytes_roundtrip() {
+        let sid = StateID::new(12345).unwrap();
+        let bytes = sid.to_ne_bytes();
+        let sid2 = StateID::from_ne_bytes(bytes).unwrap();
+        assert_eq!(sid, sid2);
+    }
+
+    #[test]
+    fn state_id_from_ne_bytes_max() {
+        let bytes = StateID::MAX.to_ne_bytes();
+        let sid = StateID::from_ne_bytes(bytes).unwrap();
+        assert_eq!(sid, StateID::MAX);
+    }
+
+    #[test]
+    fn state_id_from_ne_bytes_overflow() {
+        let mut bytes = StateID::MAX.to_ne_bytes();
+        bytes[0] = bytes[0].wrapping_add(1);
+        assert!(StateID::from_ne_bytes(bytes).is_err());
+    }
+
+    #[test]
+    fn state_id_error_display() {
+        let err = StateID::new(StateID::LIMIT).unwrap_err();
+        let expected = format!(
+            "failed to create StateID from {}, which exceeds StateID({})",
+            StateID::LIMIT as u64,
+            StateID::MAX.as_u32(),
+        );
+        assert_eq!(err.to_string(), expected);
+    }
+}
