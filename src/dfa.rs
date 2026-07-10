@@ -300,6 +300,11 @@ unsafe impl Automaton for DFA {
     fn prefilter(&self) -> Option<&Prefilter> {
         self.prefilter.as_ref()
     }
+
+    #[inline(always)]
+    fn prefers_interleaved_scan(&self) -> bool {
+        true
+    }
 }
 
 impl core::fmt::Debug for DFA {

@@ -2665,6 +2665,11 @@ unsafe impl Automaton for Arc<dyn AcAutomaton> {
     }
 
     #[inline(always)]
+    fn prefers_interleaved_scan(&self) -> bool {
+        (**self).prefers_interleaved_scan()
+    }
+
+    #[inline(always)]
     fn next_state(
         &self,
         anchored: Anchored,
