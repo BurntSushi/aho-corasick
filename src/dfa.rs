@@ -93,13 +93,23 @@ pub struct DFA {
     /// instead of the IDs being 0, 1, 2, 3, ..., they are 0*stride, 1*stride,
     /// 2*stride, 3*stride, ...
     trans: Vec<StateID>,
-    /// The matches for every match state in this DFA. This is first indexed by
-    /// state index (so that's `sid >> stride2`) and then by order in which the
-    /// matches are meant to occur.
-    matches: Vec<Vec<PatternID>>,
-    /// The amount of heap memory used, in bytes, by the inner Vecs of
-    /// 'matches'.
-    matches_memory_usage: usize,
+    /// The matches for every match state in this DFA, in one contiguous
+    /// allocation. The matches for the state whose index (that's
+    /// `sid >> stride2`, less 2 for the dead and fail states) is `i` are given
+    /// by `matches[match_offsets[i]..match_offsets[i + 1]]`, in the order in
+    /// which the matches are meant to occur.
+    matches: Vec<PatternID>,
+    /// The offsets into 'matches' for every match state in this DFA, indexed
+    /// by state index. This always has a length equal to the number of match
+    /// states plus one.
+    ///
+    /// A `u32` is always big enough for these offsets: the total number of
+    /// matches in a DFA is at most twice (for `StartKind::Both`, which
+    /// duplicates every match state) the number of matches in the
+    /// noncontiguous NFA it was built from, and NFA construction returns an
+    /// error if that number would exceed `StateID::LIMIT`. Since
+    /// `2 * StateID::LIMIT < u32::MAX`, these offsets never overflow.
+    match_offsets: Vec<u32>,
     /// The length of each pattern. This is used to compute the start offset
     /// of a match.
     pattern_lens: Vec<SmallIndex>,
@@ -166,20 +176,28 @@ impl DFA {
     /// than the NFAs in this crate.
     const DEAD: StateID = StateID::new_unchecked(0);
 
-    /// Adds the given pattern IDs as matches to the given state and also
-    /// records the added memory usage.
+    /// Adds the given pattern IDs as matches to the given state.
+    ///
+    /// This must be called for match states in ascending order of state
+    /// index, since the pattern IDs are appended to a single contiguous
+    /// allocation shared by all match states.
     fn set_matches(
         &mut self,
         sid: StateID,
         pids: impl Iterator<Item = PatternID>,
     ) {
         let index = (sid.as_usize() >> self.stride2).checked_sub(2).unwrap();
+        assert_eq!(
+            self.match_offsets[index].as_usize(),
+            self.matches.len(),
+            "match states must be set in ascending order",
+        );
         let mut at_least_one = false;
         for pid in pids {
-            self.matches[index].push(pid);
-            self.matches_memory_usage += PatternID::SIZE;
+            self.matches.push(pid);
             at_least_one = true;
         }
+        self.match_offsets[index + 1] = self.matches.len().as_u32();
         assert!(at_least_one, "match state must have non-empty pids");
     }
 }
@@ -275,14 +293,17 @@ unsafe impl Automaton for DFA {
     fn match_len(&self, sid: StateID) -> usize {
         debug_assert!(self.is_match(sid));
         let offset = (sid.as_usize() >> self.stride2) - 2;
-        self.matches[offset].len()
+        (self.match_offsets[offset + 1] - self.match_offsets[offset])
+            .as_usize()
     }
 
     #[inline(always)]
     fn match_pattern(&self, sid: StateID, index: usize) -> PatternID {
         debug_assert!(self.is_match(sid));
         let offset = (sid.as_usize() >> self.stride2) - 2;
-        self.matches[offset][index]
+        let start = self.match_offsets[offset].as_usize();
+        let end = self.match_offsets[offset + 1].as_usize();
+        self.matches[start..end][index]
     }
 
     #[inline(always)]
@@ -290,8 +311,8 @@ unsafe impl Automaton for DFA {
         use core::mem::size_of;
 
         (self.trans.len() * size_of::<u32>())
-            + (self.matches.len() * size_of::<Vec<PatternID>>())
-            + self.matches_memory_usage
+            + (self.matches.len() * PatternID::SIZE)
+            + (self.match_offsets.len() * size_of::<u32>())
             + (self.pattern_lens.len() * size_of::<SmallIndex>())
             + self.prefilter.as_ref().map_or(0, |p| p.memory_usage())
     }
@@ -491,8 +512,8 @@ impl Builder {
         };
         let mut dfa = DFA {
             trans: vec![DFA::DEAD; trans_len],
-            matches: vec![vec![]; num_match_states],
-            matches_memory_usage: 0,
+            matches: vec![],
+            match_offsets: vec![0; num_match_states + 1],
             pattern_lens: nnfa.pattern_lens_raw().to_vec(),
             prefilter: nnfa.prefilter().cloned(),
             match_kind: nnfa.match_kind(),
@@ -524,18 +545,27 @@ impl Builder {
             dfa.byte_classes.alphabet_len(),
             dfa.byte_classes.stride(),
         );
+        // For 'StartKind::Both' when the empty pattern is one of the patterns
+        // given, the number of match states allocated above can exceed the
+        // number of match states actually created. (This is because the start
+        // states are match states in that case, but are not duplicated like
+        // other match states are.) The offsets of any unused trailing slots
+        // are never set above, so we set them here such that they would
+        // correspond to empty slices of 'dfa.matches'. (They should never be
+        // read, since the slots don't correspond to any match state, but this
+        // way, the invariant 'match_offsets[i] <= match_offsets[i + 1]' holds
+        // for the entire table.)
+        for i in 1..dfa.match_offsets.len() {
+            if dfa.match_offsets[i] < dfa.match_offsets[i - 1] {
+                dfa.match_offsets[i] = dfa.match_offsets[i - 1];
+            }
+        }
         // The vectors can grow ~twice as big during construction because a
         // Vec amortizes growth. But here, let's shrink things back down to
         // what we actually need since we're never going to add more to it.
         dfa.trans.shrink_to_fit();
         dfa.pattern_lens.shrink_to_fit();
         dfa.matches.shrink_to_fit();
-        // TODO: We might also want to shrink each Vec inside of `dfa.matches`,
-        // or even better, convert it to one contiguous allocation. But I think
-        // I went with nested allocs for good reason (can't remember), so this
-        // may be tricky to do. I decided not to shrink them here because it
-        // might require a fair bit of work to do. It's unclear whether it's
-        // worth it.
         Ok(dfa)
     }
 
