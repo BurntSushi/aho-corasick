@@ -1114,7 +1114,7 @@ impl<'a, A: Automaton, R: std::io::Read> StreamChunkIter<'a, A, R> {
         })
     }
 
-    fn next(&mut self) -> Option<std::io::Result<StreamChunk>> {
+    fn next(&mut self) -> Option<std::io::Result<StreamChunk<'_>>> {
         // This code is pretty gnarly. It IS simpler than the equivalent code
         // in the previous aho-corasick release, in part because we inline
         // automaton traversal here and also in part because we have abdicated

@@ -82,7 +82,7 @@ impl ByteClasses {
     }
 
     /// Returns an iterator of the bytes in the given equivalence class.
-    pub(crate) fn elements(&self, class: u8) -> ByteClassElements {
+    pub(crate) fn elements(&self, class: u8) -> ByteClassElements<'_> {
         ByteClassElements { classes: self, class, bytes: 0..=255 }
     }
 
@@ -90,7 +90,7 @@ impl ByteClasses {
     ///
     /// That is, a sequence of contiguous ranges are returned. Typically, every
     /// class maps to a single contiguous range.
-    fn element_ranges(&self, class: u8) -> ByteClassElementRanges {
+    fn element_ranges(&self, class: u8) -> ByteClassElementRanges<'_> {
         ByteClassElementRanges { elements: self.elements(class), range: None }
     }
 }

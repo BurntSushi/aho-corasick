@@ -28,8 +28,6 @@ use core::{
 pub(crate) trait Vector:
     Copy + Debug + Send + Sync + UnwindSafe + RefUnwindSafe
 {
-    /// The number of bits in the vector.
-    const BITS: usize;
     /// The number of bytes in the vector. That is, this is the size of the
     /// vector in memory.
     const BYTES: usize;
@@ -106,8 +104,8 @@ pub(crate) trait Vector:
     /// this vector.
     ///
     /// Stated differently, this behaves as if `self` and `vector2` were
-    /// concatenated into a `2 * Self::BITS` temporary buffer and then shifted
-    /// right by `Self::BYTES - 1` bytes.
+    /// concatenated into a `2 * (Self::BYTES * 8)` temporary buffer and then
+    /// shifted right by `Self::BYTES - 1` bytes.
     ///
     /// With respect to the Teddy algorithm, `vector2` is usually a previous
     /// `Self::BYTES` chunk from the haystack and `self` is the chunk
@@ -128,8 +126,8 @@ pub(crate) trait Vector:
     /// this vector.
     ///
     /// Stated differently, this behaves as if `self` and `vector2` were
-    /// concatenated into a `2 * Self::BITS` temporary buffer and then shifted
-    /// right by `Self::BYTES - 2` bytes.
+    /// concatenated into a `2 * (Self::BYTES * 8)` temporary buffer and then
+    /// shifted right by `Self::BYTES - 2` bytes.
     ///
     /// With respect to the Teddy algorithm, `vector2` is usually a previous
     /// `Self::BYTES` chunk from the haystack and `self` is the chunk
@@ -150,8 +148,8 @@ pub(crate) trait Vector:
     /// this vector.
     ///
     /// Stated differently, this behaves as if `self` and `vector2` were
-    /// concatenated into a `2 * Self::BITS` temporary buffer and then shifted
-    /// right by `Self::BYTES - 3` bytes.
+    /// concatenated into a `2 * (Self::BYTES * 8)` temporary buffer and then
+    /// shifted right by `Self::BYTES - 3` bytes.
     ///
     /// With respect to the Teddy algorithm, `vector2` is usually a previous
     /// `Self::BYTES` chunk from the haystack and `self` is the chunk
@@ -188,7 +186,7 @@ pub(crate) trait Vector:
     /// # Notes
     ///
     /// Conceptually it would be nice if we could have a
-    /// `unpack64(self) -> [u64; BITS / 64]` method, but defining that is
+    /// `unpack64(self) -> [u64; BYTES * 8 / 64]` method, but defining that is
     /// tricky given Rust's [current support for const generics][support].
     /// And even if we could, it would be tricky to write generic code over
     /// it. (Not impossible. We could introduce another layer that requires
@@ -326,7 +324,6 @@ mod x86_64_ssse3 {
     use super::Vector;
 
     impl Vector for __m128i {
-        const BITS: usize = 128;
         const BYTES: usize = 16;
 
         #[inline(always)]
@@ -419,7 +416,6 @@ mod x86_64_avx2 {
     use super::{FatVector, Vector};
 
     impl Vector for __m256i {
-        const BITS: usize = 256;
         const BYTES: usize = 32;
 
         #[inline(always)]
@@ -607,7 +603,6 @@ mod aarch64_neon {
     use super::Vector;
 
     impl Vector for uint8x16_t {
-        const BITS: usize = 128;
         const BYTES: usize = 16;
 
         #[inline(always)]
