@@ -962,15 +962,14 @@ impl Match {
 
     /// Returns a new match with `offset` added to its span's `start` and `end`
     /// values.
+    ///
+    /// # Panics
+    ///
+    /// This panics if adding `offset` to either part of this match's `Span`
+    /// would result in overflow.
     #[inline]
     pub fn offset(&self, offset: usize) -> Match {
-        Match {
-            pattern: self.pattern,
-            span: Span {
-                start: self.start() + offset,
-                end: self.end() + offset,
-            },
-        }
+        Match { pattern: self.pattern, span: self.span.offset(offset) }
     }
 }
 
