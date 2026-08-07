@@ -315,6 +315,51 @@ impl AhoCorasick {
             .is_some()
     }
 
+    /// Returns the total number of non-overlapping matches in the given input
+    /// according to the match semantics that this automaton was constructed with.
+    ///
+    /// `input` may be any type that is cheaply convertible to an `Input`. This
+    /// includes, but is not limited to, `&str` and `&[u8]`.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use aho_corasick::AhoCorasick;
+    ///
+    /// let ac = AhoCorasick::new(&["foo", "bar", "quux"]).unwrap();
+    /// assert_eq!(2, ac.count("foo and bar"));
+    /// assert_eq!(0, ac.count("baz"));
+    /// ```
+    pub fn count<'h, I: Into<Input<'h>>>(&self, input: I) -> usize {
+        self.find_iter(input).count()
+    }
+
+    /// Returns the total number of non-overlapping matches in the given input.
+    ///
+    /// This is the fallible version of [`AhoCorasick::count`].
+    ///
+    /// # Errors
+    ///
+    /// This returns an error when this Aho-Corasick searcher does not support
+    /// the given `Input` configuration.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use aho_corasick::AhoCorasick;
+    ///
+    /// let ac = AhoCorasick::new(&["foo", "bar"]).unwrap();
+    /// assert_eq!(Ok(2), ac.try_count("foo and bar"));
+    /// ```
+    pub fn try_count<'h, I: Into<Input<'h>>>(
+        &self,
+        input: I,
+    ) -> Result<usize, MatchError> {
+        Ok(self.try_find_iter(input)?.count())
+    }
+
     /// Returns the location of the first match according to the match
     /// semantics that this automaton was constructed with.
     ///
@@ -2785,5 +2830,25 @@ fn enforce_anchored_consistency(
         StartKind::Unanchored => Err(MatchError::invalid_input_anchored()),
         StartKind::Anchored if want.is_anchored() => Ok(()),
         StartKind::Anchored => Err(MatchError::invalid_input_unanchored()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_count() {
+        let ac = AhoCorasick::new(&["apple", "maple", "Snapple"]).unwrap();
+        let haystack = "Nobody likes maple in their apple flavored Snapple.";
+        assert_eq!(ac.count(haystack), 3);
+        assert_eq!(ac.count("no matches here"), 0);
+    }
+
+    #[test]
+    fn test_try_count() {
+        let ac = AhoCorasick::new(&["apple", "maple"]).unwrap();
+        assert_eq!(ac.try_count("apple and maple").unwrap(), 2);
+        assert_eq!(ac.try_count("none").unwrap(), 0);
     }
 }
