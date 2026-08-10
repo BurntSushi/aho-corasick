@@ -1,4 +1,4 @@
-use core::{cmp, fmt, mem, u16, usize};
+use core::{cmp, fmt, mem};
 
 use alloc::{boxed::Box, string::String, vec, vec::Vec};
 

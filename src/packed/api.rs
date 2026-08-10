@@ -309,7 +309,7 @@ impl Builder {
             return self;
         }
         // Just in case PATTERN_LIMIT increases beyond u16::MAX.
-        assert!(self.patterns.len() <= core::u16::MAX as usize);
+        assert!(self.patterns.len() <= u16::MAX as usize);
 
         let pattern = pattern.as_ref();
         if pattern.is_empty() {

@@ -2,7 +2,6 @@ use core::{
     cmp,
     fmt::Debug,
     panic::{RefUnwindSafe, UnwindSafe},
-    u8,
 };
 
 use alloc::{sync::Arc, vec, vec::Vec};
