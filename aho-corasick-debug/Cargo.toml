@@ -9,6 +9,10 @@ categories = ["text-processing"]
 autotests = false
 edition = "2018"
 
+[features]
+perf-experiments = ["aho-corasick/perf-experiments"]
+perf-stats = ["perf-experiments", "aho-corasick/perf-stats"]
+
 [[bin]]
 name = "aho-corasick-debug"
 path = "main.rs"

@@ -23,6 +23,165 @@ use crate::{
     },
 };
 
+/// Internal transition counters for contiguous NFA profiling.
+#[cfg(feature = "perf-stats")]
+#[doc(hidden)]
+pub mod perf_stats {
+    use core::sync::atomic::{AtomicUsize, Ordering};
+
+    /// A point-in-time snapshot of contiguous NFA transition counters.
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    pub struct Stats {
+        /// Calls to `Automaton::next_state`.
+        pub input_transition_calls: usize,
+        /// State rows visited by the inner failure loop.
+        pub loop_state_visits: usize,
+        /// Failure links followed.
+        pub failure_transitions: usize,
+        /// Dense rows visited.
+        pub dense_row_visits: usize,
+        /// Dense rows whose selected transition was `FAIL`.
+        pub dense_row_fail_hits: usize,
+        /// One-transition rows visited.
+        pub one_transition_row_visits: usize,
+        /// Sparse rows visited.
+        pub sparse_row_visits: usize,
+        /// Sparse class chunks scanned.
+        pub sparse_chunks_scanned: usize,
+        /// Sparse rows that contained the requested transition.
+        pub sparse_hits: usize,
+        /// Sparse rows that did not contain the requested transition.
+        pub sparse_misses: usize,
+    }
+
+    static INPUT_TRANSITION_CALLS: AtomicUsize = AtomicUsize::new(0);
+    static LOOP_STATE_VISITS: AtomicUsize = AtomicUsize::new(0);
+    static FAILURE_TRANSITIONS: AtomicUsize = AtomicUsize::new(0);
+    static DENSE_ROW_VISITS: AtomicUsize = AtomicUsize::new(0);
+    static DENSE_ROW_FAIL_HITS: AtomicUsize = AtomicUsize::new(0);
+    static ONE_TRANSITION_ROW_VISITS: AtomicUsize = AtomicUsize::new(0);
+    static SPARSE_ROW_VISITS: AtomicUsize = AtomicUsize::new(0);
+    static SPARSE_CHUNKS_SCANNED: AtomicUsize = AtomicUsize::new(0);
+    static SPARSE_HITS: AtomicUsize = AtomicUsize::new(0);
+    static SPARSE_MISSES: AtomicUsize = AtomicUsize::new(0);
+
+    macro_rules! counter {
+        ($name:ident) => {
+            $name.fetch_add(1, Ordering::Relaxed);
+        };
+    }
+
+    /// Reset all contiguous NFA transition counters to zero.
+    pub fn reset() {
+        INPUT_TRANSITION_CALLS.store(0, Ordering::Relaxed);
+        LOOP_STATE_VISITS.store(0, Ordering::Relaxed);
+        FAILURE_TRANSITIONS.store(0, Ordering::Relaxed);
+        DENSE_ROW_VISITS.store(0, Ordering::Relaxed);
+        DENSE_ROW_FAIL_HITS.store(0, Ordering::Relaxed);
+        ONE_TRANSITION_ROW_VISITS.store(0, Ordering::Relaxed);
+        SPARSE_ROW_VISITS.store(0, Ordering::Relaxed);
+        SPARSE_CHUNKS_SCANNED.store(0, Ordering::Relaxed);
+        SPARSE_HITS.store(0, Ordering::Relaxed);
+        SPARSE_MISSES.store(0, Ordering::Relaxed);
+    }
+
+    /// Return a point-in-time snapshot of all contiguous NFA counters.
+    pub fn snapshot() -> Stats {
+        Stats {
+            input_transition_calls: INPUT_TRANSITION_CALLS
+                .load(Ordering::Relaxed),
+            loop_state_visits: LOOP_STATE_VISITS.load(Ordering::Relaxed),
+            failure_transitions: FAILURE_TRANSITIONS.load(Ordering::Relaxed),
+            dense_row_visits: DENSE_ROW_VISITS.load(Ordering::Relaxed),
+            dense_row_fail_hits: DENSE_ROW_FAIL_HITS.load(Ordering::Relaxed),
+            one_transition_row_visits: ONE_TRANSITION_ROW_VISITS
+                .load(Ordering::Relaxed),
+            sparse_row_visits: SPARSE_ROW_VISITS.load(Ordering::Relaxed),
+            sparse_chunks_scanned: SPARSE_CHUNKS_SCANNED
+                .load(Ordering::Relaxed),
+            sparse_hits: SPARSE_HITS.load(Ordering::Relaxed),
+            sparse_misses: SPARSE_MISSES.load(Ordering::Relaxed),
+        }
+    }
+
+    impl core::fmt::Display for Stats {
+        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            writeln!(
+                f,
+                "input transition calls: {}",
+                self.input_transition_calls
+            )?;
+            writeln!(f, "loop state visits: {}", self.loop_state_visits)?;
+            writeln!(f, "failure transitions: {}", self.failure_transitions)?;
+            writeln!(f, "dense row visits: {}", self.dense_row_visits)?;
+            writeln!(f, "dense row FAIL hits: {}", self.dense_row_fail_hits)?;
+            writeln!(
+                f,
+                "one-transition row visits: {}",
+                self.one_transition_row_visits
+            )?;
+            writeln!(f, "sparse row visits: {}", self.sparse_row_visits)?;
+            writeln!(
+                f,
+                "sparse chunks scanned: {}",
+                self.sparse_chunks_scanned
+            )?;
+            writeln!(f, "sparse hits: {}", self.sparse_hits)?;
+            write!(f, "sparse misses: {}", self.sparse_misses)
+        }
+    }
+
+    #[inline(always)]
+    pub(crate) fn input_transition_call() {
+        counter!(INPUT_TRANSITION_CALLS);
+    }
+
+    #[inline(always)]
+    pub(crate) fn loop_state_visit() {
+        counter!(LOOP_STATE_VISITS);
+    }
+
+    #[inline(always)]
+    pub(crate) fn failure_transition() {
+        counter!(FAILURE_TRANSITIONS);
+    }
+
+    #[inline(always)]
+    pub(crate) fn dense_row_visit() {
+        counter!(DENSE_ROW_VISITS);
+    }
+
+    #[inline(always)]
+    pub(crate) fn dense_row_fail_hit() {
+        counter!(DENSE_ROW_FAIL_HITS);
+    }
+
+    #[inline(always)]
+    pub(crate) fn one_transition_row_visit() {
+        counter!(ONE_TRANSITION_ROW_VISITS);
+    }
+
+    #[inline(always)]
+    pub(crate) fn sparse_row_visit() {
+        counter!(SPARSE_ROW_VISITS);
+    }
+
+    #[inline(always)]
+    pub(crate) fn sparse_chunk_scanned() {
+        counter!(SPARSE_CHUNKS_SCANNED);
+    }
+
+    #[inline(always)]
+    pub(crate) fn sparse_hit() {
+        counter!(SPARSE_HITS);
+    }
+
+    #[inline(always)]
+    pub(crate) fn sparse_miss() {
+        counter!(SPARSE_MISSES);
+    }
+}
+
 /// A contiguous NFA implementation of Aho-Corasick.
 ///
 /// When possible, prefer using [`AhoCorasick`](crate::AhoCorasick) instead of
@@ -82,7 +241,7 @@ use crate::{
 ///     Some(Match::must(0, 1..2)),
 ///     nfa.try_find(&Input::new(haystack))?,
 /// );
-/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// # Ok::<(), aho_corasick::MatchError>(())
 /// ```
 ///
 /// It is also possible to implement your own version of `try_find`. See the
@@ -192,7 +351,11 @@ unsafe impl Automaton for NFA {
         let repr = &self.repr;
         let class = self.byte_classes.get(byte);
         let u32tosid = StateID::from_u32_unchecked;
+        #[cfg(feature = "perf-stats")]
+        perf_stats::input_transition_call();
         loop {
+            #[cfg(feature = "perf-stats")]
+            perf_stats::loop_state_visit();
             let o = sid.as_usize();
             let kind = repr[o] & 0xFF;
             // I tried to encapsulate the "next transition" logic into its own
@@ -203,15 +366,23 @@ unsafe impl Automaton for NFA {
             // I've also tried a lot of different ways to speed up this
             // routine, and most of them have failed.
             if kind == State::KIND_DENSE {
+                #[cfg(feature = "perf-stats")]
+                perf_stats::dense_row_visit();
                 let next = u32tosid(repr[o + 2 + usize::from(class)]);
                 if next != NFA::FAIL {
                     return next;
                 }
+                #[cfg(feature = "perf-stats")]
+                perf_stats::dense_row_fail_hit();
             } else if kind == State::KIND_ONE {
+                #[cfg(feature = "perf-stats")]
+                perf_stats::one_transition_row_visit();
                 if class == repr[o].low_u16().high_u8() {
                     return u32tosid(repr[o + 2]);
                 }
             } else {
+                #[cfg(feature = "perf-stats")]
+                perf_stats::sparse_row_visit();
                 // NOTE: I tried a SWAR technique in the loop below, but found
                 // it slower. See the 'swar' test in the tests for this module.
                 let trans_len = kind.as_usize();
@@ -220,20 +391,32 @@ unsafe impl Automaton for NFA {
                 for (i, &chunk) in
                     repr[o + 2..][..classes_len].iter().enumerate()
                 {
+                    #[cfg(feature = "perf-stats")]
+                    perf_stats::sparse_chunk_scanned();
                     let classes = chunk.to_ne_bytes();
                     if classes[0] == class {
+                        #[cfg(feature = "perf-stats")]
+                        perf_stats::sparse_hit();
                         return u32tosid(repr[trans_offset + i * 4]);
                     }
                     if classes[1] == class {
+                        #[cfg(feature = "perf-stats")]
+                        perf_stats::sparse_hit();
                         return u32tosid(repr[trans_offset + i * 4 + 1]);
                     }
                     if classes[2] == class {
+                        #[cfg(feature = "perf-stats")]
+                        perf_stats::sparse_hit();
                         return u32tosid(repr[trans_offset + i * 4 + 2]);
                     }
                     if classes[3] == class {
+                        #[cfg(feature = "perf-stats")]
+                        perf_stats::sparse_hit();
                         return u32tosid(repr[trans_offset + i * 4 + 3]);
                     }
                 }
+                #[cfg(feature = "perf-stats")]
+                perf_stats::sparse_miss();
             }
             // For an anchored search, we never follow failure transitions
             // because failure transitions lead us down a path to matching
@@ -242,6 +425,8 @@ unsafe impl Automaton for NFA {
             if anchored.is_anchored() {
                 return NFA::DEAD;
             }
+            #[cfg(feature = "perf-stats")]
+            perf_stats::failure_transition();
             sid = u32tosid(repr[o + 1]);
         }
     }
@@ -690,6 +875,8 @@ impl<'a> State<'a> {
         classes: &ByteClasses,
         dst: &mut Vec<u32>,
         force_dense: bool,
+        dense_transition_threshold: Option<usize>,
+        failureless_dense_rows: bool,
     ) -> Result<StateID, BuildError> {
         let sid = StateID::new(dst.len()).map_err(|e| {
             BuildError::state_id_overflow(StateID::MAX.as_u64(), e.attempted())
@@ -700,7 +887,12 @@ impl<'a> State<'a> {
         // okay with it. This also gives us more sentinels in the state's
         // 'kind', which lets us create different state kinds to save on
         // space.
-        let kind = if force_dense || old_len > State::MAX_SPARSE_TRANSITIONS {
+        let should_dense_by_count =
+            dense_transition_threshold.map_or(false, |min| old_len >= min);
+        let kind = if force_dense
+            || should_dense_by_count
+            || old_len > State::MAX_SPARSE_TRANSITIONS
+        {
             State::KIND_DENSE
         } else if old_len == 1 && !old.is_match() {
             State::KIND_ONE
@@ -711,7 +903,13 @@ impl<'a> State<'a> {
         if kind == State::KIND_DENSE {
             dst.push(kind);
             dst.push(old.fail().as_u32());
-            State::write_dense_trans(nnfa, oldsid, classes, dst)?;
+            State::write_dense_trans(
+                nnfa,
+                oldsid,
+                classes,
+                dst,
+                failureless_dense_rows,
+            )?;
         } else if kind == State::KIND_ONE {
             let t = nnfa.iter_trans(oldsid).next().unwrap();
             let class = u32::from(classes.get(t.byte()));
@@ -795,6 +993,7 @@ impl<'a> State<'a> {
         oldsid: StateID,
         classes: &ByteClasses,
         dst: &mut Vec<u32>,
+        failureless: bool,
     ) -> Result<(), BuildError> {
         // Our byte classes let us shrink the size of our dense states to the
         // number of equivalence classes instead of just fixing it to 256.
@@ -807,16 +1006,44 @@ impl<'a> State<'a> {
         // IDs from the noncontiguous NFA. It isn't until we've added all
         // states that we go back and map noncontiguous IDs to contiguous IDs.
         let start = dst.len();
-        dst.extend(
-            core::iter::repeat(noncontiguous::NFA::FAIL.as_u32())
-                .take(classes.alphabet_len()),
-        );
+        if failureless {
+            let fail = nnfa.states()[oldsid].fail();
+            for class in classes.iter() {
+                let byte = classes.elements(class).next().unwrap();
+                dst.push(
+                    State::next_state_unanchored(nnfa, fail, byte).as_u32(),
+                );
+            }
+        } else {
+            dst.extend(
+                core::iter::repeat(noncontiguous::NFA::FAIL.as_u32())
+                    .take(classes.alphabet_len()),
+            );
+        }
         assert!(start < dst.len(), "equivalence classes are never empty");
         for t in nnfa.iter_trans(oldsid) {
             dst[start + usize::from(classes.get(t.byte()))] =
                 t.next().as_u32();
         }
         Ok(())
+    }
+
+    fn next_state_unanchored(
+        nnfa: &noncontiguous::NFA,
+        mut sid: StateID,
+        byte: u8,
+    ) -> StateID {
+        loop {
+            for t in nnfa.iter_trans(sid) {
+                if byte <= t.byte() {
+                    if byte == t.byte() {
+                        return t.next();
+                    }
+                    break;
+                }
+            }
+            sid = nnfa.states()[sid].fail();
+        }
     }
 
     /// Return an iterator over every explicitly defined transition in this
@@ -894,6 +1121,8 @@ impl<'a> core::fmt::Debug for State<'a> {
 pub struct Builder {
     noncontiguous: noncontiguous::Builder,
     dense_depth: usize,
+    dense_transition_threshold: Option<usize>,
+    failureless_dense_rows: bool,
     byte_classes: bool,
 }
 
@@ -902,6 +1131,8 @@ impl Default for Builder {
         Builder {
             noncontiguous: noncontiguous::Builder::new(),
             dense_depth: 2,
+            dense_transition_threshold: None,
+            failureless_dense_rows: false,
             byte_classes: true,
         }
     }
@@ -974,6 +1205,8 @@ impl Builder {
                 &nfa.byte_classes,
                 &mut nfa.repr,
                 force_dense,
+                self.dense_transition_threshold,
+                self.failureless_dense_rows,
             )?;
             index_to_state_id[oldsid] = newsid;
         }
@@ -1055,6 +1288,25 @@ impl Builder {
     /// for more documentation and examples.
     pub fn dense_depth(&mut self, depth: usize) -> &mut Builder {
         self.dense_depth = depth;
+        self
+    }
+
+    /// Set a transition-count threshold for forcing states to use dense rows.
+    #[cfg(any(feature = "perf-stats", feature = "perf-experiments"))]
+    #[doc(hidden)]
+    pub fn dense_transition_threshold(
+        &mut self,
+        threshold: Option<usize>,
+    ) -> &mut Builder {
+        self.dense_transition_threshold = threshold;
+        self
+    }
+
+    pub(crate) fn failureless_dense_rows(
+        &mut self,
+        yes: bool,
+    ) -> &mut Builder {
+        self.failureless_dense_rows = yes;
         self
     }
 

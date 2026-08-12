@@ -136,7 +136,7 @@ impl<'h> Input<'h> {
     /// // because it is the correct leftmost-first match.
     /// assert_eq!("abc", &haystack[mat.span()]);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     #[inline]
     pub fn span<S: Into<Span>>(mut self, span: S) -> Input<'h> {
@@ -246,7 +246,7 @@ impl<'h> Input<'h> {
     /// let mat = ac.try_find(input)?.expect("should have a match");
     /// assert_eq!("bcd", &haystack[mat.span()]);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     #[inline]
     pub fn anchored(mut self, mode: Anchored) -> Input<'h> {
@@ -294,9 +294,12 @@ impl<'h> Input<'h> {
     /// // The "earliest" possible match, even if it isn't leftmost-first.
     /// let input = Input::new(haystack).earliest(true);
     /// let mat = ac.try_find(input)?.expect("should have a match");
+    /// #[cfg(feature = "perf-literal")]
     /// assert_eq!("b", &haystack[mat.span()]);
+    /// #[cfg(not(feature = "perf-literal"))]
+    /// assert_eq!("abc", &haystack[mat.span()]);
     ///
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # Ok::<(), aho_corasick::MatchError>(())
     /// ```
     #[inline]
     pub fn earliest(mut self, yes: bool) -> Input<'h> {

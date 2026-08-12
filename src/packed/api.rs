@@ -75,9 +75,9 @@ impl Default for MatchKind {
 ///     .collect();
 /// assert_eq!(vec![PatternID::must(1)], matches);
 /// # Some(()) }
-/// # if cfg!(all(feature = "std", any(
+/// # if cfg!(any(
 /// #     target_arch = "x86_64", target_arch = "aarch64",
-/// # ))) {
+/// # )) {
 /// #     example().unwrap()
 /// # } else {
 /// #     assert!(example().is_none());
@@ -220,9 +220,9 @@ impl Config {
 ///     .collect();
 /// assert_eq!(vec![PatternID::ZERO], matches);
 /// # Some(()) }
-/// # if cfg!(all(feature = "std", any(
+/// # if cfg!(any(
 /// #     target_arch = "x86_64", target_arch = "aarch64",
-/// # ))) {
+/// # )) {
 /// #     example().unwrap()
 /// # } else {
 /// #     assert!(example().is_none());
@@ -384,9 +384,9 @@ impl Default for Builder {
 ///     .collect();
 /// assert_eq!(vec![PatternID::ZERO], matches);
 /// # Some(()) }
-/// # if cfg!(all(feature = "std", any(
+/// # if cfg!(any(
 /// #     target_arch = "x86_64", target_arch = "aarch64",
-/// # ))) {
+/// # )) {
 /// #     example().unwrap()
 /// # } else {
 /// #     assert!(example().is_none());
@@ -429,9 +429,9 @@ impl Searcher {
     ///     .collect();
     /// assert_eq!(vec![PatternID::ZERO], matches);
     /// # Some(()) }
-    /// # if cfg!(all(feature = "std", any(
+    /// # if cfg!(any(
     /// #     target_arch = "x86_64", target_arch = "aarch64",
-    /// # ))) {
+    /// # )) {
     /// #     example().unwrap()
     /// # } else {
     /// #     assert!(example().is_none());
@@ -479,9 +479,9 @@ impl Searcher {
     /// assert_eq!(0, mat.start());
     /// assert_eq!(6, mat.end());
     /// # Some(()) }
-    /// # if cfg!(all(feature = "std", any(
+    /// # if cfg!(any(
     /// #     target_arch = "x86_64", target_arch = "aarch64",
-    /// # ))) {
+    /// # )) {
     /// #     example().unwrap()
     /// # } else {
     /// #     assert!(example().is_none());
@@ -521,9 +521,9 @@ impl Searcher {
     /// assert_eq!(3, mat.start());
     /// assert_eq!(9, mat.end());
     /// # Some(()) }
-    /// # if cfg!(all(feature = "std", any(
+    /// # if cfg!(any(
     /// #     target_arch = "x86_64", target_arch = "aarch64",
-    /// # ))) {
+    /// # )) {
     /// #     example().unwrap()
     /// # } else {
     /// #     assert!(example().is_none());
@@ -572,9 +572,9 @@ impl Searcher {
     ///     PatternID::must(1),
     /// ], matches);
     /// # Some(()) }
-    /// # if cfg!(all(feature = "std", any(
+    /// # if cfg!(any(
     /// #     target_arch = "x86_64", target_arch = "aarch64",
-    /// # ))) {
+    /// # )) {
     /// #     example().unwrap()
     /// # } else {
     /// #     assert!(example().is_none());
@@ -604,9 +604,9 @@ impl Searcher {
     /// // leftmost-first is the default.
     /// assert_eq!(&MatchKind::LeftmostFirst, searcher.match_kind());
     /// # Some(()) }
-    /// # if cfg!(all(feature = "std", any(
+    /// # if cfg!(any(
     /// #     target_arch = "x86_64", target_arch = "aarch64",
-    /// # ))) {
+    /// # )) {
     /// #     example().unwrap()
     /// # } else {
     /// #     assert!(example().is_none());

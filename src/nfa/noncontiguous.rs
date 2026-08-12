@@ -73,7 +73,7 @@ use crate::{
 ///     Some(Match::must(0, 1..2)),
 ///     nfa.try_find(&Input::new(haystack))?,
 /// );
-/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// # Ok::<(), aho_corasick::MatchError>(())
 /// ```
 ///
 /// It is also possible to implement your own version of `try_find`. See the
