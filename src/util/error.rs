@@ -83,16 +83,14 @@ impl core::fmt::Display for BuildError {
                 write!(
                     f,
                     "state identifier overflow: failed to create state ID \
-                     from {}, which exceeds the max of {}",
-                    requested_max, max,
+                     from {requested_max}, which exceeds the max of {max}",
                 )
             }
             ErrorKind::PatternIDOverflow { max, requested_max } => {
                 write!(
                     f,
                     "pattern identifier overflow: failed to create pattern ID \
-                     from {}, which exceeds the max of {}",
-                    requested_max, max,
+                     from {requested_max}, which exceeds the max of {max}",
                 )
             }
             ErrorKind::PatternTooLong { pattern, len } => {
@@ -236,15 +234,13 @@ impl core::fmt::Display for MatchError {
             MatchErrorKind::UnsupportedStream { got } => {
                 write!(
                     f,
-                    "match kind {:?} does not support stream searching",
-                    got,
+                    "match kind {got:?} does not support stream searching",
                 )
             }
             MatchErrorKind::UnsupportedOverlapping { got } => {
                 write!(
                     f,
-                    "match kind {:?} does not support overlapping searches",
-                    got,
+                    "match kind {got:?} does not support overlapping searches",
                 )
             }
             MatchErrorKind::UnsupportedEmpty => {

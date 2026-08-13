@@ -105,12 +105,12 @@ impl core::fmt::Debug for ByteClasses {
                 if i > 0 {
                     write!(f, ", ")?;
                 }
-                write!(f, "{:?} => [", class)?;
+                write!(f, "{class:?} => [")?;
                 for (start, end) in self.element_ranges(class) {
                     if start == end {
-                        write!(f, "{:?}", start)?;
+                        write!(f, "{start:?}")?;
                     } else {
-                        write!(f, "{:?}-{:?}", start, end)?;
+                        write!(f, "{start:?}-{end:?}")?;
                     }
                 }
                 write!(f, "]")?;

@@ -1561,7 +1561,7 @@ fn regression_case_insensitive_prefilter() {
         for c2 in b'a'..b'z' {
             let c = c as char;
             let c2 = c2 as char;
-            let needle = format!("{}{}", c, c2).to_lowercase();
+            let needle = format!("{c}{c2}").to_lowercase();
             let haystack = needle.to_uppercase();
             let ac = AhoCorasick::builder()
                 .ascii_case_insensitive(true)
@@ -1571,10 +1571,7 @@ fn regression_case_insensitive_prefilter() {
             assert_eq!(
                 1,
                 ac.find_iter(&haystack).count(),
-                "failed to find {:?} in {:?}\n\nautomaton:\n{:?}",
-                needle,
-                haystack,
-                ac,
+                "failed to find {needle:?} in {haystack:?}\n\nautomaton:\n{ac:?}",
             );
         }
     }
