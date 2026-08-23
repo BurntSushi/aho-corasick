@@ -345,6 +345,20 @@ pub unsafe trait Automaton: private::Sealed {
     /// number of patterns built into the automaton.
     fn prefilter(&self) -> Option<&Prefilter>;
 
+    /// Returns true when this automaton benefits from scanning blocks of a
+    /// haystack with several interleaved independent walks, as done by
+    /// `FindOverlappingIter`.
+    ///
+    /// This is an internal heuristic hook and not part of the public API.
+    /// Only the DFA returns true: its transitions are cheap and constant
+    /// time, so interleaving hides the latency of its (often cache-resident
+    /// at best) transition table lookups. The NFAs' costlier transition
+    /// functions make interleaving a pessimization instead.
+    #[doc(hidden)]
+    fn prefers_interleaved_scan(&self) -> bool {
+        false
+    }
+
     /// Executes a non-overlapping search with this automaton using the given
     /// configuration.
     ///
@@ -401,25 +415,7 @@ pub unsafe trait Automaton: private::Sealed {
     where
         Self: Sized,
     {
-        if !self.match_kind().is_standard() {
-            return Err(MatchError::unsupported_overlapping(
-                self.match_kind(),
-            ));
-        }
-        //  We might consider lifting this restriction. The reason why I added
-        // it was to ban the combination of "anchored search" and "overlapping
-        // iteration." The match semantics aren't totally clear in that case.
-        // Should we allow *any* matches that are adjacent to *any* previous
-        // match? Or only following the most recent one? Or only matches
-        // that start at the beginning of the search? We might also elect to
-        // just keep this restriction in place, as callers should be able to
-        // implement it themselves if they want to.
-        if input.get_anchored().is_anchored() {
-            return Err(MatchError::invalid_input_anchored());
-        }
-        let _ = self.start_state(input.get_anchored())?;
-        let state = OverlappingState::start();
-        Ok(FindOverlappingIter { aut: self, input, state })
+        FindOverlappingIter::new(self, input)
     }
 
     /// Replaces all non-overlapping matches in `haystack` with
@@ -642,6 +638,11 @@ unsafe impl<'a, A: Automaton + ?Sized> Automaton for &'a A {
     #[inline(always)]
     fn start_state(&self, anchored: Anchored) -> Result<StateID, MatchError> {
         (**self).start_state(anchored)
+    }
+
+    #[inline(always)]
+    fn prefers_interleaved_scan(&self) -> bool {
+        (**self).prefers_interleaved_scan()
     }
 
     #[inline(always)]
@@ -954,7 +955,316 @@ impl<'a, 'h, A: Automaton> Iterator for FindIter<'a, 'h, A> {
 pub struct FindOverlappingIter<'a, 'h, A> {
     aut: &'a A,
     input: Input<'h>,
+    /// The resumable search state. This is used only for automatons that do
+    /// not prefer interleaved block scanning (see
+    /// `Automaton::prefers_interleaved_scan`, i.e., everything but the DFA):
+    /// those run the byte-at-a-time resumable search, yielding each match
+    /// directly with no buffering at all. For the DFA, all fields below drive
+    /// the buffered block scanner instead.
     state: OverlappingState,
+    /// The start state for unanchored searches, used to initialize the
+    /// warm-up of each stream in a block scan.
+    start: StateID,
+    /// The position of the first byte not yet consumed by the search, in
+    /// absolute haystack offsets.
+    at: usize,
+    /// The automaton state corresponding to the position `at`. A `None`
+    /// indicates that the search is over: the end of the span was reached, a
+    /// dead state was entered or a prefilter reported that no candidates
+    /// remain.
+    sid: Option<StateID>,
+    /// The matches found by the most recent block scan that have not been
+    /// yielded yet. `buf[buf_next..]` is yielded in order before the next
+    /// block is scanned.
+    buf: Vec<Match>,
+    buf_next: usize,
+    /// Scratch buffers holding the matches found by the streams (other than
+    /// the first one, which writes to `buf` directly) of a block scan. They
+    /// are drained into `buf` in stream order after each block, and kept
+    /// around to reuse their allocation across blocks.
+    stream_bufs: [Vec<Match>; OVERLAPPING_STREAMS - 1],
+    /// Whether the region being scanned looks dense with candidates, as
+    /// determined by the most recent block scan. Dense blocks are scanned
+    /// with interleaved streams (the prefilter can't skip anything anyway,
+    /// and interleaving hides the latency of the transition table accesses),
+    /// while sparse blocks are scanned byte-at-a-time so that the prefilter
+    /// is consulted at every visit to a start state, just like the
+    /// byte-at-a-time search does. When no prefilter exists, there is nothing
+    /// to skip with and blocks are always scanned interleaved.
+    dense: bool,
+}
+
+/// The number of independent automaton walks that are interleaved to scan a
+/// block of the haystack in `FindOverlappingIter`.
+const OVERLAPPING_STREAMS: usize = 4;
+
+/// The number of haystack bytes consumed by a single block scan in
+/// `FindOverlappingIter`. Matches are buffered one block at a time, so this
+/// bounds both the buffer memory and the work done ahead of what the caller
+/// has asked for.
+const OVERLAPPING_BLOCK: usize = 64 * 1024;
+
+impl<'a, 'h, A: Automaton> FindOverlappingIter<'a, 'h, A> {
+    fn new(
+        aut: &'a A,
+        input: Input<'h>,
+    ) -> Result<FindOverlappingIter<'a, 'h, A>, MatchError> {
+        if !aut.match_kind().is_standard() {
+            return Err(MatchError::unsupported_overlapping(aut.match_kind()));
+        }
+        //  We might consider lifting this restriction. The reason why I added
+        // it was to ban the combination of "anchored search" and "overlapping
+        // iteration." The match semantics aren't totally clear in that case.
+        // Should we allow *any* matches that are adjacent to *any* previous
+        // match? Or only following the most recent one? Or only matches
+        // that start at the beginning of the search? We might also elect to
+        // just keep this restriction in place, as callers should be able to
+        // implement it themselves if they want to.
+        if input.get_anchored().is_anchored() {
+            return Err(MatchError::invalid_input_anchored());
+        }
+        let start = aut.start_state(input.get_anchored())?;
+        let buffered = aut.prefers_interleaved_scan();
+        let mut buf = Vec::new();
+        let sid = if !buffered || input.is_done() {
+            None
+        } else {
+            // Handle the case where the start state is a match state. That
+            // is, the empty string is in our automaton. These are the only
+            // matches not discovered by consuming a byte in 'refill' below.
+            if aut.is_match(start) {
+                for i in 0..aut.match_len(start) {
+                    buf.push(get_match(aut, start, i, input.start()));
+                }
+            }
+            Some(start)
+        };
+        let at = input.start();
+        Ok(FindOverlappingIter {
+            aut,
+            input,
+            state: OverlappingState::start(),
+            start,
+            at,
+            sid,
+            buf,
+            buf_next: 0,
+            stream_bufs: [Vec::new(), Vec::new(), Vec::new()],
+            dense: false,
+        })
+    }
+
+    /// Scans the next block of the haystack, filling `self.buf` with all of
+    /// the matches in it.
+    ///
+    /// To hide the latency of the transition table accesses (the table is
+    /// often larger than the CPU cache and every access depends on the
+    /// previous one), a block is split into `OVERLAPPING_STREAMS` chunks
+    /// that are scanned by interleaved independent automaton walks. This
+    /// is possible because an Aho-Corasick state can only depend on the
+    /// previous `max_pattern_len` bytes of input: each chunk's walk is warmed
+    /// up on the bytes immediately preceding its chunk before any of its
+    /// matches are recorded. Stitching the buffered matches back together in
+    /// chunk order yields exactly the matches, in the same order, that a
+    /// byte-at-a-time scan produces.
+    #[inline(never)]
+    fn refill(&mut self, sid: StateID) {
+        self.buf.clear();
+        self.buf_next = 0;
+        // Mirrors the prefilter handling of the byte-at-a-time search: a
+        // prefilter is only consulted while the search is in a start state,
+        // and either reports that no candidates remain (search over) or gives
+        // a position at or after 'at' to jump to.
+        if let Some(pre) = self.aut.prefilter() {
+            if self.aut.is_start(sid) {
+                let span = Span::from(self.at..self.input.end());
+                match pre.find_in(self.input.haystack(), span).into_option() {
+                    None => {
+                        self.sid = None;
+                        return;
+                    }
+                    Some(i) => self.at = i,
+                }
+            }
+        }
+        let block_end =
+            core::cmp::min(self.at + OVERLAPPING_BLOCK, self.input.end());
+        // Interleaved scanning is only used for automatons that benefit from
+        // it (see 'prefers_interleaved_scan'), and only pays off when each
+        // chunk is meaningfully bigger than the warm-up region it must scan
+        // first.
+        let warm = self.aut.max_pattern_len().saturating_sub(1);
+        let chunk = (block_end - self.at) / OVERLAPPING_STREAMS;
+        let can_interleave = self.aut.prefers_interleaved_scan()
+            && chunk >= core::cmp::max(2 * warm, 64);
+        if !can_interleave || (self.aut.prefilter().is_some() && !self.dense) {
+            // Scan byte-at-a-time so that the prefilter keeps skipping at
+            // every visit to a start state. This loops over blocks internally
+            // (instead of returning to the iterator after each one) so that a
+            // long sparse region is traversed by a single tight loop, just
+            // like the byte-at-a-time search traverses it. If the prefilter
+            // could not skip most of a block (the region is dense with
+            // candidates), switch to interleaved scanning for the following
+            // blocks, until a block without any matches demotes us back
+            // below.
+            let mut sid = sid;
+            loop {
+                let scan_start = self.at;
+                let block_end = core::cmp::min(
+                    self.at + OVERLAPPING_BLOCK,
+                    self.input.end(),
+                );
+                let stepped = self.scan_serial(sid, block_end);
+                self.dense =
+                    stepped.saturating_mul(2) >= block_end - scan_start;
+                if (self.dense && can_interleave)
+                    || !self.buf.is_empty()
+                    || self.at >= self.input.end()
+                {
+                    return;
+                }
+                sid = match self.sid {
+                    None => return,
+                    Some(sid) => sid,
+                };
+            }
+        }
+        let hay = self.input.haystack();
+        let start = self.at;
+        let mut sids = [sid; OVERLAPPING_STREAMS];
+        for k in 1..OVERLAPPING_STREAMS {
+            let s = start + k * chunk;
+            let w = core::cmp::max(self.input.start(), s.saturating_sub(warm));
+            let mut lane = self.start;
+            for i in w..s {
+                lane = self.aut.next_state(Anchored::No, lane, hay[i]);
+            }
+            sids[k] = lane;
+        }
+        for j in 0..chunk {
+            sids[0] =
+                self.aut.next_state(Anchored::No, sids[0], hay[start + j]);
+            if self.aut.is_match(sids[0]) {
+                for i in 0..self.aut.match_len(sids[0]) {
+                    self.buf.push(get_match(
+                        self.aut,
+                        sids[0],
+                        i,
+                        start + j + 1,
+                    ));
+                }
+            }
+            for k in 1..OVERLAPPING_STREAMS {
+                let at = start + k * chunk + j;
+                sids[k] = self.aut.next_state(Anchored::No, sids[k], hay[at]);
+                if self.aut.is_match(sids[k]) {
+                    for i in 0..self.aut.match_len(sids[k]) {
+                        self.stream_bufs[k - 1].push(get_match(
+                            self.aut,
+                            sids[k],
+                            i,
+                            at + 1,
+                        ));
+                    }
+                }
+            }
+        }
+        // When the block isn't evenly divisible, the remainder continues on
+        // the last stream's state (and buffer, to keep matches in order).
+        let mut last = sids[OVERLAPPING_STREAMS - 1];
+        for at in (start + OVERLAPPING_STREAMS * chunk)..block_end {
+            last = self.aut.next_state(Anchored::No, last, hay[at]);
+            if self.aut.is_match(last) {
+                for i in 0..self.aut.match_len(last) {
+                    self.stream_bufs[OVERLAPPING_STREAMS - 2].push(get_match(
+                        self.aut,
+                        last,
+                        i,
+                        at + 1,
+                    ));
+                }
+            }
+        }
+        // A dead state means "the search is over": a byte-at-a-time scan
+        // stops at the first dead transition and reports nothing after it,
+        // but interleaved streams can't know that the chunks after a death
+        // are unreachable. So redo the block serially, which handles death
+        // correctly. (Dead states are believed to be unreachable here, since
+        // unanchored searches with the automatons in this crate never lead
+        // to a dead state, but correctness must not depend on that.)
+        let died = self.aut.is_dead(last)
+            || sids.iter().any(|&s| self.aut.is_dead(s));
+        if died {
+            self.buf.clear();
+            for b in self.stream_bufs.iter_mut() {
+                b.clear();
+            }
+            self.at = start;
+            self.dense = false;
+            self.scan_serial(sid, block_end);
+            return;
+        }
+        for k in 0..(OVERLAPPING_STREAMS - 1) {
+            self.buf.append(&mut self.stream_bufs[k]);
+        }
+        // A block without a single match suggests the region is sparse after
+        // all: go back to byte-at-a-time scanning so the prefilter gets a
+        // chance to skip.
+        self.dense = !self.buf.is_empty();
+        self.at = block_end;
+        self.sid = Some(last);
+    }
+
+    /// Scans up to `block_end` with a single byte-at-a-time automaton walk,
+    /// mirroring `try_find_overlapping_fwd_imp` (except that matches are
+    /// buffered instead of returned one at a time).
+    ///
+    /// Returns the number of bytes the automaton actually stepped through,
+    /// as opposed to bytes skipped over by the prefilter. A high ratio of
+    /// stepped bytes means the prefilter isn't effective on this region.
+    fn scan_serial(&mut self, mut sid: StateID, block_end: usize) -> usize {
+        let hay = self.input.haystack();
+        let mut stepped = 0;
+        while self.at < block_end {
+            sid = self.aut.next_state(Anchored::No, sid, hay[self.at]);
+            if self.aut.is_special(sid) {
+                if self.aut.is_dead(sid) {
+                    self.sid = None;
+                    return stepped;
+                } else if self.aut.is_match(sid) {
+                    for i in 0..self.aut.match_len(sid) {
+                        self.buf.push(get_match(
+                            self.aut,
+                            sid,
+                            i,
+                            self.at + 1,
+                        ));
+                    }
+                } else if let Some(pre) = self.aut.prefilter() {
+                    // A special state that is neither dead nor a match while
+                    // a prefilter is active must be a start state.
+                    debug_assert!(self.aut.is_start(sid));
+                    let span = Span::from(self.at..self.input.end());
+                    match pre.find_in(hay, span).into_option() {
+                        None => {
+                            self.sid = None;
+                            return stepped;
+                        }
+                        Some(i) => {
+                            if i > self.at {
+                                self.at = i;
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+            self.at += 1;
+            stepped += 1;
+        }
+        self.sid = Some(sid);
+        stepped
+    }
 }
 
 impl<'a, 'h, A: Automaton> Iterator for FindOverlappingIter<'a, 'h, A> {
@@ -962,6 +1272,51 @@ impl<'a, 'h, A: Automaton> Iterator for FindOverlappingIter<'a, 'h, A> {
 
     #[inline(always)]
     fn next(&mut self) -> Option<Match> {
+        // Serve buffered matches before any dispatch, so that the per-match
+        // hot path of the buffered (DFA) mode is identical to a plain buffer
+        // pop. Non-buffered automatons never put anything in 'buf', so for
+        // them this is a single always-false comparison.
+        if self.buf_next < self.buf.len() {
+            let m = self.buf[self.buf_next];
+            self.buf_next += 1;
+            return Some(m);
+        }
+        // For concrete automaton types this is a constant, so one of the two
+        // arms below is compiled away entirely.
+        if self.aut.prefers_interleaved_scan() {
+            self.next_buffered()
+        } else {
+            self.next_byte_at_a_time()
+        }
+    }
+}
+
+impl<'a, 'h, A: Automaton> FindOverlappingIter<'a, 'h, A> {
+    /// Advances the buffered block scanner until it has matches to yield (or
+    /// the search is over). Only used for automatons that prefer interleaved
+    /// scanning (the DFA).
+    fn next_buffered(&mut self) -> Option<Match> {
+        loop {
+            let sid = self.sid?;
+            if self.at >= self.input.end() {
+                self.sid = None;
+                return None;
+            }
+            self.refill(sid);
+            if self.buf_next < self.buf.len() {
+                let m = self.buf[self.buf_next];
+                self.buf_next += 1;
+                return Some(m);
+            }
+        }
+    }
+
+    /// Yields the next match directly from the byte-at-a-time resumable
+    /// search, with no buffering. Used for automatons that do not prefer
+    /// interleaved scanning (the NFAs), for which this is the exact code
+    /// path that predates the block scanner.
+    #[inline(always)]
+    fn next_byte_at_a_time(&mut self) -> Option<Match> {
         self.aut
             .try_find_overlapping(&self.input, &mut self.state)
             .expect("already checked that no match error can occur here");
@@ -1605,4 +1960,70 @@ pub(crate) fn sparse_transitions<'a>(
         }
         None
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use alloc::{string::String, vec, vec::Vec};
+
+    use super::*;
+    use crate::{
+        dfa,
+        nfa::{contiguous, noncontiguous},
+    };
+
+    // Collects all overlapping matches using the byte-at-a-time resumable
+    // search, which serves as the ground truth for the block-scanning
+    // iterator.
+    fn byte_at_a_time<A: Automaton>(aut: &A, hay: &[u8]) -> Vec<Match> {
+        let mut out = vec![];
+        let input = Input::new(hay);
+        let mut state = OverlappingState::start();
+        loop {
+            aut.try_find_overlapping(&input, &mut state).unwrap();
+            match state.get_match() {
+                None => break,
+                Some(m) => out.push(m),
+            }
+        }
+        out
+    }
+
+    fn iter_all<A: Automaton>(aut: &A, hay: &[u8]) -> Vec<Match> {
+        aut.try_find_overlapping_iter(Input::new(hay)).unwrap().collect()
+    }
+
+    #[test]
+    fn overlapping_iter_matches_byte_at_a_time() {
+        let sets: &[&[&str]] = &[
+            &["abc", "bc", "c", "b", "zzz"],
+            &["", "a", "abcd"],
+            &["aaa", "aa", "a"],
+            &["0123", "123 ", "23", "x"],
+        ];
+        let base = "abc bc zabcd 0123456 aaaa x";
+        let mut hays: Vec<String> =
+            vec![String::new(), String::from("a"), String::from(base)];
+        // Sizes that exercise the serial path, the interleaved path and both
+        // sides of block and chunk boundaries.
+        for len in [500, 16 * 1024, 64 * 1024 - 3, 64 * 1024, 200 * 1024] {
+            hays.push(base.repeat(1 + len / base.len()));
+        }
+        for &pats in sets {
+            let dfa_pre = dfa::DFA::new(pats).unwrap();
+            let mut builder = dfa::DFA::builder();
+            builder.prefilter(false);
+            let dfa_nopre = builder.build(pats).unwrap();
+            let nnfa = noncontiguous::NFA::new(pats).unwrap();
+            let cnfa = contiguous::NFA::new(pats).unwrap();
+            for hay in hays.iter() {
+                let hay = hay.as_bytes();
+                let want = byte_at_a_time(&dfa_pre, hay);
+                assert_eq!(want, iter_all(&dfa_pre, hay));
+                assert_eq!(want, iter_all(&dfa_nopre, hay));
+                assert_eq!(want, iter_all(&nnfa, hay));
+                assert_eq!(want, iter_all(&cnfa, hay));
+            }
+        }
+    }
 }
