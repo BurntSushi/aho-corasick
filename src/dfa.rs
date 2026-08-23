@@ -93,13 +93,23 @@ pub struct DFA {
     /// instead of the IDs being 0, 1, 2, 3, ..., they are 0*stride, 1*stride,
     /// 2*stride, 3*stride, ...
     trans: Vec<StateID>,
-    /// The matches for every match state in this DFA. This is first indexed by
-    /// state index (so that's `sid >> stride2`) and then by order in which the
-    /// matches are meant to occur.
-    matches: Vec<Vec<PatternID>>,
-    /// The amount of heap memory used, in bytes, by the inner Vecs of
-    /// 'matches'.
-    matches_memory_usage: usize,
+    /// The matches for every match state in this DFA, in one contiguous
+    /// allocation. The matches for the state whose index (that's
+    /// `sid / stride`, less 2 for the dead and fail states) is `i` are given
+    /// by `matches[match_offsets[i]..match_offsets[i + 1]]`, in the order in
+    /// which the matches are meant to occur.
+    matches: Vec<PatternID>,
+    /// The offsets into 'matches' for every match state in this DFA, indexed
+    /// by state index. This always has a length equal to the number of match
+    /// states plus one.
+    ///
+    /// A `u32` is always big enough for these offsets: the total number of
+    /// matches in a DFA is at most twice (for `StartKind::Both`, which
+    /// duplicates every match state) the number of matches in the
+    /// noncontiguous NFA it was built from, and NFA construction returns an
+    /// error if that number would exceed `StateID::LIMIT`. Since
+    /// `2 * StateID::LIMIT < u32::MAX`, these offsets never overflow.
+    match_offsets: Vec<u32>,
     /// The length of each pattern. This is used to compute the start offset
     /// of a match.
     pattern_lens: Vec<SmallIndex>,
@@ -110,15 +120,27 @@ pub struct DFA {
     /// The total number of states in this DFA.
     state_len: usize,
     /// The alphabet size, or total number of equivalence classes, for this
-    /// DFA. Note that the actual number of transitions in each state is
-    /// stride=2^stride2, where stride is the smallest power of 2 greater than
-    /// or equal to alphabet_len. We do things this way so that we can use
-    /// bitshifting to go from a state ID to an index into 'matches'.
+    /// DFA.
     alphabet_len: usize,
-    /// The exponent with a base 2, such that stride=2^stride2. Given a state
-    /// index 'i', its state identifier is 'i << stride2'. Given a state
-    /// identifier 'sid', its state index is 'sid >> stride2'.
-    stride2: usize,
+    /// The stride: the number of transitions in each state's row of the
+    /// transition table. Given a state index 'i', its state identifier is
+    /// 'i * stride'. Given a state identifier 'sid', its state index is
+    /// 'sid / stride'.
+    ///
+    /// For a small transition table (which is usually cache resident), this
+    /// is 'alphabet_len' rounded up to a power of 2, which keeps every row
+    /// aligned to (and thus within) as few cache lines as possible. For a
+    /// big table, this is exactly 'alphabet_len': the (up to ~2x) memory
+    /// saved matters much more there, since search speed is then dominated
+    /// by cache misses that a smaller table alleviates.
+    stride: usize,
+    /// The constants used to recover a state index from a (premultiplied)
+    /// state ID without a division: with 'stride = 2^stride_shift * odd' and
+    /// 'stride_inv = odd^-1 mod 2^32', the index of 'sid' is
+    /// '(sid >> stride_shift) * stride_inv mod 2^32'. This is exact because
+    /// a state ID is always an exact multiple of the stride.
+    stride_shift: u32,
+    stride_inv: u32,
     /// The equivalence classes for this DFA. All transitions are defined on
     /// equivalence classes and not on the 256 distinct byte values.
     byte_classes: ByteClasses,
@@ -166,20 +188,44 @@ impl DFA {
     /// than the NFAs in this crate.
     const DEAD: StateID = StateID::new_unchecked(0);
 
-    /// Adds the given pattern IDs as matches to the given state and also
-    /// records the added memory usage.
+    /// Returns the index of the state with the given (premultiplied) ID.
+    ///
+    /// Since state IDs are premultiplied by the stride, this is a division
+    /// by the stride. The stride isn't necessarily a power of 2, but the
+    /// division is always exact (IDs are exact multiples of the stride), so
+    /// it can be done with a shift and a multiplication by the inverse of
+    /// the stride's odd factor, both precomputed at build time. This matters
+    /// because this is called for every match found by a search: an actual
+    /// division here measurably slows down match-heavy workloads.
+    #[inline(always)]
+    fn state_index(&self, sid: StateID) -> usize {
+        (sid.as_u32() >> self.stride_shift)
+            .wrapping_mul(self.stride_inv)
+            .as_usize()
+    }
+
+    /// Adds the given pattern IDs as matches to the given state.
+    ///
+    /// This must be called for match states in ascending order of state
+    /// index, since the pattern IDs are appended to a single contiguous
+    /// allocation shared by all match states.
     fn set_matches(
         &mut self,
         sid: StateID,
         pids: impl Iterator<Item = PatternID>,
     ) {
-        let index = (sid.as_usize() >> self.stride2).checked_sub(2).unwrap();
+        let index = self.state_index(sid).checked_sub(2).unwrap();
+        assert_eq!(
+            self.match_offsets[index].as_usize(),
+            self.matches.len(),
+            "match states must be set in ascending order",
+        );
         let mut at_least_one = false;
         for pid in pids {
-            self.matches[index].push(pid);
-            self.matches_memory_usage += PatternID::SIZE;
+            self.matches.push(pid);
             at_least_one = true;
         }
+        self.match_offsets[index + 1] = self.matches.len().as_u32();
         assert!(at_least_one, "match state must have non-empty pids");
     }
 }
@@ -274,15 +320,18 @@ unsafe impl Automaton for DFA {
     #[inline(always)]
     fn match_len(&self, sid: StateID) -> usize {
         debug_assert!(self.is_match(sid));
-        let offset = (sid.as_usize() >> self.stride2) - 2;
-        self.matches[offset].len()
+        let offset = self.state_index(sid) - 2;
+        (self.match_offsets[offset + 1] - self.match_offsets[offset])
+            .as_usize()
     }
 
     #[inline(always)]
     fn match_pattern(&self, sid: StateID, index: usize) -> PatternID {
         debug_assert!(self.is_match(sid));
-        let offset = (sid.as_usize() >> self.stride2) - 2;
-        self.matches[offset][index]
+        let offset = self.state_index(sid) - 2;
+        let start = self.match_offsets[offset].as_usize();
+        let end = self.match_offsets[offset + 1].as_usize();
+        self.matches[start..end][index]
     }
 
     #[inline(always)]
@@ -290,8 +339,8 @@ unsafe impl Automaton for DFA {
         use core::mem::size_of;
 
         (self.trans.len() * size_of::<u32>())
-            + (self.matches.len() * size_of::<Vec<PatternID>>())
-            + self.matches_memory_usage
+            + (self.matches.len() * PatternID::SIZE)
+            + (self.match_offsets.len() * size_of::<u32>())
             + (self.pattern_lens.len() * size_of::<SmallIndex>())
             + self.prefilter.as_ref().map_or(0, |p| p.memory_usage())
     }
@@ -311,7 +360,7 @@ impl core::fmt::Debug for DFA {
 
         writeln!(f, "dfa::DFA(")?;
         for index in 0..self.state_len {
-            let sid = StateID::new_unchecked(index << self.stride2);
+            let sid = StateID::new_unchecked(index * self.stride);
             // While we do currently include the FAIL state in the transition
             // table (to simplify construction), it is never actually used. It
             // poses problems with the code below because it gets treated as
@@ -372,7 +421,7 @@ impl core::fmt::Debug for DFA {
         writeln!(f, "shortest pattern length: {:?}", self.min_pattern_len)?;
         writeln!(f, "longest pattern length: {:?}", self.max_pattern_len)?;
         writeln!(f, "alphabet length: {:?}", self.alphabet_len)?;
-        writeln!(f, "stride: {:?}", 1 << self.stride2)?;
+        writeln!(f, "stride: {:?}", self.stride)?;
         writeln!(f, "byte classes: {:?}", self.byte_classes)?;
         writeln!(f, "memory usage: {:?}", self.memory_usage())?;
         writeln!(f, ")")?;
@@ -459,23 +508,39 @@ impl Builder {
                     .unwrap()
             }
         };
-        let trans_len =
-            match state_len.checked_shl(byte_classes.stride2().as_u32()) {
-                Some(trans_len) => trans_len,
-                None => {
-                    return Err(BuildError::state_id_overflow(
-                        StateID::MAX.as_u64(),
-                        usize::MAX.as_u64(),
-                    ))
-                }
-            };
-        StateID::new(trans_len.checked_sub(byte_classes.stride()).unwrap())
-            .map_err(|e| {
-                BuildError::state_id_overflow(
+        // Small transition tables are usually cache resident, where keeping
+        // every row cache-line aligned (by rounding the stride up to a power
+        // of 2) measurably helps search speed and the padding costs at most
+        // 64KB. For bigger tables, an exact stride can shrink the table by
+        // up to ~2x, which matters much more: their search speed is
+        // dominated by cache misses, which a smaller table alleviates.
+        let stride = {
+            let pow2 = byte_classes.alphabet_len().next_power_of_two();
+            let pow2_table_bytes = state_len
+                .checked_mul(pow2)
+                .and_then(|len| len.checked_mul(StateID::SIZE));
+            match pow2_table_bytes {
+                Some(bytes) if bytes <= 128 * 1024 => pow2,
+                _ => byte_classes.alphabet_len(),
+            }
+        };
+        // The constants for recovering a state index from a premultiplied
+        // state ID with a shift and a multiplication instead of a division.
+        // See 'DFA::state_index' for how they are used.
+        let stride_shift = stride.trailing_zeros();
+        let stride_inv = mod32_inverse((stride >> stride_shift).as_u32());
+        let trans_len = match state_len.checked_mul(stride) {
+            Some(trans_len) => trans_len,
+            None => {
+                return Err(BuildError::state_id_overflow(
                     StateID::MAX.as_u64(),
-                    e.attempted(),
-                )
-            })?;
+                    usize::MAX.as_u64(),
+                ))
+            }
+        };
+        StateID::new(trans_len.checked_sub(stride).unwrap()).map_err(|e| {
+            BuildError::state_id_overflow(StateID::MAX.as_u64(), e.attempted())
+        })?;
         let num_match_states = match self.start_kind {
             StartKind::Unanchored | StartKind::Anchored => {
                 nnfa.special().max_match_id.as_usize().checked_sub(1).unwrap()
@@ -491,14 +556,16 @@ impl Builder {
         };
         let mut dfa = DFA {
             trans: vec![DFA::DEAD; trans_len],
-            matches: vec![vec![]; num_match_states],
-            matches_memory_usage: 0,
+            matches: vec![],
+            match_offsets: vec![0; num_match_states + 1],
             pattern_lens: nnfa.pattern_lens_raw().to_vec(),
             prefilter: nnfa.prefilter().cloned(),
             match_kind: nnfa.match_kind(),
             state_len,
             alphabet_len: byte_classes.alphabet_len(),
-            stride2: byte_classes.stride2(),
+            stride,
+            stride_shift,
+            stride_inv,
             byte_classes,
             min_pattern_len: nnfa.min_pattern_len(),
             max_pattern_len: nnfa.max_pattern_len(),
@@ -522,20 +589,29 @@ impl Builder {
             dfa.state_len,
             dfa.memory_usage(),
             dfa.byte_classes.alphabet_len(),
-            dfa.byte_classes.stride(),
+            dfa.stride,
         );
+        // For 'StartKind::Both' when the empty pattern is one of the patterns
+        // given, the number of match states allocated above can exceed the
+        // number of match states actually created. (This is because the start
+        // states are match states in that case, but are not duplicated like
+        // other match states are.) The offsets of any unused trailing slots
+        // are never set above, so we set them here such that they would
+        // correspond to empty slices of 'dfa.matches'. (They should never be
+        // read, since the slots don't correspond to any match state, but this
+        // way, the invariant 'match_offsets[i] <= match_offsets[i + 1]' holds
+        // for the entire table.)
+        for i in 1..dfa.match_offsets.len() {
+            if dfa.match_offsets[i] < dfa.match_offsets[i - 1] {
+                dfa.match_offsets[i] = dfa.match_offsets[i - 1];
+            }
+        }
         // The vectors can grow ~twice as big during construction because a
         // Vec amortizes growth. But here, let's shrink things back down to
         // what we actually need since we're never going to add more to it.
         dfa.trans.shrink_to_fit();
         dfa.pattern_lens.shrink_to_fit();
         dfa.matches.shrink_to_fit();
-        // TODO: We might also want to shrink each Vec inside of `dfa.matches`,
-        // or even better, convert it to one contiguous allocation. But I think
-        // I went with nested allocs for good reason (can't remember), so this
-        // may be tricky to do. I decided not to shrink them here because it
-        // might require a fair bit of work to do. It's unclear whether it's
-        // worth it.
         Ok(dfa)
     }
 
@@ -549,9 +625,9 @@ impl Builder {
     ) {
         // This function always succeeds because we check above that all of the
         // states in the NFA can be mapped to DFA state IDs.
-        let stride2 = dfa.stride2;
+        let stride = dfa.stride;
         let old2new = |oldsid: StateID| {
-            StateID::new_unchecked(oldsid.as_usize() << stride2)
+            StateID::new_unchecked(oldsid.as_usize() * stride)
         };
         for (oldsid, state) in nnfa.states().iter().with_state_ids() {
             let newsid = old2new(oldsid);
@@ -619,8 +695,7 @@ impl Builder {
         nnfa: &noncontiguous::NFA,
         dfa: &mut DFA,
     ) {
-        let stride2 = dfa.stride2;
-        let stride = 1 << stride2;
+        let stride = dfa.stride;
         let mut remap_unanchored = vec![DFA::DEAD; nnfa.states().len()];
         let mut remap_anchored = vec![DFA::DEAD; nnfa.states().len()];
         let mut is_anchored = vec![false; dfa.state_len];
@@ -643,7 +718,7 @@ impl Builder {
                 } else {
                     remap_unanchored[oldsid] = DFA::DEAD;
                     remap_anchored[oldsid] = newsid;
-                    is_anchored[newsid.as_usize() >> stride2] = true;
+                    is_anchored[newsid.as_usize() / stride] = true;
                 }
                 if state.is_match() {
                     dfa.set_matches(newsid, nnfa.iter_matches(oldsid));
@@ -670,7 +745,7 @@ impl Builder {
 
                 remap_unanchored[oldsid] = unewsid;
                 remap_anchored[oldsid] = anewsid;
-                is_anchored[anewsid.as_usize() >> stride2] = true;
+                is_anchored[anewsid.as_usize() / stride] = true;
                 if state.is_match() {
                     dfa.set_matches(unewsid, nnfa.iter_matches(oldsid));
                     dfa.set_matches(anewsid, nnfa.iter_matches(oldsid));
@@ -702,7 +777,7 @@ impl Builder {
             }
         }
         for i in 0..dfa.state_len {
-            let sid = i << stride2;
+            let sid = i * stride;
             if is_anchored[i] {
                 for next in dfa.trans[sid..][..stride].iter_mut() {
                     *next = remap_anchored[*next];
@@ -787,6 +862,24 @@ impl Builder {
         self.byte_classes = yes;
         self
     }
+}
+
+/// Returns the multiplicative inverse of `n` modulo `2^32`, where `n` must
+/// be odd (an inverse only exists for odd numbers).
+///
+/// This uses Newton's method: starting from an approximation `x` of the
+/// inverse that is correct on its lowest `k` bits, `x * (2 - n * x)` is
+/// correct on its lowest `2k` bits. `x = n` is always correct on the lowest
+/// 3 bits (for odd `n`, `n * n = 1 mod 8`), so five iterations are enough
+/// to be correct on all 32 bits.
+fn mod32_inverse(n: u32) -> u32 {
+    assert_eq!(n % 2, 1, "multiplicative inverse requires an odd number");
+    let mut inv = n;
+    for _ in 0..5 {
+        inv = inv.wrapping_mul(2u32.wrapping_sub(n.wrapping_mul(inv)));
+    }
+    debug_assert_eq!(n.wrapping_mul(inv), 1);
+    inv
 }
 
 /// Iterate over all possible equivalence class transitions in this state.
