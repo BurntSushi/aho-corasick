@@ -860,7 +860,11 @@ impl<const BUCKETS: usize> Teddy<BUCKETS> {
             // construction.
             debug_assert!(pid.as_usize() < self.patterns.len());
             let pat = self.patterns.get_unchecked(pid);
-            if pat.is_prefix_raw(cur, end) {
+            if pat.is_prefix_raw(
+                cur,
+                end,
+                self.patterns.is_ascii_case_insensitive(),
+            ) {
                 let start = cur;
                 let end = start.add(pat.len());
                 return Some(Match { pid, start, end });
@@ -1245,7 +1249,19 @@ impl SlimMaskBuilder {
             for pid in bucket.iter().copied() {
                 let pat = teddy.patterns.get(pid);
                 for (i, builder) in mask_builders.iter_mut().enumerate() {
-                    builder.add(bucket_index, pat.bytes()[i]);
+                    let byte = pat.bytes()[i];
+                    builder.add(bucket_index, byte);
+                    // ASCII case differs only in bit 5, which lives in the
+                    // HIGH nibble -- so the low-nibble entry is already
+                    // shared by both cases and this widens only the high
+                    // one. Setting extra mask bits can admit more candidate
+                    // positions but never fewer, and `verify_bucket` rejects
+                    // the extras, so the prefilter stays sound.
+                    if teddy.patterns.is_ascii_case_insensitive()
+                        && byte.is_ascii_alphabetic()
+                    {
+                        builder.add(bucket_index, byte ^ 0x20);
+                    }
                 }
             }
         }
@@ -1357,7 +1373,19 @@ impl FatMaskBuilder {
             for pid in bucket.iter().copied() {
                 let pat = teddy.patterns.get(pid);
                 for (i, builder) in mask_builders.iter_mut().enumerate() {
-                    builder.add(bucket_index, pat.bytes()[i]);
+                    let byte = pat.bytes()[i];
+                    builder.add(bucket_index, byte);
+                    // ASCII case differs only in bit 5, which lives in the
+                    // HIGH nibble -- so the low-nibble entry is already
+                    // shared by both cases and this widens only the high
+                    // one. Setting extra mask bits can admit more candidate
+                    // positions but never fewer, and `verify_bucket` rejects
+                    // the extras, so the prefilter stays sound.
+                    if teddy.patterns.is_ascii_case_insensitive()
+                        && byte.is_ascii_alphabetic()
+                    {
+                        builder.add(bucket_index, byte ^ 0x20);
+                    }
                 }
             }
         }

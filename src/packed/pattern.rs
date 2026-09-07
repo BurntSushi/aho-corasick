@@ -38,6 +38,13 @@ pub(crate) struct Patterns {
     /// The total number of pattern bytes across the entire collection. This
     /// is used for reporting total heap usage in constant time.
     total_pattern_bytes: usize,
+    /// Whether ASCII letters in these patterns match either case.
+    ///
+    /// This is carried here because verification of a candidate reported by a
+    /// packed searcher compares raw pattern bytes against the haystack, and
+    /// that comparison has to agree with whatever case semantics the masks
+    /// were built for. See `Pattern::is_prefix_raw`.
+    ascii_case_insensitive: bool,
 }
 
 // BREADCRUMBS: I think we want to experiment with a different bucket
@@ -61,7 +68,21 @@ impl Patterns {
             order: vec![],
             minimum_len: usize::MAX,
             total_pattern_bytes: 0,
+            ascii_case_insensitive: false,
         }
+    }
+
+    /// Enable ASCII-aware case insensitive matching for these patterns.
+    ///
+    /// This must be set before the packed searcher builds its masks, since
+    /// both the masks and candidate verification depend on it.
+    pub(crate) fn set_ascii_case_insensitive(&mut self, yes: bool) {
+        self.ascii_case_insensitive = yes;
+    }
+
+    /// Whether ASCII letters in these patterns match either case.
+    pub(crate) fn is_ascii_case_insensitive(&self) -> bool {
+        self.ascii_case_insensitive
     }
 
     /// Add a pattern to this collection.
@@ -123,6 +144,9 @@ impl Patterns {
         self.by_id.clear();
         self.order.clear();
         self.minimum_len = usize::MAX;
+        // Case semantics belong to the pattern set, so a reused collection
+        // must not inherit them from the previous one.
+        self.ascii_case_insensitive = false;
     }
 
     /// Returns the length, in bytes, of the smallest pattern.
@@ -266,6 +290,7 @@ impl<'p> Pattern<'p> {
         &self,
         start: *const u8,
         end: *const u8,
+        ascii_case_insensitive: bool,
     ) -> bool {
         let patlen = self.bytes().len();
         let haylen = end.distance(start);
@@ -275,7 +300,23 @@ impl<'p> Pattern<'p> {
         // SAFETY: We've checked that the haystack has length at least equal
         // to this pattern. All other safety concerns are the responsibility
         // of the caller.
-        is_equal_raw(start, self.bytes().as_ptr(), patlen)
+        if !ascii_case_insensitive {
+            return is_equal_raw(start, self.bytes().as_ptr(), patlen);
+        }
+        // Case-folded comparison, which must agree with how the packed masks
+        // were built: ASCII letters match either case, everything else is
+        // compared exactly. `to_ascii_lowercase` is the identity on
+        // non-letters, so one branch covers both -- and it must stay that
+        // way, since `@`/`` ` ``, `[`/`{`, `]`/`}`, `^`/`~` and `_`/DEL each
+        // differ only in the case bit without being letters.
+        for i in 0..patlen {
+            let hay = start.add(i).read();
+            let pat = *self.bytes().get_unchecked(i);
+            if hay.to_ascii_lowercase() != pat.to_ascii_lowercase() {
+                return false;
+            }
+        }
+        true
     }
 }
 

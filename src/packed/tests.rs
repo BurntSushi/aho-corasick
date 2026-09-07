@@ -581,3 +581,299 @@ fn run_search_tests<F: FnMut(&SearchTestOwned) -> Option<Vec<Match>>>(
         }
     }
 }
+
+/// Tests for ASCII case insensitive packed searching.
+///
+/// These check the property a packed searcher may not violate: it reports
+/// exactly the leftmost-first case folded matches. A false negative loses a
+/// match outright and a false positive invents one, since this searcher
+/// reports matches rather than candidates.
+mod caseless {
+    use alloc::{vec, vec::Vec};
+
+    use crate::{
+        packed::{Config, MatchKind},
+        AhoCorasick, Input,
+    };
+
+    /// Deterministic xorshift, so a failure reproduces from its seed alone.
+    struct Rng(u64);
+
+    impl Rng {
+        fn next(&mut self) -> u64 {
+            let mut x = self.0;
+            x ^= x << 13;
+            x ^= x >> 7;
+            x ^= x << 17;
+            self.0 = x;
+            x
+        }
+
+        fn below(&mut self, n: usize) -> usize {
+            (self.next() % (n as u64)) as usize
+        }
+    }
+
+    /// Brute force leftmost-first case folded search. Deliberately the
+    /// simplest thing that could work, sharing no machinery with the code
+    /// under test.
+    fn reference(pats: &[Vec<u8>], hay: &[u8]) -> Vec<(usize, usize)> {
+        let fold = |b: &u8| b.to_ascii_lowercase();
+        let folded: Vec<Vec<u8>> =
+            pats.iter().map(|p| p.iter().map(fold).collect()).collect();
+        let mut out = vec![];
+        let mut at = 0;
+        'outer: while at < hay.len() {
+            for (pid, p) in folded.iter().enumerate() {
+                if at + p.len() <= hay.len()
+                    && hay[at..at + p.len()]
+                        .iter()
+                        .map(fold)
+                        .eq(p.iter().copied())
+                {
+                    out.push((pid, at));
+                    at += p.len();
+                    continue 'outer;
+                }
+            }
+            at += 1;
+        }
+        out
+    }
+
+    /// Random mixed case ASCII word of length `lo..lo+span`.
+    fn word(rng: &mut Rng, lo: usize, span: usize) -> Vec<u8> {
+        let len = lo + rng.below(span);
+        (0..len)
+            .map(|_| {
+                let c =
+                    b"abcdefghijklmnopqrstuvwxyz0123456789_-"[rng.below(38)];
+                if rng.below(2) == 0 {
+                    c.to_ascii_uppercase()
+                } else {
+                    c
+                }
+            })
+            .collect()
+    }
+
+    /// Whether a packed searcher can be built on this target at all. Teddy
+    /// needs SIMD, and where it is unavailable every packed assertion below
+    /// is vacuous rather than failing.
+    fn packed_is_available() -> bool {
+        Config::new()
+            .ascii_case_insensitive(true)
+            .builder()
+            .add("abcdefgh")
+            .build()
+            .is_some()
+    }
+
+    fn packed_matches(
+        pats: &[Vec<u8>],
+        hay: &[u8],
+    ) -> Option<Vec<(usize, usize)>> {
+        let searcher = Config::new()
+            .match_kind(MatchKind::LeftmostFirst)
+            .ascii_case_insensitive(true)
+            .builder()
+            .extend(pats.iter())
+            .build()?;
+        Some(
+            searcher
+                .find_iter(hay)
+                .map(|m| (m.pattern().as_usize(), m.start()))
+                .collect(),
+        )
+    }
+
+    #[test]
+    fn matches_reference() {
+        let mut rng = Rng(0x9E3779B97F4A7C15);
+        let mut checked = 0usize;
+        for round in 0..2000 {
+            let npats = 1 + rng.below(6);
+            let pats: Vec<Vec<u8>> =
+                (0..npats).map(|_| word(&mut rng, 2, 11)).collect();
+
+            // Random filler with pattern occurrences spliced in at random
+            // cases, so real matches exist and straddle vector lanes.
+            let mut hay = vec![];
+            for _ in 0..(20 + rng.below(400)) {
+                if rng.below(3) == 0 {
+                    let p = &pats[rng.below(pats.len())];
+                    hay.extend(p.iter().map(|&b| {
+                        if rng.below(2) == 0 {
+                            b.to_ascii_uppercase()
+                        } else {
+                            b.to_ascii_lowercase()
+                        }
+                    }));
+                } else {
+                    hay.extend(word(&mut rng, 1, 6));
+                }
+            }
+            let want = reference(&pats, &hay);
+
+            if let Some(got) = packed_matches(&pats, &hay) {
+                assert_eq!(want, got, "packed, round {}", round);
+                checked += 1;
+            }
+
+            let ac = AhoCorasick::builder()
+                .match_kind(crate::MatchKind::LeftmostFirst)
+                .ascii_case_insensitive(true)
+                .build(&pats)
+                .unwrap();
+            let got: Vec<(usize, usize)> = ac
+                .find_iter(Input::new(&hay))
+                .map(|m| (m.pattern().as_usize(), m.start()))
+                .collect();
+            assert_eq!(want, got, "automaton, round {}", round);
+        }
+        if packed_is_available() {
+            assert!(checked > 500, "packed built in only {} rounds", checked);
+        }
+    }
+
+    #[test]
+    fn short_haystacks_use_rabinkarp() {
+        // Haystacks below Teddy's minimum fall through to Rabin-Karp, whose
+        // hash and verifier are case folded separately from the masks.
+        let mut rng = Rng(0xDEADBEEFCAFEF00D);
+        for round in 0..3000 {
+            let pats: Vec<Vec<u8>> =
+                (0..1 + rng.below(3)).map(|_| word(&mut rng, 2, 4)).collect();
+            let hay = word(&mut rng, 1, 24);
+            let want = reference(&pats, &hay);
+            if let Some(got) = packed_matches(&pats, &hay) {
+                assert_eq!(want, got, "round {}", round);
+            }
+        }
+    }
+
+    #[test]
+    fn unifies_only_ascii_letters() {
+        // Case folding must unify a byte pair only when both are ASCII
+        // letters differing in the case bit. `@`/`` ` ``, `[`/`{`, `]`/`}`,
+        // `^`/`~`, `_`/DEL and 0x10/0x30 differ solely in bit 5 without being
+        // letters, and must stay distinct -- which is what an unconditional
+        // 0xDF mask or 0x20 xor would get wrong.
+        for c in 0..=255u8 {
+            for bitpos in 0..8u32 {
+                let bit = 1u8 << bitpos;
+                let alt = c ^ bit;
+                let unify = c.is_ascii_alphabetic()
+                    && bit == 0x20
+                    && alt.is_ascii_alphabetic();
+                for len in [1usize, 2, 4, 8] {
+                    let pats = vec![vec![c; len]];
+                    let hay = vec![alt; 1024];
+                    if let Some(got) = packed_matches(&pats, &hay) {
+                        let want = if unify { 1024 / len } else { 0 };
+                        assert_eq!(
+                            want,
+                            got.len(),
+                            "c={:#04x} alt={:#04x} bit={:#04x} len={}",
+                            c,
+                            alt,
+                            bit,
+                            len
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn floods() {
+        // A flood drives the candidate rate to 100%, so verification runs at
+        // every position instead of being skipped by the prefilter.
+        for c in [b'a', b'z', b'A', b'Z', b'0', b'@', b'[', b'_', 0x00, 0xFF] {
+            for len in [1usize, 2, 3, 5, 8, 13] {
+                let pat: Vec<u8> = (0..len)
+                    .map(|i| if i % 2 == 0 { c } else { c ^ 0x20 })
+                    .collect();
+                for hay_byte in [c, c ^ 0x20] {
+                    let hay = vec![hay_byte; 512];
+                    let pats = vec![pat.clone()];
+                    let want = reference(&pats, &hay);
+                    if let Some(got) = packed_matches(&pats, &hay) {
+                        assert_eq!(
+                            want, got,
+                            "c={:#04x} hay={:#04x}",
+                            c, hay_byte
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn alignment_sweep() {
+        // Sweep every alignment of the haystack against the vector loop at
+        // both ends, since a mask bug can hide entirely in the unaligned
+        // head or tail scan.
+        let pats = vec![b"CaDdY".to_vec()];
+        let mut hay = vec![b'.'; 2048];
+        for i in (0..2000).step_by(37) {
+            for (k, b) in b"caddy".iter().enumerate() {
+                hay[i + k] = if (i / 37) % 2 == 0 {
+                    b.to_ascii_uppercase()
+                } else {
+                    *b
+                };
+            }
+        }
+        for head in 0..32usize {
+            for tail in 0..32usize {
+                let slice = &hay[head..hay.len() - tail];
+                let want = reference(&pats, slice);
+                if let Some(got) = packed_matches(&pats, slice) {
+                    assert_eq!(want, got, "head={} tail={}", head, tail);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn case_sensitive_is_unchanged() {
+        // The change must be inert when case insensitivity is off.
+        let mut rng = Rng(0x123456789ABCDEF);
+        for _ in 0..2000 {
+            let pats: Vec<Vec<u8>> =
+                (0..1 + rng.below(5)).map(|_| word(&mut rng, 2, 8)).collect();
+            let mut hay = vec![];
+            for _ in 0..(20 + rng.below(200)) {
+                if rng.below(3) == 0 {
+                    hay.extend(pats[rng.below(pats.len())].iter().copied());
+                } else {
+                    hay.extend(word(&mut rng, 1, 5));
+                }
+            }
+            let mut want: Vec<(usize, usize)> = vec![];
+            let mut at = 0;
+            'outer: while at < hay.len() {
+                for (pid, p) in pats.iter().enumerate() {
+                    if hay[at..].starts_with(p) {
+                        want.push((pid, at));
+                        at += p.len();
+                        continue 'outer;
+                    }
+                }
+                at += 1;
+            }
+            let ac = AhoCorasick::builder()
+                .match_kind(crate::MatchKind::LeftmostFirst)
+                .build(&pats)
+                .unwrap();
+            let got: Vec<(usize, usize)> = ac
+                .find_iter(Input::new(&hay))
+                .map(|m| (m.pattern().as_usize(), m.start()))
+                .collect();
+            assert_eq!(want, got);
+        }
+    }
+}

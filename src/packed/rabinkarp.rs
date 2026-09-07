@@ -139,10 +139,34 @@ impl RabinKarp {
         at: usize,
     ) -> Option<Match> {
         let pat = self.patterns.get(id);
-        if pat.is_prefix(&haystack[at..]) {
+        let hay = &haystack[at..];
+        let hit = if self.patterns.is_ascii_case_insensitive() {
+            let bytes = pat.bytes();
+            hay.len() >= bytes.len()
+                && hay.iter().zip(bytes).all(|(&h, &p)| {
+                    h.to_ascii_lowercase() == p.to_ascii_lowercase()
+                })
+        } else {
+            pat.is_prefix(hay)
+        };
+        if hit {
             Some(Match::new(id, at..at + pat.len()))
         } else {
             None
+        }
+    }
+
+    /// Fold a byte to the case the hash is computed in.
+    ///
+    /// Case-insensitive patterns must hash to the same value as any haystack
+    /// window that matches them, so both sides go through this. It is the
+    /// identity for non-letters and when case sensitivity is on.
+    #[inline(always)]
+    fn fold(&self, b: u8) -> u8 {
+        if self.patterns.is_ascii_case_insensitive() {
+            b.to_ascii_lowercase()
+        } else {
+            b
         }
     }
 
@@ -152,7 +176,7 @@ impl RabinKarp {
 
         let mut hash = 0usize;
         for &b in bytes {
-            hash = hash.wrapping_shl(1).wrapping_add(b as usize);
+            hash = hash.wrapping_shl(1).wrapping_add(self.fold(b) as usize);
         }
         hash
     }
@@ -161,8 +185,10 @@ impl RabinKarp {
     /// of some byte string, and appending `new_byte` to the end of that same
     /// byte string.
     fn update_hash(&self, prev: Hash, old_byte: u8, new_byte: u8) -> Hash {
-        prev.wrapping_sub((old_byte as usize).wrapping_mul(self.hash_2pow))
-            .wrapping_shl(1)
-            .wrapping_add(new_byte as usize)
+        prev.wrapping_sub(
+            (self.fold(old_byte) as usize).wrapping_mul(self.hash_2pow),
+        )
+        .wrapping_shl(1)
+        .wrapping_add(self.fold(new_byte) as usize)
     }
 }
