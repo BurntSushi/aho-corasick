@@ -90,6 +90,7 @@ pub struct Config {
     only_teddy_fat: Option<bool>,
     only_teddy_256bit: Option<bool>,
     heuristic_pattern_limits: bool,
+    ascii_case_insensitive: bool,
 }
 
 /// An internal option for forcing the use of a particular packed algorithm.
@@ -119,6 +120,7 @@ impl Config {
             only_teddy_fat: None,
             only_teddy_256bit: None,
             heuristic_pattern_limits: true,
+            ascii_case_insensitive: false,
         }
     }
 
@@ -197,6 +199,20 @@ impl Config {
         self.heuristic_pattern_limits = yes;
         self
     }
+
+    /// Enable ASCII-aware case insensitive matching.
+    ///
+    /// When enabled, ASCII letters in the patterns match either case. This
+    /// costs nothing at search time: the case bit (0x20) lives in a byte's
+    /// high nibble, so a case-insensitive pattern shares its low-nibble mask
+    /// entry with its other case and only widens the high-nibble entry.
+    /// Candidate verification case-folds to match.
+    ///
+    /// This is disabled by default.
+    pub fn ascii_case_insensitive(&mut self, yes: bool) -> &mut Config {
+        self.ascii_case_insensitive = yes;
+        self
+    }
 }
 
 /// A builder for constructing a packed searcher from a collection of patterns.
@@ -249,6 +265,15 @@ impl Builder {
         Builder { config, inert: false, patterns: Patterns::new() }
     }
 
+    /// Enable ASCII-aware case insensitive matching for this builder.
+    ///
+    /// May be called at any point before `build`, since it only takes effect
+    /// when the masks and verifier are constructed there.
+    pub fn ascii_case_insensitive(&mut self, yes: bool) -> &mut Builder {
+        self.config.ascii_case_insensitive = yes;
+        self
+    }
+
     /// Build a searcher from the patterns added to this builder so far.
     pub fn build(&self) -> Option<Searcher> {
         if self.inert || self.patterns.is_empty() {
@@ -256,6 +281,8 @@ impl Builder {
         }
         let mut patterns = self.patterns.clone();
         patterns.set_match_kind(self.config.kind);
+        patterns
+            .set_ascii_case_insensitive(self.config.ascii_case_insensitive);
         let patterns = Arc::new(patterns);
         let rabinkarp = RabinKarp::new(&patterns);
         // Effectively, we only want to return a searcher if we can use Teddy,

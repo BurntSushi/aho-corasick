@@ -152,6 +152,9 @@ impl Builder {
         self.ascii_case_insensitive = yes;
         self.start_bytes = self.start_bytes.ascii_case_insensitive(yes);
         self.rare_bytes = self.rare_bytes.ascii_case_insensitive(yes);
+        if let Some(ref mut p) = self.packed {
+            p.ascii_case_insensitive(yes);
+        }
         self
     }
 
@@ -177,9 +180,12 @@ impl Builder {
                 return Some(pre);
             }
         }
-        let (packed, patlen, minlen) = if self.ascii_case_insensitive {
-            (None, usize::MAX, 0)
-        } else {
+        // The packed searcher now handles ASCII case insensitivity itself:
+        // its nibble masks admit both cases of a letter (the case bit lives
+        // in the high nibble, so only that half widens) and verification
+        // case-folds to match. So there is no longer a reason to decline it
+        // here.
+        let (packed, patlen, minlen) = {
             let patlen = self.packed.as_ref().map_or(usize::MAX, |p| p.len());
             let minlen = self.packed.as_ref().map_or(0, |p| p.minimum_len());
             let packed =
@@ -284,13 +290,6 @@ impl Builder {
                      so using rare byte prefilter",
                 );
                 prerare
-            }
-            (None, None) if self.ascii_case_insensitive => {
-                debug!(
-                    "no start or rare byte prefilter and ASCII case \
-                     insensitivity was enabled, so skipping prefilter",
-                );
-                None
             }
             (None, None) => {
                 if packed.is_some() {
