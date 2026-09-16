@@ -351,7 +351,12 @@ impl<'h> Input<'h> {
     /// This routine will panic if the given range could not be converted
     /// to a valid [`Range`]. For example, this would panic when given
     /// `0..=usize::MAX` since it cannot be represented using a half-open
-    /// interval in terms of `usize`.
+    /// interval in terms of `usize`. The same is true for the symmetric
+    /// start-bound case: a range whose start bound is
+    /// `Bound::Excluded(usize::MAX)` panics, since there is no representable
+    /// half-open start position after `usize::MAX`. Note that while range
+    /// syntax cannot produce such a bound, any custom `RangeBounds`
+    /// implementation can, and it is not specially handled.
     ///
     /// This routine also panics if the given range does not correspond to
     /// valid bounds in the haystack or the termination of a search.
