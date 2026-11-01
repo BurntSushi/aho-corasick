@@ -154,8 +154,10 @@ impl<'h> Input<'h> {
     ///
     /// This routine will panic if the given range could not be converted
     /// to a valid [`Range`]. For example, this would panic when given
-    /// `0..=usize::MAX` since it cannot be represented using a half-open
-    /// interval in terms of `usize`.
+    /// `0..=usize::MAX` (end bound is `Bound::Included(usize::MAX)`) or when
+    /// the start bound is `Bound::Excluded(usize::MAX)` via a custom
+    /// [`RangeBounds`] implementation, since neither can be represented using a
+    /// half-open interval in terms of `usize`.
     ///
     /// This routine also panics if the given range does not correspond to
     /// valid bounds in the haystack or the termination of a search.
@@ -350,8 +352,10 @@ impl<'h> Input<'h> {
     ///
     /// This routine will panic if the given range could not be converted
     /// to a valid [`Range`]. For example, this would panic when given
-    /// `0..=usize::MAX` since it cannot be represented using a half-open
-    /// interval in terms of `usize`.
+    /// `0..=usize::MAX` (end bound is `Bound::Included(usize::MAX)`) or when
+    /// the start bound is `Bound::Excluded(usize::MAX)` via a custom
+    /// [`RangeBounds`] implementation, since neither can be represented using a
+    /// half-open interval in terms of `usize`.
     ///
     /// This routine also panics if the given range does not correspond to
     /// valid bounds in the haystack or the termination of a search.
@@ -376,7 +380,8 @@ impl<'h> Input<'h> {
         // internal. Therefore, handling things like m..=n is a little awkward.
         let start = match range.start_bound() {
             Bound::Included(&i) => i,
-            // Can this case ever happen? Range syntax doesn't support it...
+            // Range syntax doesn't support excluded start bounds, but custom
+            // `RangeBounds` implementations can provide one.
             Bound::Excluded(&i) => i.checked_add(1).unwrap(),
             Bound::Unbounded => 0,
         };
