@@ -1662,3 +1662,25 @@ fn regression_stream_rare_byte_prefilter() {
 
     run().unwrap()
 }
+
+#[test]
+#[should_panic]
+fn input_set_range_excluded_max_panics() {
+    use core::ops::{Bound, RangeBounds};
+
+    struct ExcludedMaxStart;
+
+    impl RangeBounds<usize> for ExcludedMaxStart {
+        fn start_bound(&self) -> Bound<&usize> {
+            static MAX: usize = usize::MAX;
+            Bound::Excluded(&MAX)
+        }
+
+        fn end_bound(&self) -> Bound<&usize> {
+            Bound::Unbounded
+        }
+    }
+
+    let mut input = Input::new("hello");
+    input.set_range(ExcludedMaxStart);
+}
