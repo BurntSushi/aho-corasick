@@ -1191,6 +1191,34 @@ impl AhoCorasick {
         self.aut.try_find_overlapping(&input, state)
     }
 
+    /// Take the next overlapping match already available at the current end
+    /// offset, without searching the haystack.
+    ///
+    /// Use a fresh state or a state from a successful overlapping search
+    /// with this same searcher. Passing state from a different automaton may
+    /// panic or return incorrect matches. Continue the search with the
+    /// original input whenever calling [`AhoCorasick::try_find_overlapping`].
+    ///
+    /// A search error can leave matches from a previous successful call
+    /// pending. If [`AhoCorasick::try_find_overlapping`] returns an error,
+    /// reset the state with [`OverlappingState::start`] before reusing it.
+    ///
+    /// A returned match is the next match that a search with the original
+    /// input would find. It is also made available through
+    /// [`OverlappingState::get_match`]. If this returns `None`, the state is
+    /// unchanged. A fresh state and a state for which a search found no
+    /// match have no pending matches.
+    #[inline]
+    pub fn next_pending_overlapping_match(
+        &self,
+        state: &mut OverlappingState,
+    ) -> Option<Match> {
+        if !state.has_pending_match() {
+            return None;
+        }
+        self.aut.next_pending_overlapping_match(state)
+    }
+
     /// Returns an iterator of non-overlapping matches, using the match
     /// semantics that this automaton was constructed with.
     ///
@@ -2643,11 +2671,22 @@ pub enum AhoCorasickKind {
 trait AcAutomaton:
     Automaton + Debug + Send + Sync + UnwindSafe + RefUnwindSafe + 'static
 {
+    fn next_pending_overlapping_match(
+        &self,
+        state: &mut OverlappingState,
+    ) -> Option<Match>;
 }
 
-impl<A> AcAutomaton for A where
-    A: Automaton + Debug + Send + Sync + UnwindSafe + RefUnwindSafe + 'static
+impl<A> AcAutomaton for A
+where
+    A: Automaton + Debug + Send + Sync + UnwindSafe + RefUnwindSafe + 'static,
 {
+    fn next_pending_overlapping_match(
+        &self,
+        state: &mut OverlappingState,
+    ) -> Option<Match> {
+        automaton::next_pending_overlapping_match(self, state)
+    }
 }
 
 impl crate::automaton::private::Sealed for Arc<dyn AcAutomaton> {}
@@ -2707,6 +2746,15 @@ unsafe impl Automaton for Arc<dyn AcAutomaton> {
     #[inline(always)]
     fn match_pattern(&self, sid: StateID, index: usize) -> PatternID {
         (**self).match_pattern(sid, index)
+    }
+
+    #[inline(always)]
+    fn match_pattern_with_more(
+        &self,
+        sid: StateID,
+        index: usize,
+    ) -> (PatternID, bool) {
+        (**self).match_pattern_with_more(sid, index)
     }
 
     #[inline(always)]
