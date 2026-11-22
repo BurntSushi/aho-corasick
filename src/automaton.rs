@@ -759,7 +759,9 @@ unsafe impl<'a, A: Automaton + ?Sized> Automaton for &'a A {
 /// [`OverlappingState::start`] when starting a new search. That same state
 /// should be reused for subsequent searches on the same `Input`. The state
 /// given will advance through the haystack itself. Callers can detect the end
-/// of a search when neither an error nor a match is returned.
+/// of an unbounded search when neither an error nor a match is returned. A
+/// [byte-bounded search](crate::AhoCorasick::try_find_overlapping_until) can
+/// return [`OverlappingSearch::Paused`] before reaching the end of the search.
 ///
 /// # Example
 ///
@@ -848,6 +850,17 @@ impl OverlappingState {
     pub(crate) fn has_pending_match(&self) -> bool {
         self.next_match_index.is_some() && self.mat.is_some()
     }
+}
+
+/// Outcome of a byte-bounded overlapping search.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum OverlappingSearch {
+    /// The next match in overlapping search order.
+    Match(Match),
+    /// The scan reached the requested byte boundary before the input end.
+    Paused,
+    /// The search found no further matches.
+    Exhausted,
 }
 
 /// An iterator of non-overlapping matches in a particular haystack.
@@ -1457,18 +1470,57 @@ fn try_find_overlapping_fwd<A: Automaton + ?Sized>(
     // use a prefilter when no pattern ID is given.
     if aut.prefilter().is_some() && !input.get_anchored().is_anchored() {
         let pre = aut.prefilter().unwrap();
-        try_find_overlapping_fwd_imp(aut, input, Some(pre), state)
+        try_find_overlapping_fwd_imp::<_, false>(
+            aut,
+            input,
+            Some(pre),
+            state,
+            input.end(),
+        )
     } else {
-        try_find_overlapping_fwd_imp(aut, input, None, state)
+        try_find_overlapping_fwd_imp::<_, false>(
+            aut,
+            input,
+            None,
+            state,
+            input.end(),
+        )
     }
 }
 
+pub(crate) fn try_find_overlapping_until<A: Automaton + ?Sized>(
+    aut: &A,
+    input: &Input<'_>,
+    state: &mut OverlappingState,
+    end: usize,
+) -> Result<OverlappingSearch, MatchError> {
+    state.mat = None;
+    if input.is_done() {
+        return Ok(OverlappingSearch::Exhausted);
+    }
+    let end = end.min(input.end());
+    let pre = if input.get_anchored().is_anchored() {
+        None
+    } else {
+        aut.prefilter()
+    };
+    try_find_overlapping_fwd_imp::<_, true>(aut, input, pre, state, end)?;
+    Ok(if let Some(mat) = state.mat {
+        OverlappingSearch::Match(mat)
+    } else if state.at >= end && end < input.end() {
+        OverlappingSearch::Paused
+    } else {
+        OverlappingSearch::Exhausted
+    })
+}
+
 #[inline(always)]
-fn try_find_overlapping_fwd_imp<A: Automaton + ?Sized>(
+fn try_find_overlapping_fwd_imp<A: Automaton + ?Sized, const BOUNDED: bool>(
     aut: &A,
     input: &Input<'_>,
     pre: Option<&Prefilter>,
     state: &mut OverlappingState,
+    end: usize,
 ) -> Result<(), MatchError> {
     let mut sid = match state.id {
         None => {
@@ -1493,7 +1545,7 @@ fn try_find_overlapping_fwd_imp<A: Automaton + ?Sized>(
             sid
         }
     };
-    while state.at < input.end() {
+    while state.at < end {
         sid = aut.next_state(
             input.get_anchored(),
             sid,
@@ -1512,15 +1564,37 @@ fn try_find_overlapping_fwd_imp<A: Automaton + ?Sized>(
                 // dead or a match state AND that a prefilter is active. Thus,
                 // it must be a start state.
                 debug_assert!(aut.is_start(sid));
-                let span = Span::from(state.at..input.end());
-                match pre.find_in(input.haystack(), span).into_option() {
-                    None => return Ok(()),
-                    Some(i) => {
-                        if i > state.at {
-                            state.at = i;
-                            continue;
-                        }
+                let haystack = if BOUNDED {
+                    &input.haystack()[..end]
+                } else {
+                    input.haystack()
+                };
+                let next = if BOUNDED && end < input.end() {
+                    // A match starting in the last max_len - 1 bytes can
+                    // straddle the boundary. A prefilter hit (or lack of one)
+                    // on this prefix can only rule out earlier starts.
+                    let safe_end = end.saturating_sub(
+                        aut.max_pattern_len().saturating_sub(1),
+                    );
+                    if state.at >= safe_end {
+                        state.at += 1;
+                        continue;
                     }
+                    pre.find_in(haystack, Span::from(state.at..end))
+                        .into_option()
+                        .map_or(safe_end, |i| i.min(safe_end))
+                } else {
+                    match pre
+                        .find_in(haystack, Span::from(state.at..end))
+                        .into_option()
+                    {
+                        None => return Ok(()),
+                        Some(i) => i,
+                    }
+                };
+                if next > state.at {
+                    state.at = next;
+                    continue;
                 }
             } else {
                 // When pre.is_none(), then starting states should not be

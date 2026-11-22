@@ -1191,6 +1191,37 @@ impl AhoCorasick {
         self.aut.try_find_overlapping(&input, state)
     }
 
+    /// Search for the next overlapping match without examining bytes at or
+    /// after the exclusive absolute haystack offset `end`.
+    ///
+    /// Only `MatchKind::Standard` supports this search. Already pending
+    /// matches use no bytes and can be returned at the boundary. A pause
+    /// retains the automaton state and scan position. Continue with a later
+    /// boundary or call [`AhoCorasick::try_find_overlapping`] to resume
+    /// without a boundary.
+    ///
+    /// Use the same searcher and original input for every call with this
+    /// state. Keep the boundary at or ahead of the current position.
+    /// Passing state from a different automaton may panic or return
+    /// incorrect matches. Reset with [`OverlappingState::start`] to reuse the
+    /// state after exhaustion or an error. A search error can leave a
+    /// previous successful match in the state.
+    pub fn try_find_overlapping_until<'h, I: Into<Input<'h>>>(
+        &self,
+        input: I,
+        state: &mut OverlappingState,
+        end: usize,
+    ) -> Result<automaton::OverlappingSearch, MatchError> {
+        let input = input.into();
+        enforce_anchored_consistency(self.start_kind, input.get_anchored())?;
+        if !self.match_kind().is_standard() {
+            return Err(MatchError::unsupported_overlapping(
+                self.match_kind(),
+            ));
+        }
+        self.aut.try_find_overlapping_until(&input, state, end)
+    }
+
     /// Take the next overlapping match already available at the current end
     /// offset, without searching the haystack.
     ///
@@ -2675,6 +2706,13 @@ trait AcAutomaton:
         &self,
         state: &mut OverlappingState,
     ) -> Option<Match>;
+
+    fn try_find_overlapping_until(
+        &self,
+        input: &Input<'_>,
+        state: &mut OverlappingState,
+        end: usize,
+    ) -> Result<automaton::OverlappingSearch, MatchError>;
 }
 
 impl<A> AcAutomaton for A
@@ -2686,6 +2724,15 @@ where
         state: &mut OverlappingState,
     ) -> Option<Match> {
         automaton::next_pending_overlapping_match(self, state)
+    }
+
+    fn try_find_overlapping_until(
+        &self,
+        input: &Input<'_>,
+        state: &mut OverlappingState,
+        end: usize,
+    ) -> Result<automaton::OverlappingSearch, MatchError> {
+        automaton::try_find_overlapping_until(self, input, state, end)
     }
 }
 

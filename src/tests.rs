@@ -1734,3 +1734,56 @@ fn pending_overlapping_anchored_start_matches() {
         assert_eq!(None, ac.next_pending_overlapping_match(&mut state));
     }
 }
+
+#[test]
+fn bounded_overlapping_preserves_partial_matches_at_the_boundary() {
+    use crate::automaton::{OverlappingSearch, OverlappingState};
+
+    for kind in [
+        AhoCorasickKind::NoncontiguousNFA,
+        AhoCorasickKind::ContiguousNFA,
+        AhoCorasickKind::DFA,
+    ] {
+        // The one-pattern prefilter needs a complete literal to report it.
+        let ac =
+            AhoCorasick::builder().kind(Some(kind)).build(["é🧪"]).unwrap();
+        let haystack = "é🧪.....é🧪";
+        let mut state = OverlappingState::start();
+        ac.try_find_overlapping(haystack, &mut state).unwrap();
+        assert_eq!(Some(Match::must(0, 0..6)), state.get_match());
+
+        assert_eq!(
+            OverlappingSearch::Paused,
+            ac.try_find_overlapping_until(haystack, &mut state, 12).unwrap(),
+        );
+        assert_eq!(None, state.get_match());
+        ac.try_find_overlapping(haystack, &mut state).unwrap();
+        assert_eq!(Some(Match::must(0, 11..17)), state.get_match());
+    }
+}
+
+#[test]
+fn bounded_overlapping_yields_pending_matches_at_the_boundary() {
+    use crate::automaton::{OverlappingSearch, OverlappingState};
+
+    let ac = AhoCorasick::new(["b", "ab", "z"]).unwrap();
+    let mut state = OverlappingState::start();
+    for expected in [
+        OverlappingSearch::Match(Match::must(1, 0..2)),
+        OverlappingSearch::Match(Match::must(0, 1..2)),
+        OverlappingSearch::Paused,
+    ] {
+        assert_eq!(
+            expected,
+            ac.try_find_overlapping_until("abz", &mut state, 2).unwrap(),
+        );
+    }
+    assert_eq!(
+        OverlappingSearch::Match(Match::must(2, 2..3)),
+        ac.try_find_overlapping_until("abz", &mut state, 3).unwrap(),
+    );
+    assert_eq!(
+        OverlappingSearch::Exhausted,
+        ac.try_find_overlapping_until("abz", &mut state, 3).unwrap(),
+    );
+}
