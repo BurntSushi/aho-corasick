@@ -313,6 +313,18 @@ pub unsafe trait Automaton: private::Sealed {
     /// matches in this match state.
     fn match_pattern(&self, sid: StateID, index: usize) -> PatternID;
 
+    // This takes the same state and index as match_pattern, and also reports
+    // whether another pattern ID follows it in the match state.
+    #[doc(hidden)]
+    #[inline(always)]
+    fn match_pattern_with_more(
+        &self,
+        sid: StateID,
+        index: usize,
+    ) -> (PatternID, bool) {
+        (self.match_pattern(sid, index), index + 1 < self.match_len(sid))
+    }
+
     /// Returns the total number of patterns compiled into this automaton.
     fn patterns_len(&self) -> usize;
 
@@ -690,6 +702,15 @@ unsafe impl<'a, A: Automaton + ?Sized> Automaton for &'a A {
     }
 
     #[inline(always)]
+    fn match_pattern_with_more(
+        &self,
+        sid: StateID,
+        index: usize,
+    ) -> (PatternID, bool) {
+        (**self).match_pattern_with_more(sid, index)
+    }
+
+    #[inline(always)]
     fn patterns_len(&self) -> usize {
         (**self).patterns_len()
     }
@@ -738,7 +759,9 @@ unsafe impl<'a, A: Automaton + ?Sized> Automaton for &'a A {
 /// [`OverlappingState::start`] when starting a new search. That same state
 /// should be reused for subsequent searches on the same `Input`. The state
 /// given will advance through the haystack itself. Callers can detect the end
-/// of a search when neither an error nor a match is returned.
+/// of an unbounded search when neither an error nor a match is returned. A
+/// [byte-bounded search](crate::AhoCorasick::try_find_overlapping_until) can
+/// return [`OverlappingSearch::Paused`] before reaching the end of the search.
 ///
 /// # Example
 ///
@@ -780,18 +803,18 @@ unsafe impl<'a, A: Automaton + ?Sized> Automaton for &'a A {
 /// ```
 #[derive(Clone, Debug)]
 pub struct OverlappingState {
-    /// The match reported by the most recent overlapping search to use this
-    /// state.
+    /// The most recent match reported using this state, including matches
+    /// reported without advancing the search.
     ///
     /// If a search does not find any matches, then it is expected to clear
     /// this value.
     mat: Option<Match>,
     /// The state ID of the state at which the search was in when the call
-    /// terminated. When this is a match state, `last_match` must be set to a
-    /// non-None value.
+    /// terminated. When there are pending matches, this is the match state
+    /// containing them.
     ///
-    /// A `None` value indicates the start state of the corresponding
-    /// automaton. We cannot use the actual ID, since any one automaton may
+    /// A `None` value indicates that the automaton's start state has yet to be
+    /// selected. We cannot use the actual ID, since any one automaton may
     /// have many start states, and which one is in use depends on search-time
     /// factors (such as whether the search is anchored or not).
     id: Option<StateID>,
@@ -800,14 +823,13 @@ pub struct OverlappingState {
     /// When `id` is None (i.e., we are starting a search), this is set to
     /// the beginning of the search as given by the caller regardless of its
     /// current value. Subsequent calls to an overlapping search pick up at
-    /// this offset.
+    /// this offset. It is also the end offset of any pending matches at the
+    /// current state.
     at: usize,
     /// The index into the matching patterns of the next match to report if the
-    /// current state is a match state. Note that this may be 1 greater than
-    /// the total number of matches to report for the current match state. (In
-    /// which case, no more matches should be reported at the current position
-    /// and the search should advance to the next position.)
-    next_match_index: Option<usize>,
+    /// current state is a match state with pending matches. Index zero is always
+    /// reported when entering a match state.
+    next_match_index: Option<core::num::NonZeroUsize>,
 }
 
 impl OverlappingState {
@@ -816,14 +838,29 @@ impl OverlappingState {
         OverlappingState { mat: None, id: None, at: 0, next_match_index: None }
     }
 
-    /// Return the match result of the most recent search to execute with this
-    /// state.
+    /// Return the most recent match reported using this state.
     ///
-    /// Every search will clear this result automatically, such that if no
-    /// match is found, this will always correctly report `None`.
+    /// After a successful search that found no match, this returns `None`.
+    /// A search error can leave a previous match in the state.
     pub fn get_match(&self) -> Option<Match> {
         self.mat
     }
+
+    #[inline]
+    pub(crate) fn has_pending_match(&self) -> bool {
+        self.next_match_index.is_some() && self.mat.is_some()
+    }
+}
+
+/// Outcome of a byte-bounded overlapping search.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum OverlappingSearch {
+    /// The next match in overlapping search order.
+    Match(Match),
+    /// The scan reached the requested byte boundary before the input end.
+    Paused,
+    /// The search found no further matches.
+    Exhausted,
 }
 
 /// An iterator of non-overlapping matches in a particular haystack.
@@ -1433,62 +1470,82 @@ fn try_find_overlapping_fwd<A: Automaton + ?Sized>(
     // use a prefilter when no pattern ID is given.
     if aut.prefilter().is_some() && !input.get_anchored().is_anchored() {
         let pre = aut.prefilter().unwrap();
-        try_find_overlapping_fwd_imp(aut, input, Some(pre), state)
+        try_find_overlapping_fwd_imp::<_, false>(
+            aut,
+            input,
+            Some(pre),
+            state,
+            input.end(),
+        )
     } else {
-        try_find_overlapping_fwd_imp(aut, input, None, state)
+        try_find_overlapping_fwd_imp::<_, false>(
+            aut,
+            input,
+            None,
+            state,
+            input.end(),
+        )
     }
 }
 
+pub(crate) fn try_find_overlapping_until<A: Automaton + ?Sized>(
+    aut: &A,
+    input: &Input<'_>,
+    state: &mut OverlappingState,
+    end: usize,
+) -> Result<OverlappingSearch, MatchError> {
+    state.mat = None;
+    if input.is_done() {
+        return Ok(OverlappingSearch::Exhausted);
+    }
+    let end = end.min(input.end());
+    let pre = if input.get_anchored().is_anchored() {
+        None
+    } else {
+        aut.prefilter()
+    };
+    try_find_overlapping_fwd_imp::<_, true>(aut, input, pre, state, end)?;
+    Ok(if let Some(mat) = state.mat {
+        OverlappingSearch::Match(mat)
+    } else if state.at >= end && end < input.end() {
+        OverlappingSearch::Paused
+    } else {
+        OverlappingSearch::Exhausted
+    })
+}
+
 #[inline(always)]
-fn try_find_overlapping_fwd_imp<A: Automaton + ?Sized>(
+fn try_find_overlapping_fwd_imp<A: Automaton + ?Sized, const BOUNDED: bool>(
     aut: &A,
     input: &Input<'_>,
     pre: Option<&Prefilter>,
     state: &mut OverlappingState,
+    end: usize,
 ) -> Result<(), MatchError> {
     let mut sid = match state.id {
         None => {
             let sid = aut.start_state(input.get_anchored())?;
-            // Handle the case where the start state is a match state. That is,
-            // the empty string is in our automaton. We report every match we
-            // can here before moving on and updating 'state.at' and 'state.id'
-            // to find more matches in other parts of the haystack.
-            if aut.is_match(sid) {
-                let i = state.next_match_index.unwrap_or(0);
-                let len = aut.match_len(sid);
-                if i < len {
-                    state.next_match_index = Some(i + 1);
-                    state.mat = Some(get_match(aut, sid, i, input.start()));
-                    return Ok(());
-                }
-            }
             state.at = input.start();
             state.id = Some(sid);
-            state.next_match_index = None;
-            state.mat = None;
+            // Handle the case where the start state is a match state. That is,
+            // the empty string is in our automaton.
+            if aut.is_match(sid) {
+                record_overlapping_match(aut, state, sid, 0);
+                return Ok(());
+            }
             sid
         }
         Some(sid) => {
             // If we still have matches left to report in this state then
             // report them until we've exhausted them. Only after that do we
             // advance to the next offset in the haystack.
-            if let Some(i) = state.next_match_index {
-                let len = aut.match_len(sid);
-                if i < len {
-                    state.next_match_index = Some(i + 1);
-                    state.mat = Some(get_match(aut, sid, i, state.at + 1));
-                    return Ok(());
-                }
-                // Once we've reported all matches at a given position, we need
-                // to advance the search to the next position.
-                state.at += 1;
-                state.next_match_index = None;
-                state.mat = None;
+            if next_pending_overlapping_match(aut, state).is_some() {
+                return Ok(());
             }
             sid
         }
     };
-    while state.at < input.end() {
+    while state.at < end {
         sid = aut.next_state(
             input.get_anchored(),
             sid,
@@ -1499,23 +1556,45 @@ fn try_find_overlapping_fwd_imp<A: Automaton + ?Sized>(
             if aut.is_dead(sid) {
                 return Ok(());
             } else if aut.is_match(sid) {
-                state.next_match_index = Some(1);
-                state.mat = Some(get_match(aut, sid, 0, state.at + 1));
+                state.at += 1;
+                record_overlapping_match(aut, state, sid, 0);
                 return Ok(());
             } else if let Some(pre) = pre {
                 // If we're here, we know it's a special state that is not a
                 // dead or a match state AND that a prefilter is active. Thus,
                 // it must be a start state.
                 debug_assert!(aut.is_start(sid));
-                let span = Span::from(state.at..input.end());
-                match pre.find_in(input.haystack(), span).into_option() {
-                    None => return Ok(()),
-                    Some(i) => {
-                        if i > state.at {
-                            state.at = i;
-                            continue;
-                        }
+                let haystack = if BOUNDED {
+                    &input.haystack()[..end]
+                } else {
+                    input.haystack()
+                };
+                let next = if BOUNDED && end < input.end() {
+                    // A match starting in the last max_len - 1 bytes can
+                    // straddle the boundary. A prefilter hit (or lack of one)
+                    // on this prefix can only rule out earlier starts.
+                    let safe_end = end.saturating_sub(
+                        aut.max_pattern_len().saturating_sub(1),
+                    );
+                    if state.at >= safe_end {
+                        state.at += 1;
+                        continue;
                     }
+                    pre.find_in(haystack, Span::from(state.at..end))
+                        .into_option()
+                        .map_or(safe_end, |i| i.min(safe_end))
+                } else {
+                    match pre
+                        .find_in(haystack, Span::from(state.at..end))
+                        .into_option()
+                    {
+                        None => return Ok(()),
+                        Some(i) => i,
+                    }
+                };
+                if next > state.at {
+                    state.at = next;
+                    continue;
                 }
             } else {
                 // When pre.is_none(), then starting states should not be
@@ -1534,6 +1613,32 @@ fn try_find_overlapping_fwd_imp<A: Automaton + ?Sized>(
     }
     state.id = Some(sid);
     Ok(())
+}
+
+#[inline(always)]
+pub(crate) fn next_pending_overlapping_match<A: Automaton + ?Sized>(
+    aut: &A,
+    state: &mut OverlappingState,
+) -> Option<Match> {
+    let sid = state.id?;
+    let index = state.next_match_index?.get();
+    Some(record_overlapping_match(aut, state, sid, index))
+}
+
+#[inline(always)]
+fn record_overlapping_match<A: Automaton + ?Sized>(
+    aut: &A,
+    state: &mut OverlappingState,
+    sid: StateID,
+    index: usize,
+) -> Match {
+    let (pid, has_more) = aut.match_pattern_with_more(sid, index);
+    let len = aut.pattern_len(pid);
+    let mat = Match::new(pid, (state.at - len)..state.at);
+    state.next_match_index =
+        if has_more { core::num::NonZeroUsize::new(index + 1) } else { None };
+    state.mat = Some(mat);
+    mat
 }
 
 #[inline(always)]

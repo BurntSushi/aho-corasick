@@ -686,6 +686,17 @@ unsafe impl Automaton for NFA {
     }
 
     #[inline(always)]
+    fn match_pattern_with_more(
+        &self,
+        sid: StateID,
+        index: usize,
+    ) -> (PatternID, bool) {
+        let mut matches = self.iter_matches(sid);
+        let pid = matches.nth(index).unwrap();
+        (pid, matches.next().is_some())
+    }
+
+    #[inline(always)]
     fn memory_usage(&self) -> usize {
         self.states.len() * core::mem::size_of::<State>()
             + self.sparse.len() * core::mem::size_of::<Transition>()
