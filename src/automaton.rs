@@ -1377,6 +1377,15 @@ fn try_find_fwd_imp<A: Automaton + ?Sized>(
                 // Why? Because removing them seems difficult, although I
                 // haven't given it a lot of thought.
                 if !(anchored.is_anchored() && m.start() > input.start()) {
+                    // A later-starting match cannot displace the leftmost
+                    // match already found. In particular, preserve an empty
+                    // match at the search start when the automaton re-enters
+                    // its start state.
+                    if let Some(prev) = mat {
+                        if m.start() > prev.start() {
+                            return Ok(mat);
+                        }
+                    }
                     mat = Some(m);
                     if earliest {
                         return Ok(mat);

@@ -396,6 +396,32 @@ const LEFTMOST_LONGEST: &'static [SearchTest] = &[
     t!(leftlong070, &["ab", "a"], "ab", &[(0, 0, 2)]),
     t!(leftlong100, &["abcdefg", "bcde", "bcdef"], "abcdef", &[(2, 1, 6)]),
     t!(leftlong110, &["abcdefg", "bcdef", "bcde"], "abcdef", &[(1, 1, 6)]),
+    t!(leftlong120, &["a", "xyz", ""], "ax", &[(0, 0, 1), (2, 2, 2)]),
+    t!(
+        leftlong121,
+        &["a", "xyz", ""],
+        "axx",
+        &[(0, 0, 1), (2, 2, 2), (2, 3, 3)]
+    ),
+    t!(
+        leftlong122,
+        &["a", "xyz", ""],
+        "axy",
+        &[(0, 0, 1), (2, 2, 2), (2, 3, 3)]
+    ),
+    t!(
+        leftlong123,
+        &["a", "xyz", ""],
+        "axyw",
+        &[(0, 0, 1), (2, 2, 2), (2, 3, 3), (2, 4, 4)]
+    ),
+    t!(
+        leftlong124,
+        &["a", "xyz", ""],
+        "axywa",
+        &[(0, 0, 1), (2, 2, 2), (2, 3, 3), (0, 4, 5)]
+    ),
+    t!(leftlong125, &["", "a"], "ba", &[(0, 0, 0), (1, 1, 2)]),
     t!(leftlong300, &["abcd", "b", "bce"], "abce", &[(2, 1, 4)]),
     t!(
         leftlong310,
